@@ -16,7 +16,12 @@ import {
     Users,
     Clock,
     Star,
-    Sparkles
+    Sparkles,
+    ChevronDown,
+    Leaf,
+    Ticket,
+    ChevronLeft,
+    ChevronRight
 } from "lucide-react";
 
 export default function HomePage() {
@@ -58,6 +63,7 @@ export default function HomePage() {
         visible: { opacity: 1, transition: { staggerChildren: 0.12, delayChildren: 0.08 } },
     };
 
+
     if (loading) {
         return (
             <Layout>
@@ -73,72 +79,93 @@ export default function HomePage() {
     return (
         <Layout>
             {/* Hero Section */}
+            {/* Hero Section */}
             <motion.section
                 initial="hidden"
                 animate="visible"
                 variants={container}
-                className="relative h-screen flex items-center justify-center overflow-hidden text-white"
+                className="relative min-h-[88vh] flex items-center justify-center overflow-hidden text-white"
             >
-                {/* Imagen de fondo */}
-                <div
-                    className="absolute inset-0 bg-cover bg-center bg-fixed opacity-[0.9]"
-                    style={{
-                        backgroundImage:
-                            "url('https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=2070&auto=format&fit=crop')"
-                    }}
+                {/* Imagen de fondo (cálida) */}
+                <Image
+                    src="https://res.cloudinary.com/dfrhrnwwi/image/upload/f_auto,q_80,w_2400/v1756150406/hrushi-chavhan-R_z0epttP-E-unsplash_qcwnqw.jpg"
+                    alt="Ambiente cálido de BOA con café, plantas y luz suave"
+                    fill
+                    priority
+                    sizes="100vw"
+                    className="object-cover"
                 />
-                {/* Overlay de contraste */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/35 to-black/10" />
 
-                <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                    <div className="text-center space-y-8 max-w-4xl mx-auto">
+                {/* Overlay de contraste (de cacao a transparente) */}
+                <div className="absolute inset-0 bg-gradient-to-b from-neutral-900/60 via-neutral-900/40 to-neutral-900/15" />
 
-                        {/* Main Logo + Título */}
+                {/* Blobs sutiles (vibra artística) */}
+                <div className="pointer-events-none absolute inset-0">
+                    <div className="absolute -top-10 -left-10 w-80 h-80 rounded-full bg-emerald-400/15 blur-3xl" />
+                    <div className="absolute bottom-10 right-10 w-72 h-72 rounded-full bg-teal-300/10 blur-3xl" />
+                    <div className="absolute top-1/3 right-1/4 w-40 h-40 rounded-full bg-amber-300/10 blur-2xl" />
+                </div>
+
+                {/* Marca de agua del logo (minimalista) */}
+                <img
+                    src="https://res.cloudinary.com/dasch1s5i/image/upload/v1755904587/logo-boa_1_gf2bhl.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute top-10 left-1/2 -translate-x-1/2 opacity-10 w-20 sm:w-24"
+                />
+
+                <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center max-w-4xl mx-auto space-y-8">
+                        {/* Logo highlight + Título */}
                         <motion.div
                             variants={item}
-                            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-2"
+                            className="flex flex-col sm:flex-row items-center justify-center gap-4"
                         >
-                            {/* Wrapper con radial highlight */}
-                            <div className="relative">
-                                {/* Radial highlight detrás del logo */}
-                                <span
-                                    aria-hidden
-                                    className="pointer-events-none absolute -inset-8 rounded-full blur-2xl
-                       bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.35),transparent_60%)]"
-                                />
-                                {/* Logo circular */}
-
-                            </div>
-
-                            {/* Título — en mobile queda debajo del logo por el flex-col */}
-                            <h1 className="boa-logo font-sans text-5xl sm:text-8xl font-semibold tracking-tight">
+                            {/* Radial highlight suave tras el título */}
+                            <span
+                                aria-hidden
+                                className="pointer-events-none absolute left-1/2 -translate-x-1/2 -mt-6 h-32 w-32 rounded-full blur-2xl
+                     bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.28),transparent_60%)]"
+                            />
+                            <h1 className="font-sans text-5xl sm:text-7xl md:text-8xl font-extrabold tracking-tight">
                                 Espacio BOA
                             </h1>
                         </motion.div>
 
-                        {/* Tagline */}
+                        {/* Tagline (más cercano, evitando “café + centro holístico”) */}
                         <motion.p
                             variants={item}
-                            className="font-sans text-lg sm:text-2xl text-neutral-100 font-light max-w-3xl mx-auto leading-relaxed"
+                            className="font-sans text-lg sm:text-2xl text-neutral-50/95 font-light leading-relaxed"
                         >
-                            Un espacio integral donde el café de especialidad se encuentra con el
-                            bienestar, la creatividad y la comunidad
+                            Café, bienestar y comunidad. <span className="underline decoration-emerald-400/60 underline-offset-4">Vení a conocernos.</span>
                         </motion.p>
 
-                        {/* Badge de historia */}
-
+                        {/* Chips de identidad */}
+                        <motion.div
+                            variants={item}
+                            className="flex flex-wrap items-center justify-center gap-2 pt-1"
+                        >
+                            {["café de especialidad", "bienestar", "arte", "comunidad"].map((t) => (
+                                <span
+                                    key={t}
+                                    className="font-sans text-sm px-3 py-1 rounded-full bg-white/10 ring-1 ring-white/20 text-white/90"
+                                >
+                                    {t}
+                                </span>
+                            ))}
+                        </motion.div>
 
                         {/* CTAs */}
                         <motion.div
                             variants={item}
-                            className="flex flex-col sm:flex-row gap-4 justify-center pt-4"
+                            className="flex flex-col sm:flex-row gap-4 justify-center pt-2"
                         >
                             <Link href="/activities">
                                 <Button
                                     size="lg"
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-2xl
+                                    className="font-sans bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-2xl
                        shadow-lg shadow-emerald-600/25 hover:shadow-xl hover:shadow-emerald-600/30
-                       transition-all duration-300 font-sans"
+                       ring-1 ring-emerald-300/40 transition-all duration-300"
                                 >
                                     <Heart className="mr-2 h-5 w-5" />
                                     Explorar Actividades
@@ -149,290 +176,457 @@ export default function HomePage() {
                                 <Button
                                     variant="outline"
                                     size="lg"
-                                    className="bg-white/10 hover:bg-white/20 text-white border-white/50 hover:border-white
-                       px-8 py-3 rounded-2xl transition-all duration-300 font-sans"
+                                    className="font-sans bg-white/10 hover:bg-white/20 text-white border-white/40 hover:border-white
+                       px-8 py-3 rounded-2xl ring-1 ring-white/30 transition-all duration-300"
                                 >
                                     <Coffee className="mr-2 h-5 w-5" />
                                     Ver Gastronomía
                                 </Button>
                             </Link>
                         </motion.div>
+
+                        {/* Indicador de scroll (sutil) */}
+                        <motion.div
+                            variants={item}
+                            className="pt-2 flex justify-center"
+                            aria-hidden="true"
+                        >
+                            <div className="flex items-center gap-2 text-white/70">
+                                <span className="font-sans text-sm">Deslizar</span>
+                                <ChevronDown className="h-5 w-5 animate-bounce" />
+                            </div>
+                        </motion.div>
                     </div>
                 </div>
             </motion.section>
 
-            {/* Main Navigation Cards */}
+
+            {/* Departamentos – cálido/hippie */}
             <motion.section
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, amount: 0.2 }}
                 variants={cardsContainer}
-                className="py-20 bg-white font-sans"
+                className="relative py-20 font-sans"
             >
-                <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
-                        <h2 className="font-sans boa-heading text-4xl sm:text-5xl font-extrabold text-neutral-900 mb-4">
-                            Nuestros <strong className="text-emerald-600 font-extrabold">Departamentos</strong>
+                {/* fondo papel + manchas orgánicas */}
+                <div className="absolute inset-0 bg-gradient-to-b from-emerald-50/50 via-amber-50/40 to-white" />
+                <div className="pointer-events-none absolute -top-20 -left-20 h-64 w-64 rounded-full bg-emerald-300/10 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-10 -right-10 h-72 w-72 rounded-full bg-amber-300/10 blur-3xl" />
+
+                <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    {/* encabezado */}
+                    <div className="text-center mb-14">
+                        <h2 className="boa-heading text-4xl sm:text-5xl font-extrabold tracking-tight text-neutral-900">
+                            Nuestros <span className="text-emerald-700">Departamentos</span>
                         </h2>
-                        <p className="font-sans text-xl text-neutral-600 max-w-2xl mx-auto font-normal">
-                            Lorem, ipsum dolor sit amet consectetur adipisicing elit. Recusandae pariatur quas, perferendis laborum sint
+                        <p className="mt-3 text-lg sm:text-xl text-neutral-700 max-w-2xl mx-auto">
+                            No somos “café + centro holístico”. Somos BOA. Vení a conocernos.
                         </p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 
-                        {/* Activities */}
-                        <motion.div variants={cardItem} whileHover={{ y: -6 }} transition={{ type: "spring", stiffness: 300, damping: 24 }}>
+                    {/* grid cálida */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {/* ACTIVIDADES */}
+                        <motion.div
+                            variants={cardItem}
+                            whileHover={{ y: -6, rotateX: -0.3, rotateY: 0.3, scale: 1.01 }}
+                            transition={{ type: "spring", stiffness: 260, damping: 26 }}
+                            className="relative"
+                        >
                             <Link
                                 href="/activities"
-                                className="group relative block h-96 rounded-2xl overflow-hidden
-                     border border-black/5 shadow-[0_10px_25px_rgba(2,6,23,.05)]
-                     focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                                className="group relative block h-[420px] rounded-[28px] overflow-hidden ring-1 ring-black/5 shadow-[0_12px_28px_rgba(2,6,23,.10)] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                                 aria-label="Explorar Actividades"
                             >
+                                {/* imagen */}
                                 <Image
-                                    src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1600&auto=format&fit=crop&q=80"
+                                    src="https://res.cloudinary.com/dfrhrnwwi/image/upload/v1756216234/34390c1b-4114-4e44-8f6a-eb175921eead_yhgrch.jpg"
                                     alt="Actividades en BOA"
                                     fill
-                                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                                     sizes="(min-width: 1024px) 33vw, 100vw"
+                                    className="object-cover transition-transform duration-[1200ms] group-hover:scale-[1.06]"
                                     priority
                                 />
-                                <div className="absolute inset-0 transition-all duration-500
-                        bg-gradient-to-t from-neutral-900/80 via-neutral-900/40 to-neutral-900/10
-                        group-hover:from-neutral-900/90 group-hover:via-neutral-900/50 group-hover:to-neutral-900/20" />
+                                {/* tint + vidrio */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/65 via-emerald-900/30 to-transparent" />
+                                <div className="absolute inset-0 bg-white/6 backdrop-blur-[1px]" />
+
+                                {/* contenido */}
                                 <Card className="relative h-full bg-transparent border-0 text-white">
-                                    <CardContent className="p-8 h-full flex flex-col justify-end items-center">
-                                        <div className="text-center space-y-4 font-sans">
-                                            {/* <div className="w-16 h-16 mx-auto bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center transition-colors group-hover:bg-white/30">
-                                                <Heart className="h-8 w-8 text-white transition-transform duration-300 group-hover:scale-110" />
-                                            </div> */}
-                                            <div className="text-center">
-                                                <h3 className="font-sans boa-heading text-2xl font-semibold text-white mb-2">BOA <strong className="font-semibold">Actividades</strong></h3>
-                                                <p className="font-sans text-white/90 leading-relaxed font-normal">Yoga, arte, bienestar y talleres creativos</p>
-                                            </div>
-                                            <div className="flex items-center justify-center text-white/90 group-hover:text-white transition-colors pt-2">
-                                                <span className="font-sans font-medium">Explorar</span>
-                                                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                                            </div>
+                                    <CardContent className="p-7 h-full flex flex-col justify-end">
+                                        {/* chip orgánico */}
+                                        <div className="absolute top-6 left-6 inline-flex items-center gap-2 rounded-full bg-white/70 text-emerald-800 px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
+                                            <Heart className="h-3.5 w-3.5" />
+                                            BOA Actividades
+                                        </div>
+
+                                        {/* título dominante */}
+                                        <h3 className="text-3xl sm:text-[32px] font-extrabold leading-tight drop-shadow-sm">
+                                            Movimiento & Bienestar
+                                        </h3>
+                                        <p className="mt-2 text-sm/relaxed sm:text-base text-white/90">
+                                            Yoga, arte, respiración, talleres creativos.
+                                        </p>
+
+                                        {/* CTA cálido */}
+                                        <div className="mt-5">
+                                            <span className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-4 py-2 text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,.25)] transition-all group-hover:bg-white/25 group-hover:border-white/60">
+                                                Explorar
+                                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                            </span>
                                         </div>
                                     </CardContent>
                                 </Card>
+
+                                {/* halo verde al hover */}
+                                <span className="pointer-events-none absolute inset-0 rounded-[28px] ring-2 ring-transparent group-hover:ring-emerald-300/50 transition" />
                             </Link>
                         </motion.div>
 
-                        {/* Gastronomy */}
-                        <motion.div variants={cardItem} whileHover={{ y: -6 }} transition={{ type: "spring", stiffness: 300, damping: 24 }}>
+                        {/* GASTRONOMÍA */}
+                        <motion.div
+                            variants={cardItem}
+                            whileHover={{ y: -6, rotateX: -0.3, rotateY: 0.3, scale: 1.01 }}
+                            transition={{ type: "spring", stiffness: 260, damping: 26 }}
+                            className="relative"
+                        >
                             <Link
                                 href="/menu"
-                                className="group relative block h-96 rounded-2xl overflow-hidden
-                     border border-black/5 shadow-[0_10px_25px_rgba(2,6,23,.05)]
-                     focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                                className="group relative block h-[420px] rounded-[28px] overflow-hidden ring-1 ring-black/5 shadow-[0_12px_28px_rgba(2,6,23,.10)] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                                 aria-label="Ver Gastronomía"
                             >
+                                {/* imagen */}
                                 <Image
                                     src="https://res.cloudinary.com/dasch1s5i/image/upload/v1755904741/boa-bowl_v6wn6a.jpg"
                                     alt="Gastronomía de BOA"
                                     fill
-                                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                                     sizes="(min-width: 1024px) 33vw, 100vw"
+                                    className="object-cover transition-transform duration-[1200ms] group-hover:scale-[1.06]"
                                 />
-                                <div className="absolute inset-0 transition-all duration-500
-                          bg-gradient-to-t from-neutral-900/80 via-neutral-900/40 to-neutral-900/10
-                          group-hover:from-neutral-900/90 group-hover:via-neutral-900/50 group-hover:to-neutral-900/20" />
+                                {/* fondo verde sutil + papel */}
+                                <div className="absolute inset-0 bg-gradient-to-b from-emerald-700/15 via-emerald-900/45 to-emerald-950/65" />
+                                <div className="absolute inset-0 bg-emerald-100/5 mix-blend-soft-light" />
+
                                 <Card className="relative h-full bg-transparent border-0 text-white">
-                                    <CardContent className="p-8 h-full flex flex-col justify-end items-center">
-                                        <div className="text-center space-y-4 font-sans">
-                                            {/* <div className="w-16 h-16 mx-auto bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center transition-colors group-hover:bg-white/30">
-                                                <Coffee className="h-8 w-8 text-white transition-transform duration-300 group-hover:scale-110" />
-                                            </div> */}
-                                            <div className="text-center">
-                                                <h3 className="font-sans boa-heading text-2xl font-semibold text-white mb-2">BOA <strong className="font-semibold">Gastronomía</strong></h3>
-                                                <p className="font-sans text-white/90 leading-relaxed font-normal">Café de especialidad y opciones saludables</p>
-                                            </div>
-                                            <div className="flex items-center justify-center text-white/90 group-hover:text-white transition-colors pt-2">
-                                                <span className="font-sans font-medium">Ver menú</span>
-                                                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                                            </div>
+                                    <CardContent className="p-7 h-full flex flex-col justify-end">
+                                        <div className="absolute top-6 left-6 inline-flex items-center gap-2 rounded-full bg-white/70 text-emerald-800 px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
+                                            <Coffee className="h-3.5 w-3.5" />
+                                            BOA Gastronomía
+                                        </div>
+
+                                        <h3 className="text-3xl sm:text-[32px] font-extrabold leading-tight drop-shadow-sm">
+                                            Café & Cocina Consciente
+                                        </h3>
+                                        <p className="mt-2 text-sm/relaxed sm:text-base text-white/90">
+                                            Especialidad y opciones que abrazan.
+                                        </p>
+
+                                        <div className="mt-5">
+                                            <span className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-4 py-2 text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,.25)] transition-all group-hover:bg-white/25 group-hover:border-white/60">
+                                                Ver menú
+                                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                            </span>
                                         </div>
                                     </CardContent>
                                 </Card>
+
+                                <span className="pointer-events-none absolute inset-0 rounded-[28px] ring-2 ring-transparent group-hover:ring-emerald-300/50 transition" />
                             </Link>
                         </motion.div>
 
-                        {/* Spaces */}
-                        <motion.div variants={cardItem} whileHover={{ y: -6 }} transition={{ type: "spring", stiffness: 300, damping: 24 }}>
+                        {/* ESPACIOS */}
+                        <motion.div
+                            variants={cardItem}
+                            whileHover={{ y: -6, rotateX: -0.3, rotateY: 0.3, scale: 1.01 }}
+                            transition={{ type: "spring", stiffness: 260, damping: 26 }}
+                            className="relative"
+                        >
                             <Link
                                 href="/spaces"
-                                className="group relative block h-96 rounded-2xl overflow-hidden
-                     border border-black/5 shadow-[0_10px_25px_rgba(2,6,23,.05)]
-                     focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                                className="group relative block h-[420px] rounded-[28px] overflow-hidden ring-1 ring-black/5 shadow-[0_12px_28px_rgba(2,6,23,.10)] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                                 aria-label="Conocer Espacios"
                             >
                                 <Image
                                     src="https://res.cloudinary.com/dasch1s5i/image/upload/v1755911507/boa-entrada_ezfcms.jpg"
                                     alt="Espacios de BOA"
                                     fill
-                                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                                     sizes="(min-width: 1024px) 33vw, 100vw"
+                                    className="object-cover transition-transform duration-[1200ms] group-hover:scale-[1.06]"
                                 />
-                                <div className="absolute inset-0 transition-all duration-500
-                          bg-gradient-to-t from-neutral-900/80 via-neutral-900/40 to-neutral-900/10
-                          group-hover:from-neutral-900/90 group-hover:via-neutral-900/50 group-hover:to-neutral-900/20" />
+                                {/* tint cálido + vidrio */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-amber-900/65 via-emerald-900/35 to-transparent" />
+                                <div className="absolute inset-0 bg-white/6 backdrop-blur-[1px]" />
+
                                 <Card className="relative h-full bg-transparent border-0 text-white">
-                                    <CardContent className="p-8 h-full flex flex-col justify-end items-center">
-                                        <div className="text-center space-y-4 font-sans">
-                                            {/* <div className="w-16 h-16 mx-auto bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center transition-colors group-hover:bg-white/30">
-                                                <MapPin className="h-8 w-8 text-white transition-transform duration-300 group-hover:scale-110" />
-                                            </div> */}
-                                            <div className="text-center">
-                                                <h3 className="font-sans boa-heading text-2xl font-semibold text-white mb-2">BOA <strong className="font-semibold">Espacios</strong></h3>
-                                                <p className="font-sans text-white/90 leading-relaxed font-normal">Ambientes únicos para inspirar y conectar</p>
-                                            </div>
-                                            <div className="flex items-center justify-center text-white/90 group-hover:text-white transition-colors pt-2">
-                                                <span className="font-sans font-medium">Conocer</span>
-                                                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                                            </div>
+                                    <CardContent className="p-7 h-full flex flex-col justify-end">
+                                        <div className="absolute top-6 left-6 inline-flex items-center gap-2 rounded-full bg-white/70 text-emerald-800 px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
+                                            <Leaf className="h-3.5 w-3.5" />
+                                            BOA Espacios
+                                        </div>
+
+                                        <h3 className="text-3xl sm:text-[32px] font-extrabold leading-tight drop-shadow-sm">
+                                            Lugares que abrazan
+                                        </h3>
+                                        <p className="mt-2 text-sm/relaxed sm:text-base text-white/90">
+                                            Verde, luz y texturas para inspirar y conectar.
+                                        </p>
+
+                                        <div className="mt-5">
+                                            <span className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-4 py-2 text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,.25)] transition-all group-hover:bg-white/25 group-hover:border-white/60">
+                                                Conocer
+                                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                            </span>
                                         </div>
                                     </CardContent>
                                 </Card>
+
+                                <span className="pointer-events-none absolute inset-0 rounded-[28px] ring-2 ring-transparent group-hover:ring-emerald-300/50 transition" />
                             </Link>
                         </motion.div>
-
                     </div>
                 </div>
             </motion.section>
 
-            {/* Featured Activities & Events */}
+
+            {/* Featured Activities & Events — cuadros/lienzo cálido */}
             <motion.section
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, amount: 0.2 }}
-                className="py-20 bg-neutral-50 font-sans"
+                className="relative py-28 font-sans overflow-hidden"
             >
-                <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
-                        <h2 className="font-sans boa-heading text-4xl sm:text-5xl font-extrabold text-neutral-900 mb-4">
-                            Próximas <strong className="text-emerald-600 font-extrabold">Experiencias</strong>
+                {/* Fondo: papel + veladuras suaves */}
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,#FBF7EC_0%,#FFFFFF_60%)]" />
+                <div
+                    className="absolute inset-0 opacity-[0.22] mix-blend-multiply pointer-events-none"
+                    style={{
+                        backgroundImage:
+                            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'><defs><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0.1'/><feComponentTransfer><feFuncA type='table' tableValues='0 0.06'/></feComponentTransfer></filter></defs><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")",
+                        backgroundSize: "300px 300px",
+                    }}
+                />
+                <div className="absolute -top-20 -left-28 h-80 w-80 rounded-full bg-emerald-300/15 blur-3xl" />
+                <div className="absolute top-10 -right-10 h-72 w-72 rounded-full bg-amber-300/20 blur-3xl" />
+
+                <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    {/* Encabezado */}
+                    <div className="text-center mb-14">
+                        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/70 text-emerald-800 text-xs font-medium ring-1 ring-emerald-300/60">
+                            <Sparkles className="h-4 w-4" />
+                            agenda viva
+                        </span>
+                        <h2 className="mt-4 boa-heading text-4xl sm:text-5xl font-extrabold text-neutral-900">
+                            Próximas <span className="text-emerald-700">Experiencias</span>
                         </h2>
-                        <p className="text-xl text-neutral-600 max-w-2xl mx-auto font-normal">
-                            Actividades regulares y eventos especiales para nutrir tu alma y expandir tu creatividad
+                        <p className="mt-3 text-lg text-neutral-700 max-w-2xl mx-auto">
+                            Encuentros con alma BOA: cercanía, movimiento y creatividad compartida.
                         </p>
+                        {/* subrayado orgánico */}
+                        <svg className="mx-auto mt-6" width="180" height="18" viewBox="0 0 180 18" fill="none">
+                            <path d="M4 10C42 14 78 14 176 8" stroke="url(#g)" strokeWidth="6" strokeLinecap="round" opacity=".7" />
+                            <defs>
+                                <linearGradient id="g" x1="0" x2="180" y1="0" y2="0" gradientUnits="userSpaceOnUse">
+                                    <stop stopColor="#34D399" /><stop offset=".5" stopColor="#10B981" /><stop offset="1" stopColor="#34D399" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
                     </div>
 
+                    {/* Grid dos columnas */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                        {/* Featured Activities */}
-                        <motion.div variants={list} className="space-y-6">
+                        {/* ACTIVIDADES / “cuadros” */}
+                        <motion.div variants={list} className="space-y-7">
                             <div className="flex items-center justify-between">
-                                <h3 className="font-sans boa-heading text-2xl font-semibold text-neutral-900">Actividades Destacadas</h3>
-                                <Link href="/activities" className="text-emerald-600 hover:text-emerald-700 font-medium text-sm flex items-center">
-                                    Ver todas <ArrowRight className="ml-1 h-4 w-4" />
+                                <h3 className="boa-heading text-2xl font-semibold text-neutral-900">Actividades destacadas</h3>
+                                <Link href="/activities" className="inline-flex items-center gap-2 text-emerald-800 hover:text-emerald-900 text-sm font-medium">
+                                    Ver todas <ArrowRight className="h-4 w-4" />
                                 </Link>
                             </div>
 
-                            <div className="space-y-4">
-                                {featuredActivities.map((activity) => (
-                                    <motion.div key={activity.id} variants={item} whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300, damping: 26 }}>
-                                        <Card className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 border border-neutral-200/60 hover:border-emerald-200">
-                                            <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-emerald-50/0 group-hover:bg-emerald-50/55 transition-colors duration-300" />
-                                            <div className="pointer-events-none absolute inset-0 rounded-[inherit] ring-0 ring-emerald-300/40 group-hover:ring-1 transition-all duration-300" />
+                            {featuredActivities.map((a, idx) => (
+                                <motion.article
+                                    key={a.id}
+                                    variants={item}
+                                    whileHover={{ y: -4 }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 26 }}
+                                    className="relative"
+                                >
+                                    {/* marco madera */}
+                                    <div className="rounded-[28px] p-2 bg-[linear-gradient(135deg,#a0754e,#caa57f)] shadow-[0_14px_40px_rgba(0,0,0,.10)] ring-1 ring-amber-900/20">
+                                        {/* cinta washi (esquinas) */}
+                                        <div
+                                            className="absolute -top-2 left-8 h-6 w-16 rotate-[-6deg] bg-amber-200/70 ring-1 ring-amber-300/60"
+                                            style={{ borderRadius: "4px" }}
+                                        />
+                                        <div
+                                            className="absolute -top-1 right-10 h-6 w-12 rotate-[7deg] bg-emerald-200/70 ring-1 ring-emerald-300/60"
+                                            style={{ borderRadius: "4px" }}
+                                        />
 
-                                            <CardContent className="relative p-6">
-                                                <div className="flex gap-5">
-                                                    <div className="w-28 h-28 md:w-36 md:h-36 rounded-xl overflow-hidden flex-shrink-0">
-                                                        <img
-                                                            src={activity.image}
-                                                            alt={activity.title}
-                                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                                        />
+                                        {/* lienzo */}
+                                        <div className="rounded-[22px] overflow-hidden bg-[#FCFAF5] ring-1 ring-black/10">
+                                            {/* textura papel */}
+                                            <div
+                                                className="absolute inset-0 opacity-[0.22] pointer-events-none"
+                                                style={{
+                                                    backgroundImage:
+                                                        "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'><defs><filter id='t'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/><feComponentTransfer><feFuncA type='table' tableValues='0 0.05'/></feComponentTransfer></filter></defs><rect width='100%' height='100%' filter='url(%23t)'/></svg>\")",
+                                                    backgroundSize: "260px 260px",
+                                                }}
+                                            />
+
+                                            {/* contenido: imagen “pintada” + textos */}
+                                            <div className="relative p-6 flex gap-5">
+                                                {/* zona imagen con veladuras cálidas */}
+                                                <div className="relative w-28 h-28 md:w-40 md:h-40 rounded-[18px] overflow-hidden ring-1 ring-black/10 flex-shrink-0">
+                                                    <img src={a.image} alt={a.title} className="h-full w-full object-cover transition-transform duration-[1200ms] hover:scale-[1.05]" />
+                                                    {/* manchas tipo pintura */}
+                                                    <div
+                                                        className="absolute inset-0 pointer-events-none mix-blend-multiply"
+                                                        style={{
+                                                            background:
+                                                                "radial-gradient(60px 36px at 18% 28%, rgba(16,185,129,.18), transparent 60%), radial-gradient(70px 40px at 80% 70%, rgba(245,158,11,.18), transparent 60%)",
+                                                        }}
+                                                    />
+                                                </div>
+
+                                                {/* texto sobre el lienzo */}
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="text-[1.12rem] font-extrabold text-neutral-900 leading-snug">
+                                                        {a.title}
+                                                    </h4>
+                                                    <p className="mt-1 text-[0.95rem] text-neutral-700/90 line-clamp-2">
+                                                        {a.description}
+                                                    </p>
+
+                                                    <div className="mt-3 flex items-center justify-between text-[12.5px] text-neutral-600">
+                                                        <span className="inline-flex items-center gap-2">
+                                                            <Clock className="h-4 w-4" />
+                                                            {a.schedule.day} • {a.schedule.time}
+                                                        </span>
+                                                        <span className="inline-flex items-center gap-2">
+                                                            <Users className="h-4 w-4" />
+                                                            {a.enrolled}/{a.capacity}
+                                                        </span>
                                                     </div>
 
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-start justify-between mb-2">
-                                                            <h4 className="font-semibold text-neutral-900 group-hover:text-emerald-700 transition-colors">
-                                                                {activity.title}
-                                                            </h4>
-                                                            <Badge variant="secondary" className="text-xs font-semibold">
-                                                                ${activity.price}
-                                                            </Badge>
-                                                        </div>
-
-                                                        <p className="text-sm text-neutral-600 mb-3 line-clamp-2 font-normal">{activity.description}</p>
-
-                                                        <div className="flex items-center justify-between text-xs text-neutral-500">
-                                                            <div className="flex items-center">
-                                                                <Clock className="h-3.5 w-3.5 mr-1" />
-                                                                {activity.schedule.day} {activity.schedule.time}
-                                                            </div>
-                                                            <div className="flex items-center">
-                                                                <Users className="h-3.5 w-3.5 mr-1" />
-                                                                {activity.enrolled}/{activity.capacity}
-                                                            </div>
-                                                        </div>
+                                                    {/* “sticker” precio */}
+                                                    <div className="mt-4 inline-flex -rotate-1 items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300/60 shadow-sm">
+                                                        ${a.price}
                                                     </div>
                                                 </div>
-                                            </CardContent>
-                                        </Card>
-                                    </motion.div>
-                                ))}
-                            </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.article>
+                            ))}
                         </motion.div>
 
-                        {/* Featured Events */}
-                        <motion.div variants={list} className="space-y-6">
+                        {/* EVENTOS / “cuadros” */}
+                        <motion.div variants={list} className="space-y-7">
                             <div className="flex items-center justify-between">
-                                <h3 className="font-sans boa-heading text-2xl font-semibold text-neutral-900">Eventos Especiales</h3>
-                                <Link href="/events" className="text-emerald-600 hover:text-emerald-700 font-medium text-sm flex items-center">
-                                    Ver todos <ArrowRight className="ml-1 h-4 w-4" />
+                                <h3 className="boa-heading text-2xl font-semibold text-neutral-900">Eventos especiales</h3>
+                                <Link href="/events" className="inline-flex items-center gap-2 text-emerald-800 hover:text-emerald-900 text-sm font-medium">
+                                    Ver todos <ArrowRight className="h-4 w-4" />
                                 </Link>
                             </div>
 
-                            <div className="space-y-4">
-                                {featuredEvents.map((event) => (
-                                    <motion.div key={event.id} variants={item} whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300, damping: 26 }}>
-                                        <Card className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 border border-neutral-200/60 hover:border-emerald-200">
-                                            <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-emerald-50/0 group-hover:bg-emerald-50/55 transition-colors duration-300" />
-                                            <div className="pointer-events-none absolute inset-0 rounded-[inherit] ring-0 ring-emerald-300/40 group-hover:ring-1 transition-all duration-300" />
+                            {featuredEvents.map((e, idx) => (
+                                <motion.article
+                                    key={e.id}
+                                    variants={item}
+                                    whileHover={{ y: -4 }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 26 }}
+                                    className="relative"
+                                >
+                                    {/* marco madera (tono apenas más oscuro) */}
+                                    <div className="rounded-[28px] p-2 bg-[linear-gradient(135deg,#956b46,#bf9a73)] shadow-[0_14px_40px_rgba(0,0,0,.10)] ring-1 ring-amber-900/25">
+                                        {/* washi */}
+                                        <div
+                                            className="absolute -top-2 left-10 h-6 w-14 rotate-[5deg] bg-emerald-200/70 ring-1 ring-emerald-300/60"
+                                            style={{ borderRadius: "4px" }}
+                                        />
+                                        <div
+                                            className="absolute -top-1 right-8 h-6 w-16 rotate-[-7deg] bg-amber-200/70 ring-1 ring-amber-300/60"
+                                            style={{ borderRadius: "4px" }}
+                                        />
 
-                                            <CardContent className="relative p-6">
-                                                <div className="flex gap-5">
-                                                    <div className="w-28 h-28 md:w-36 md:h-36 rounded-xl overflow-hidden flex-shrink-0">
-                                                        <img
-                                                            src={event.image}
-                                                            alt={event.title}
-                                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                                        />
+                                        {/* lienzo */}
+                                        <div className="rounded-[22px] overflow-hidden bg-[#FCFAF5] ring-1 ring-black/10">
+                                            {/* textura */}
+                                            <div
+                                                className="absolute inset-0 opacity-[0.22] pointer-events-none"
+                                                style={{
+                                                    backgroundImage:
+                                                        "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'><defs><filter id='t2'><feTurbulence type='fractalNoise' baseFrequency='0.86' numOctaves='1' stitchTiles='stitch'/><feComponentTransfer><feFuncA type='table' tableValues='0 0.05'/></feComponentTransfer></filter></defs><rect width='100%' height='100%' filter='url(%23t2)'/></svg>\")",
+                                                    backgroundSize: "260px 260px",
+                                                }}
+                                            />
+
+                                            <div className="relative p-6 flex gap-5">
+                                                {/* imagen con veladura verdosa */}
+                                                <div className="relative w-28 h-28 md:w-40 md:h-40 rounded-[18px] overflow-hidden ring-1 ring-black/10 flex-shrink-0">
+                                                    <img src={e.image} alt={e.title} className="h-full w-full object-cover transition-transform duration-[1200ms] hover:scale-[1.05]" />
+                                                    <div
+                                                        className="absolute inset-0 pointer-events-none mix-blend-multiply"
+                                                        style={{
+                                                            background:
+                                                                "radial-gradient(70px 42px at 20% 30%, rgba(16,185,129,.20), transparent 60%), radial-gradient(72px 40px at 80% 70%, rgba(15,118,110,.18), transparent 60%)",
+                                                        }}
+                                                    />
+                                                </div>
+
+                                                {/* texto */}
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="text-[1.12rem] font-extrabold text-neutral-900 leading-snug">
+                                                        {e.title}
+                                                    </h4>
+                                                    <p className="mt-1 text-[0.95rem] text-neutral-700/90 line-clamp-2">
+                                                        {e.description}
+                                                    </p>
+
+                                                    <div className="mt-3 flex items-center justify-between text-[12.5px] text-neutral-600">
+                                                        <span className="inline-flex items-center gap-2">
+                                                            <Calendar className="h-4 w-4" />
+                                                            {new Date(e.date).toLocaleDateString("es-ES")} • {e.time}
+                                                        </span>
+                                                        <span className="inline-flex items-center gap-2">
+                                                            <Users className="h-4 w-4" />
+                                                            {e.enrolled}/{e.capacity}
+                                                        </span>
                                                     </div>
 
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-start justify-between mb-2">
-                                                            <h4 className="font-semibold text-neutral-900 group-hover:text-emerald-700 transition-colors">
-                                                                {event.title}
-                                                            </h4>
-                                                            <Badge className="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-semibold">
-                                                                ${event.price}
-                                                            </Badge>
-                                                        </div>
-
-                                                        <p className="text-sm text-neutral-600 mb-3 line-clamp-2 font-normal">{event.description}</p>
-
-                                                        <div className="flex items-center justify-between text-xs text-neutral-500">
-                                                            <div className="flex items-center">
-                                                                <Calendar className="h-3.5 w-3.5 mr-1" />
-                                                                {new Date(event.date).toLocaleDateString('es-ES')} - {event.time}
-                                                            </div>
-                                                            <div className="flex items-center">
-                                                                <Users className="h-3.5 w-3.5 mr-1" />
-                                                                {event.enrolled}/{event.capacity}
-                                                            </div>
-                                                        </div>
+                                                    <div className="mt-4 inline-flex rotate-1 items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300/60 shadow-sm">
+                                                        ${e.price}
                                                     </div>
                                                 </div>
-                                            </CardContent>
-                                        </Card>
-                                    </motion.div>
-                                ))}
-                            </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.article>
+                            ))}
                         </motion.div>
+                    </div>
+
+                    {/* CTA inferior */}
+                    <div className="mt-14 flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <Link
+                            href="/activities"
+                            className="inline-flex items-center gap-2 rounded-full bg-emerald-600 text-white px-6 py-3 text-sm font-semibold shadow
+                   hover:bg-emerald-700 transition ring-1 ring-emerald-400/40"
+                        >
+                            Ver todas las actividades
+                            <ArrowRight className="h-4 w-4" />
+                        </Link>
+                        <Link
+                            href="/events"
+                            className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white text-emerald-800
+                   px-6 py-3 text-sm font-semibold hover:bg-emerald-50 transition"
+                        >
+                            Ver todos los eventos
+                            <ArrowRight className="h-4 w-4" />
+                        </Link>
                     </div>
                 </div>
             </motion.section>
