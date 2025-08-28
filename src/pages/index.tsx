@@ -1,5 +1,6 @@
 import Layout from "@/components/Layout";
 import { useApp } from "@/contexts/AppContext";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,6 +24,22 @@ import {
     ChevronLeft,
     ChevronRight
 } from "lucide-react";
+
+type ExpItem = {
+    id?: string | number;
+    title?: string;
+    description?: string;
+    image?: string;
+    href?: string;
+    date?: string;          // eventos
+    time?: string;          // eventos
+    schedule?: { day?: string; time?: string }; // actividades
+    capacity?: number;
+    enrolled?: number;
+    price?: number | string;
+    _kind?: "activity" | "event";
+};
+
 
 export default function HomePage() {
     const { activities, events, menuItems, giftCards, loading } = useApp();
@@ -78,754 +95,814 @@ export default function HomePage() {
 
     return (
         <Layout>
-            {/* Hero Section */}
-            {/* Hero Section */}
-            <motion.section
-                initial="hidden"
-                animate="visible"
-                variants={container}
-                className="relative min-h-[88vh] flex items-center justify-center overflow-hidden text-white"
-            >
-                {/* Imagen de fondo (cálida) */}
-                <Image
-                    src="https://res.cloudinary.com/dfrhrnwwi/image/upload/f_auto,q_80,w_2400/v1756150406/hrushi-chavhan-R_z0epttP-E-unsplash_qcwnqw.jpg"
-                    alt="Ambiente cálido de BOA con café, plantas y luz suave"
-                    fill
-                    priority
-                    sizes="100vw"
-                    className="object-cover"
-                />
 
-                {/* Overlay de contraste (de cacao a transparente) */}
-                <div className="absolute inset-0 bg-gradient-to-b from-neutral-900/60 via-neutral-900/40 to-neutral-900/15" />
-
-                {/* Blobs sutiles (vibra artística) */}
-                <div className="pointer-events-none absolute inset-0">
-                    <div className="absolute -top-10 -left-10 w-80 h-80 rounded-full bg-emerald-400/15 blur-3xl" />
-                    <div className="absolute bottom-10 right-10 w-72 h-72 rounded-full bg-teal-300/10 blur-3xl" />
-                    <div className="absolute top-1/3 right-1/4 w-40 h-40 rounded-full bg-amber-300/10 blur-2xl" />
-                </div>
-
-                {/* Marca de agua del logo (minimalista) */}
-                <img
-                    src="https://res.cloudinary.com/dasch1s5i/image/upload/v1755904587/logo-boa_1_gf2bhl.svg"
-                    alt=""
-                    aria-hidden="true"
-                    className="absolute top-10 left-1/2 -translate-x-1/2 opacity-10 w-20 sm:w-24"
-                />
-
-                <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center max-w-4xl mx-auto space-y-8">
-                        {/* Logo highlight + Título */}
-                        <motion.div
-                            variants={item}
-                            className="flex flex-col sm:flex-row items-center justify-center gap-4"
-                        >
-                            {/* Radial highlight suave tras el título */}
+            {/* ======= HERO — BOA ======= */}
+            {/*
+  Consts locales para animar el headline letra por letra
+*/}
+            {/* ======= HERO — BOA ======= */}
+            {(() => {
+                // helper para revelar texto letra por letra (con espacios no-rompibles)
+                const renderRevealed = (text: string, startIndex = 0, baseDelay = 0.03) =>
+                    Array.from(text).map((ch, i) => {
+                        const char = ch === " " ? "\u00A0" : ch;
+                        return (
                             <span
-                                aria-hidden
-                                className="pointer-events-none absolute left-1/2 -translate-x-1/2 -mt-6 h-32 w-32 rounded-full blur-2xl
-                     bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.28),transparent_60%)]"
-                            />
-                            <h1 className="font-sans text-5xl sm:text-7xl md:text-8xl font-extrabold tracking-tight">
-                                Espacio BOA
-                            </h1>
-                        </motion.div>
+                                key={`${startIndex}-${i}-${char}`}
+                                className="inline-block opacity-0 translate-y-[6px]"
+                                style={{
+                                    animation: "boaRise .7s ease-out forwards",
+                                    animationDelay: `${(startIndex + i) * baseDelay}s`,
+                                }}
+                            >
+                                {char}
+                            </span>
+                        );
+                    });
 
-                        {/* Tagline (más cercano, evitando “café + centro holístico”) */}
-                        <motion.p
-                            variants={item}
-                            className="font-sans text-lg sm:text-2xl text-neutral-50/95 font-light leading-relaxed"
-                        >
-                            Café, bienestar y comunidad. <span className="underline decoration-emerald-400/60 underline-offset-4">Vení a conocernos.</span>
-                        </motion.p>
+                const baseDelay = 0.03;
+                const prefix = "Donde lo rico y lo que hace bien ";
+                const seWord = "se ";
+                const focusWord = "encuentran";
+                const totalChars = prefix.length + seWord.length + focusWord.length;
 
-                        {/* Chips de identidad */}
-                        <motion.div
-                            variants={item}
-                            className="flex flex-wrap items-center justify-center gap-2 pt-1"
-                        >
-                            {["café de especialidad", "bienestar", "arte", "comunidad"].map((t) => (
-                                <span
-                                    key={t}
-                                    className="font-sans text-sm px-3 py-1 rounded-full bg-white/10 ring-1 ring-white/20 text-white/90"
-                                >
-                                    {t}
-                                </span>
-                            ))}
-                        </motion.div>
+                return (
+                    <motion.section
+                        initial="hidden"
+                        animate="visible"
+                        variants={container}
+                        className="relative isolate min-h-[90vh] flex items-end overflow-hidden"
+                    >
+                        {/* Foto protagonista */}
+                        <Image
+                            src="https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?q=80&w=2400&auto=format&fit=crop"
+                            alt="Coffee bar cálido con madera, luz de tarde y plantas"
+                            fill
+                            priority
+                            sizes="100vw"
+                            className="object-cover"
+                        />
 
-                        {/* CTAs */}
-                        <motion.div
-                            variants={item}
-                            className="flex flex-col sm:flex-row gap-4 justify-center pt-2"
-                        >
-                            <Link href="/activities">
-                                <Button
-                                    size="lg"
-                                    className="font-sans bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-2xl
-                       shadow-lg shadow-emerald-600/25 hover:shadow-xl hover:shadow-emerald-600/30
-                       ring-1 ring-emerald-300/40 transition-all duration-300"
-                                >
-                                    <Heart className="mr-2 h-5 w-5" />
-                                    Explorar Actividades
-                                </Button>
-                            </Link>
+                        {/* Overlays */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-boa-cocoa/35 via-boa-cocoa/10 to-transparent" />
+                        <div className="pointer-events-none absolute inset-0 [box-shadow:inset_0_-80px_120px_rgba(0,0,0,0.18)]" />
 
-                            <Link href="/menu">
-                                <Button
-                                    variant="outline"
-                                    size="lg"
-                                    className="font-sans bg-white/10 hover:bg-white/20 text-white border-white/40 hover:border-white
-                       px-8 py-3 rounded-2xl ring-1 ring-white/30 transition-all duration-300"
-                                >
-                                    <Coffee className="mr-2 h-5 w-5" />
-                                    Ver Gastronomía
-                                </Button>
-                            </Link>
-                        </motion.div>
+                        {/* Ornamentos */}
+                        <div aria-hidden className="pointer-events-none absolute inset-0">
+                            <div className="absolute -bottom-24 -left-24 w-[26rem] h-[26rem] rounded-full bg-boa-green/12 blur-3xl" />
+                            <div className="absolute -top-24 right-[-60px] w-[24rem] h-[24rem] rounded-full bg-boa-terra/14 blur-3xl" />
+                        </div>
 
-                        {/* Indicador de scroll (sutil) */}
-                        <motion.div
-                            variants={item}
-                            className="pt-2 flex justify-center"
-                            aria-hidden="true"
-                        >
-                            <div className="flex items-center gap-2 text-white/70">
-                                <span className="font-sans text-sm">Deslizar</span>
-                                <ChevronDown className="h-5 w-5 animate-bounce" />
-                            </div>
-                        </motion.div>
-                    </div>
-                </div>
-            </motion.section>
+                        {/* Contenido */}
+                        <div className="relative z-10 container mx-auto px-5 pb-14 sm:pb-16">
+                            <motion.div variants={item} className="max-w-5xl mx-auto text-center">
+                                {/* Título */}
+                                <h1 className="font-sans text-white drop-shadow-[0_10px_30px_rgba(0,0,0,.45)] text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.07] inline-block whitespace-pre-wrap">
+                                    {renderRevealed(prefix, 0, baseDelay)}
+                                    {renderRevealed(seWord, prefix.length, baseDelay)}
+
+                                    {/* Solo “encuentran” con subrayado */}
+                                    <span className="relative inline-block">
+                                        {renderRevealed(focusWord, prefix.length + seWord.length, baseDelay)}
+
+                                        {/* SUBRAYADO: más abajo, un poco más fino y aparece al final */}
+                                        <svg
+                                            className="absolute left-1/2 -translate-x-1/2 w-full opacity-0 bottom-[-0.7rem]"  // ↓ más abajo
+                                            viewBox="0 0 100 7"  // ↓ un pelín más bajo de altura
+                                            fill="none"
+                                            preserveAspectRatio="none"
+                                            aria-hidden="true"
+                                            style={{
+                                                animation: "boaUnderline .6s ease-out forwards",
+                                                animationDelay: `${totalChars * baseDelay + 0.05}s`, // aparece luego de todo el título
+                                            }}
+                                        >
+                                            <defs>
+                                                <linearGradient id="boaBrush" x1="0" x2="1" y1="0" y2="0">
+                                                    <stop offset="0%" stopColor="hsl(var(--boa-green))" stopOpacity="0.55" />
+                                                    <stop offset="50%" stopColor="hsl(var(--boa-green))" stopOpacity="0.65" />
+                                                    <stop offset="100%" stopColor="hsl(var(--boa-green))" stopOpacity="0.55" />
+                                                </linearGradient>
+                                                <filter id="boaShadow" x="-10%" y="-300%" width="120%" height="700%">
+                                                    <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="black" floodOpacity="0.22" />
+                                                </filter>
+                                            </defs>
+                                            <path
+                                                d="M2 6 C26 2, 74 2, 98 6"
+                                                stroke="url(#boaBrush)"
+                                                strokeWidth="3"        // ↓ un poco más fino
+                                                strokeLinecap="round"
+                                                filter="url(#boaShadow)"
+                                            />
+                                        </svg>
+                                    </span>
+
+                                    {/* punto final */}
+                                    <span
+                                        className="inline-block opacity-0 translate-y-[6px]"
+                                        style={{
+                                            animation: "boaRise .7s ease-out forwards",
+                                            animationDelay: `${totalChars * baseDelay}s`,
+                                        }}
+                                    >
+                                        .
+                                    </span>
+                                </h1>
+
+                                {/* Pill animada */}
+                                <div className="mt-5 flex justify-center">
+                                    <div className="boa-pill flex items-center gap-3 rounded-full bg-white/18 border border-white/30 px-4 py-2 backdrop-blur-sm text-white/95 drop-shadow-[0_6px_18px_rgba(0,0,0,.35)]">
+                                        <Coffee className="h-4 w-4" />
+                                        <span className="uppercase tracking-wide text-sm">café</span>
+                                        <span className="opacity-60">·</span>
+                                        <Leaf className="h-4 w-4" />
+                                        <span className="uppercase tracking-wide text-sm">bienestar</span>
+                                        <span className="opacity-60">·</span>
+                                        <Sparkles className="h-4 w-4" />
+                                        <span className="uppercase tracking-wide text-sm">arte</span>
+                                        <span className="opacity-60">·</span>
+                                        <Users className="h-4 w-4" />
+                                        <span className="uppercase tracking-wide text-sm">movimiento</span>
+                                    </div>
+                                </div>
+
+                                {/* CTAs */}
+                                <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+                                    <Link href="/activities">
+                                        <Button
+                                            size="lg"
+                                            className="rounded-xl2 bg-boa-green text-white hover:bg-boa-green/90 shadow-[0_10px_28px_rgba(30,122,102,.35)] px-8"
+                                        >
+                                            <Heart className="mr-2 h-5 w-5" />
+                                            Actividades
+                                        </Button>
+                                    </Link>
+                                    <Link href="/menu">
+                                        <Button
+                                            variant="outline"
+                                            size="lg"
+                                            className="rounded-xl2 bg-white/20 text-white border-white/40 hover:bg-white/30 px-8"
+                                        >
+                                            <Coffee className="mr-2 h-5 w-5" />
+                                            Gastronomía
+                                        </Button>
+                                    </Link>
+                                </div>
+                            </motion.div>
+
+                            {/* Vapor */}
+                            <div aria-hidden className="absolute bottom-20 left-1/3 w-24 h-24 rounded-full bg-white/8 blur-2xl animate-[float_6s_ease-in-out_infinite]" />
+                            <div aria-hidden className="absolute bottom-24 left-1/2 w-20 h-20 rounded-full bg-white/7 blur-2xl animate-[float_7s_ease-in-out_infinite]" />
+                        </div>
+
+                        {/* Animaciones locales */}
+                        <style jsx>{`
+        @keyframes boaRise {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes boaUnderline {
+          from { opacity: 0; transform: translate(-50%, 6px); }
+          to   { opacity: 1; transform: translate(-50%, 0); }
+        }
+        .boa-pill { position: relative; overflow: hidden; animation: boaPulse 3.4s ease-in-out infinite; }
+        .boa-pill::after {
+          content: ""; position: absolute; inset: 0;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);
+          transform: translateX(-120%); animation: boaShimmer 4.2s ease-in-out infinite;
+        }
+        @keyframes boaShimmer { 0% { transform: translateX(-120%); } 60%,100% { transform: translateX(120%); } }
+        @keyframes boaPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.18); } 50% { box-shadow: 0 0 0 6px rgba(255,255,255,0.08); } }
+      `}</style>
+                    </motion.section>
+                );
+            })()}
 
 
-            {/* Departamentos – cálido/hippie */}
+
+            {/* ===================== DEPARTAMENTOS — BOA (contenedor 7xl) ===================== */}
             <motion.section
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, amount: 0.2 }}
                 variants={cardsContainer}
-                className="relative py-20 font-sans"
+                className="relative py-24 font-sans overflow-hidden"
             >
-                {/* fondo papel + manchas orgánicas */}
+                {/* Fondo original */}
                 <div className="absolute inset-0 bg-gradient-to-b from-emerald-50/50 via-amber-50/40 to-white" />
                 <div className="pointer-events-none absolute -top-20 -left-20 h-64 w-64 rounded-full bg-emerald-300/10 blur-3xl" />
                 <div className="pointer-events-none absolute -bottom-10 -right-10 h-72 w-72 rounded-full bg-amber-300/10 blur-3xl" />
 
-                <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                    {/* encabezado */}
-                    <div className="text-center mb-14">
-                        <h2 className="boa-heading text-4xl sm:text-5xl font-extrabold tracking-tight text-neutral-900">
-                            Nuestros <span className="text-emerald-700">Departamentos</span>
+                {/* ⬅️ volvemos al ancho anterior */}
+                <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-8">
+                        <h2 className="font-sans text-4xl sm:text-5xl font-extrabold tracking-tight text-boa-ink">
+                            Nuestros <span className="text-boa-green">Departamentos</span>
                         </h2>
-                        <p className="mt-3 text-lg sm:text-xl text-neutral-700 max-w-2xl mx-auto">
-                            No somos “café + centro holístico”. Somos BOA. Vení a conocernos.
+                        <p className="mt-3 font-sans text-base sm:text-lg text-boa-ink/70 max-w-2xl mx-auto">
+                            Elegí por dónde entrar a BOA: Actividades, Gastronomía o Espacios.
                         </p>
                     </div>
 
-                    {/* grid cálida */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {/* ACTIVIDADES */}
-                        <motion.div
-                            variants={cardItem}
-                            whileHover={{ y: -6, rotateX: -0.3, rotateY: 0.3, scale: 1.01 }}
-                            transition={{ type: "spring", stiffness: 260, damping: 26 }}
-                            className="relative"
-                        >
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                        {/* ================ ACTIVIDADES ================= */}
+                        <motion.div variants={cardItem} className="relative">
                             <Link
                                 href="/activities"
-                                className="group relative block h-[420px] rounded-[28px] overflow-hidden ring-1 ring-black/5 shadow-[0_12px_28px_rgba(2,6,23,.10)] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                                 aria-label="Explorar Actividades"
+                                className="group relative block h-[480px] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
+                     [background:linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18))]
+                     hover:[background:linear-gradient(135deg,rgba(30,122,102,.32),rgba(213,149,121,.28))]"
                             >
-                                {/* imagen */}
-                                <Image
-                                    src="https://res.cloudinary.com/dfrhrnwwi/image/upload/v1756216234/34390c1b-4114-4e44-8f6a-eb175921eead_yhgrch.jpg"
-                                    alt="Actividades en BOA"
-                                    fill
-                                    sizes="(min-width: 1024px) 33vw, 100vw"
-                                    className="object-cover transition-transform duration-[1200ms] group-hover:scale-[1.06]"
-                                    priority
-                                />
-                                {/* tint + vidrio */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/65 via-emerald-900/30 to-transparent" />
-                                <div className="absolute inset-0 bg-white/6 backdrop-blur-[1px]" />
-
-                                {/* contenido */}
-                                <Card className="relative h-full bg-transparent border-0 text-white">
-                                    <CardContent className="p-7 h-full flex flex-col justify-end">
-                                        {/* chip orgánico */}
-                                        <div className="absolute top-6 left-6 inline-flex items-center gap-2 rounded-full bg-white/70 text-emerald-800 px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
-                                            <Heart className="h-3.5 w-3.5" />
-                                            BOA Actividades
-                                        </div>
-
-                                        {/* título dominante */}
-                                        <h3 className="text-3xl sm:text-[32px] font-extrabold leading-tight drop-shadow-sm">
-                                            Movimiento & Bienestar
-                                        </h3>
-                                        <p className="mt-2 text-sm/relaxed sm:text-base text-white/90">
-                                            Yoga, arte, respiración, talleres creativos.
-                                        </p>
-
-                                        {/* CTA cálido */}
-                                        <div className="mt-5">
-                                            <span className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-4 py-2 text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,.25)] transition-all group-hover:bg-white/25 group-hover:border-white/60">
-                                                Explorar
-                                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                            </span>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-
-                                {/* halo verde al hover */}
-                                <span className="pointer-events-none absolute inset-0 rounded-[28px] ring-2 ring-transparent group-hover:ring-emerald-300/50 transition" />
+                                <div className="h-full w-full rounded-[30px] overflow-hidden ring-1 ring-boa-ink/5 bg-black shadow-[0_12px_28px_rgba(2,6,23,.10)] hover:shadow-[0_18px_40px_rgba(2,6,23,.15)] transition-shadow duration-500">
+                                    <Image
+                                        src="https://images.unsplash.com/photo-1552196563-55cd4e45efb3?auto=format&fit=crop&q=90&w=2400"
+                                        alt="Movimiento y bienestar en un espacio luminoso con plantas"
+                                        fill
+                                        quality={90}
+                                        sizes="(min-width:1280px) 33vw, (min-width:768px) 50vw, 100vw"
+                                        className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
+                                        priority
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-boa-ink/60 via-boa-ink/25 to-transparent" />
+                                    <div className="absolute inset-0 bg-white/6 backdrop-blur-[1px]" />
+                                    <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
+                                    <Card className="relative h-full bg-transparent border-0 text-white">
+                                        <CardContent className="p-7 h-full flex flex-col justify-end">
+                                            <div className="absolute top-6 left-6 inline-flex items-center gap-2 rounded-full bg-white/75 text-boa-green px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
+                                                <Heart className="h-3.5 w-3.5" />
+                                                BOA Actividades
+                                            </div>
+                                            <h3 className="font-sans text-3xl sm:text-[32px] font-extrabold leading-tight drop-shadow-sm">
+                                                Movimiento & Bienestar
+                                            </h3>
+                                            <p className="mt-2 font-sans text-sm/relaxed sm:text-base text-white/90">
+                                                Yoga, arte, respiración, talleres creativos.
+                                            </p>
+                                            <div className="mt-5">
+                                                <span className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-4 py-2 font-sans text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,.25)] transition-all hover:bg-white/25 hover:border-white/60">
+                                                    Explorar <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                                                </span>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
                             </Link>
                         </motion.div>
 
-                        {/* GASTRONOMÍA */}
-                        <motion.div
-                            variants={cardItem}
-                            whileHover={{ y: -6, rotateX: -0.3, rotateY: 0.3, scale: 1.01 }}
-                            transition={{ type: "spring", stiffness: 260, damping: 26 }}
-                            className="relative"
-                        >
+                        {/* ================ GASTRONOMÍA ================= */}
+                        <motion.div variants={cardItem} className="relative">
                             <Link
                                 href="/menu"
-                                className="group relative block h-[420px] rounded-[28px] overflow-hidden ring-1 ring-black/5 shadow-[0_12px_28px_rgba(2,6,23,.10)] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                                 aria-label="Ver Gastronomía"
+                                className="group relative block h-[480px] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
+                     [background:linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18))]
+                     hover:[background:linear-gradient(135deg,rgba(30,122,102,.32),rgba(213,149,121,.28))]"
                             >
-                                {/* imagen */}
-                                <Image
-                                    src="https://res.cloudinary.com/dasch1s5i/image/upload/v1755904741/boa-bowl_v6wn6a.jpg"
-                                    alt="Gastronomía de BOA"
-                                    fill
-                                    sizes="(min-width: 1024px) 33vw, 100vw"
-                                    className="object-cover transition-transform duration-[1200ms] group-hover:scale-[1.06]"
-                                />
-                                {/* fondo verde sutil + papel */}
-                                <div className="absolute inset-0 bg-gradient-to-b from-emerald-700/15 via-emerald-900/45 to-emerald-950/65" />
-                                <div className="absolute inset-0 bg-emerald-100/5 mix-blend-soft-light" />
-
-                                <Card className="relative h-full bg-transparent border-0 text-white">
-                                    <CardContent className="p-7 h-full flex flex-col justify-end">
-                                        <div className="absolute top-6 left-6 inline-flex items-center gap-2 rounded-full bg-white/70 text-emerald-800 px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
-                                            <Coffee className="h-3.5 w-3.5" />
-                                            BOA Gastronomía
-                                        </div>
-
-                                        <h3 className="text-3xl sm:text-[32px] font-extrabold leading-tight drop-shadow-sm">
-                                            Café & Cocina Consciente
-                                        </h3>
-                                        <p className="mt-2 text-sm/relaxed sm:text-base text-white/90">
-                                            Especialidad y opciones que abrazan.
-                                        </p>
-
-                                        <div className="mt-5">
-                                            <span className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-4 py-2 text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,.25)] transition-all group-hover:bg-white/25 group-hover:border-white/60">
-                                                Ver menú
-                                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                            </span>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-
-                                <span className="pointer-events-none absolute inset-0 rounded-[28px] ring-2 ring-transparent group-hover:ring-emerald-300/50 transition" />
+                                <div className="h-full w-full rounded-[30px] overflow-hidden ring-1 ring-boa-ink/5 bg-black shadow-[0_12px_28px_rgba(2,6,23,.10)] hover:shadow-[0_18px_40px_rgba(2,6,23,.15)] transition-shadow duration-500">
+                                    <Image
+                                        src="https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&q=90&w=2400"
+                                        alt="Café y cocina consciente con opciones de especialidad"
+                                        fill
+                                        quality={90}
+                                        sizes="(min-width:1280px) 33vw, (min-width:768px) 50vw, 100vw"
+                                        className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-b from-boa-green/15 via-boa-ink/35 to-boa-ink/60" />
+                                    <div className="absolute inset-0 bg-white/6 backdrop-blur-[1px]" />
+                                    <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
+                                    <Card className="relative h-full bg-transparent border-0 text-white">
+                                        <CardContent className="p-7 h-full flex flex-col justify-end">
+                                            <div className="absolute top-6 left-6 inline-flex items-center gap-2 rounded-full bg-white/75 text-boa-green px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
+                                                <Coffee className="h-3.5 w-3.5" />
+                                                BOA Gastronomía
+                                            </div>
+                                            <h3 className="font-sans text-3xl sm:text-[32px] font-extrabold leading-tight drop-shadow-sm">
+                                                Café & Cocina Consciente
+                                            </h3>
+                                            <p className="mt-2 font-sans text-sm/relaxed sm:text-base text-white/90">
+                                                Especialidad y opciones que abrazan.
+                                            </p>
+                                            <div className="mt-5">
+                                                <span className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-4 py-2 font-sans text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,.25)] transition-all hover:bg-white/25 hover:border-white/60">
+                                                    Ver menú <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                                                </span>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
                             </Link>
                         </motion.div>
 
-                        {/* ESPACIOS */}
-                        <motion.div
-                            variants={cardItem}
-                            whileHover={{ y: -6, rotateX: -0.3, rotateY: 0.3, scale: 1.01 }}
-                            transition={{ type: "spring", stiffness: 260, damping: 26 }}
-                            className="relative"
-                        >
+                        {/* ================ ESPACIOS ================= */}
+                        <motion.div variants={cardItem} className="relative">
                             <Link
                                 href="/spaces"
-                                className="group relative block h-[420px] rounded-[28px] overflow-hidden ring-1 ring-black/5 shadow-[0_12px_28px_rgba(2,6,23,.10)] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                                 aria-label="Conocer Espacios"
+                                className="group relative block h-[480px] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
+                     [background:linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18))]
+                     hover:[background:linear-gradient(135deg,rgba(30,122,102,.32),rgba(213,149,121,.28))]"
                             >
-                                <Image
-                                    src="https://res.cloudinary.com/dasch1s5i/image/upload/v1755911507/boa-entrada_ezfcms.jpg"
-                                    alt="Espacios de BOA"
-                                    fill
-                                    sizes="(min-width: 1024px) 33vw, 100vw"
-                                    className="object-cover transition-transform duration-[1200ms] group-hover:scale-[1.06]"
-                                />
-                                {/* tint cálido + vidrio */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-amber-900/65 via-emerald-900/35 to-transparent" />
-                                <div className="absolute inset-0 bg-white/6 backdrop-blur-[1px]" />
-
-                                <Card className="relative h-full bg-transparent border-0 text-white">
-                                    <CardContent className="p-7 h-full flex flex-col justify-end">
-                                        <div className="absolute top-6 left-6 inline-flex items-center gap-2 rounded-full bg-white/70 text-emerald-800 px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
-                                            <Leaf className="h-3.5 w-3.5" />
-                                            BOA Espacios
-                                        </div>
-
-                                        <h3 className="text-3xl sm:text-[32px] font-extrabold leading-tight drop-shadow-sm">
-                                            Lugares que abrazan
-                                        </h3>
-                                        <p className="mt-2 text-sm/relaxed sm:text-base text-white/90">
-                                            Verde, luz y texturas para inspirar y conectar.
-                                        </p>
-
-                                        <div className="mt-5">
-                                            <span className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-4 py-2 text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,.25)] transition-all group-hover:bg-white/25 group-hover:border-white/60">
-                                                Conocer
-                                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                            </span>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-
-                                <span className="pointer-events-none absolute inset-0 rounded-[28px] ring-2 ring-transparent group-hover:ring-emerald-300/50 transition" />
+                                <div className="h-full w-full rounded-[30px] overflow-hidden ring-1 ring-boa-ink/5 bg-black shadow-[0_12px_28px_rgba(2,6,23,.10)] hover:shadow-[0_18px_40px_rgba(2,6,23,.15)] transition-shadow duration-500">
+                                    <Image
+                                        src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=90&w=2400"
+                                        alt="Interior cálido con madera, plantas y luz de tarde"
+                                        fill
+                                        quality={90}
+                                        sizes="(min-width:1280px) 33vw, (min-width:768px) 50vw, 100vw"
+                                        className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-boa-terra/55 via-boa-ink/30 to-transparent" />
+                                    <div className="absolute inset-0 bg-white/6 backdrop-blur-[1px]" />
+                                    <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
+                                    <Card className="relative h-full bg-transparent border-0 text-white">
+                                        <CardContent className="p-7 h-full flex flex-col justify-end">
+                                            <div className="absolute top-6 left-6 inline-flex items-center gap-2 rounded-full bg-white/75 text-boa-green px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
+                                                <Leaf className="h-3.5 w-3.5" />
+                                                BOA Espacios
+                                            </div>
+                                            <h3 className="font-sans text-3xl sm:text-[32px] font-extrabold leading-tight drop-shadow-sm">
+                                                Lugares que abrazan
+                                            </h3>
+                                            <p className="mt-2 font-sans text-sm/relaxed sm:text-base text-white/90">
+                                                Verde, luz y texturas para inspirar y conectar.
+                                            </p>
+                                            <div className="mt-5">
+                                                <span className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-4 py-2 font-sans text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,.25)] transition-all hover:bg-white/25 hover:border-white/60">
+                                                    Conocer <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                                                </span>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
                             </Link>
                         </motion.div>
                     </div>
                 </div>
             </motion.section>
 
-
-            {/* Featured Activities & Events — cuadros/lienzo cálido */}
+            {/* ===================== SLIDER EXPERIENCIAS — BOA ===================== */}
             <motion.section
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, amount: 0.2 }}
-                className="relative py-28 font-sans overflow-hidden"
+                className="relative py-20 font-sans overflow-hidden"
             >
-                {/* Fondo: papel + veladuras suaves */}
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,#FBF7EC_0%,#FFFFFF_60%)]" />
+                {/* Fondo cálido y sutil */}
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,#FEFCF7_0%,#FFFFFF_78%)]" />
                 <div
-                    className="absolute inset-0 opacity-[0.22] mix-blend-multiply pointer-events-none"
+                    className="absolute inset-0 opacity-[0.05] pointer-events-none"
                     style={{
                         backgroundImage:
-                            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'><defs><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0.1'/><feComponentTransfer><feFuncA type='table' tableValues='0 0.06'/></feComponentTransfer></filter></defs><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")",
-                        backgroundSize: "300px 300px",
+                            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'><defs><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0.1'/><feComponentTransfer><feFuncA type='table' tableValues='0 0.04'/></feComponentTransfer></filter></defs><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")",
+                        backgroundSize: "320px 320px",
                     }}
                 />
-                <div className="absolute -top-20 -left-28 h-80 w-80 rounded-full bg-emerald-300/15 blur-3xl" />
-                <div className="absolute top-10 -right-10 h-72 w-72 rounded-full bg-amber-300/20 blur-3xl" />
+
+                <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    {/* Encabezado + subtítulo */}
+                    <div className="mb-8 text-center">
+                        <h2 className="text-4xl sm:text-5xl font-extrabold text-boa-ink">
+                            Próximas <span className="text-boa-green">Experiencias</span>
+                        </h2>
+                        <p className="mt-3 text-base sm:text-lg text-boa-ink/75 max-w-2xl mx-auto">
+                            Deslizá y descubrí las Actividades y los Eventos que se vienen en BOA.
+                        </p>
+                    </div>
+
+
+                    {/* Componente Slider */}
+                    <ExperiencesSlider
+                        items={[
+                            ...featuredActivities.map((a: any) => ({ ...a, _kind: "activity" as const })),
+                            ...featuredEvents.map((e: any) => ({ ...e, _kind: "event" as const })),
+                        ].slice(0, 8)}
+                    />
+                </div>
+            </motion.section>
+            {/* =================== /SLIDER EXPERIENCIAS — BOA =================== */}
+
+
+
+            {/* Gift Cards Section */}
+            {/* Gift Cards Section */}
+            <motion.section
+                id="gift-cards"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.25 }}
+                className="relative py-28 font-sans overflow-hidden"
+            >
+                {/* Fondo cálido + patrón sutil “wrapping” */}
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,#FEFCF7_0%,#FFFFFF_85%)]" />
+                <div
+                    className="absolute inset-0 opacity-[0.06] pointer-events-none"
+                    style={{
+                        backgroundImage:
+                            "radial-gradient(rgba(30,122,102,.14) 1px, transparent 1px), radial-gradient(rgba(213,149,121,.10) 1px, transparent 1px)",
+                        backgroundSize: "22px 22px, 28px 28px",
+                        backgroundPosition: "0 0, 10px 8px",
+                    }}
+                    aria-hidden
+                />
+                <div className="pointer-events-none absolute -top-24 -left-24 w-[28rem] h-[28rem] rounded-full bg-boa-green/10 blur-3xl" aria-hidden />
+                <div className="pointer-events-none absolute -bottom-28 -right-24 w-[26rem] h-[26rem] rounded-full bg-boa-terra/12 blur-3xl" aria-hidden />
 
                 <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Encabezado */}
                     <div className="text-center mb-14">
-                        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/70 text-emerald-800 text-xs font-medium ring-1 ring-emerald-300/60">
-                            <Sparkles className="h-4 w-4" />
-                            agenda viva
-                        </span>
-                        <h2 className="mt-4 boa-heading text-4xl sm:text-5xl font-extrabold text-neutral-900">
-                            Próximas <span className="text-emerald-700">Experiencias</span>
+                        <h2 className="boa-heading font-sans text-4xl sm:text-5xl font-extrabold text-neutral-900">
+                            Gift <span className="text-boa-green">Cards</span>
                         </h2>
-                        <p className="mt-3 text-lg text-neutral-700 max-w-2xl mx-auto">
-                            Encuentros con alma BOA: cercanía, movimiento y creatividad compartida.
-                        </p>
-                        {/* subrayado orgánico */}
-                        <svg className="mx-auto mt-6" width="180" height="18" viewBox="0 0 180 18" fill="none">
-                            <path d="M4 10C42 14 78 14 176 8" stroke="url(#g)" strokeWidth="6" strokeLinecap="round" opacity=".7" />
-                            <defs>
-                                <linearGradient id="g" x1="0" x2="180" y1="0" y2="0" gradientUnits="userSpaceOnUse">
-                                    <stop stopColor="#34D399" /><stop offset=".5" stopColor="#10B981" /><stop offset="1" stopColor="#34D399" />
-                                </linearGradient>
-                            </defs>
-                        </svg>
-                    </div>
-
-                    {/* Grid dos columnas */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                        {/* ACTIVIDADES / “cuadros” */}
-                        <motion.div variants={list} className="space-y-7">
-                            <div className="flex items-center justify-between">
-                                <h3 className="boa-heading text-2xl font-semibold text-neutral-900">Actividades destacadas</h3>
-                                <Link href="/activities" className="inline-flex items-center gap-2 text-emerald-800 hover:text-emerald-900 text-sm font-medium">
-                                    Ver todas <ArrowRight className="h-4 w-4" />
-                                </Link>
-                            </div>
-
-                            {featuredActivities.map((a, idx) => (
-                                <motion.article
-                                    key={a.id}
-                                    variants={item}
-                                    whileHover={{ y: -4 }}
-                                    transition={{ type: "spring", stiffness: 300, damping: 26 }}
-                                    className="relative"
-                                >
-                                    {/* marco madera */}
-                                    <div className="rounded-[28px] p-2 bg-[linear-gradient(135deg,#a0754e,#caa57f)] shadow-[0_14px_40px_rgba(0,0,0,.10)] ring-1 ring-amber-900/20">
-                                        {/* cinta washi (esquinas) */}
-                                        <div
-                                            className="absolute -top-2 left-8 h-6 w-16 rotate-[-6deg] bg-amber-200/70 ring-1 ring-amber-300/60"
-                                            style={{ borderRadius: "4px" }}
-                                        />
-                                        <div
-                                            className="absolute -top-1 right-10 h-6 w-12 rotate-[7deg] bg-emerald-200/70 ring-1 ring-emerald-300/60"
-                                            style={{ borderRadius: "4px" }}
-                                        />
-
-                                        {/* lienzo */}
-                                        <div className="rounded-[22px] overflow-hidden bg-[#FCFAF5] ring-1 ring-black/10">
-                                            {/* textura papel */}
-                                            <div
-                                                className="absolute inset-0 opacity-[0.22] pointer-events-none"
-                                                style={{
-                                                    backgroundImage:
-                                                        "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'><defs><filter id='t'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/><feComponentTransfer><feFuncA type='table' tableValues='0 0.05'/></feComponentTransfer></filter></defs><rect width='100%' height='100%' filter='url(%23t)'/></svg>\")",
-                                                    backgroundSize: "260px 260px",
-                                                }}
-                                            />
-
-                                            {/* contenido: imagen “pintada” + textos */}
-                                            <div className="relative p-6 flex gap-5">
-                                                {/* zona imagen con veladuras cálidas */}
-                                                <div className="relative w-28 h-28 md:w-40 md:h-40 rounded-[18px] overflow-hidden ring-1 ring-black/10 flex-shrink-0">
-                                                    <img src={a.image} alt={a.title} className="h-full w-full object-cover transition-transform duration-[1200ms] hover:scale-[1.05]" />
-                                                    {/* manchas tipo pintura */}
-                                                    <div
-                                                        className="absolute inset-0 pointer-events-none mix-blend-multiply"
-                                                        style={{
-                                                            background:
-                                                                "radial-gradient(60px 36px at 18% 28%, rgba(16,185,129,.18), transparent 60%), radial-gradient(70px 40px at 80% 70%, rgba(245,158,11,.18), transparent 60%)",
-                                                        }}
-                                                    />
-                                                </div>
-
-                                                {/* texto sobre el lienzo */}
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 className="text-[1.12rem] font-extrabold text-neutral-900 leading-snug">
-                                                        {a.title}
-                                                    </h4>
-                                                    <p className="mt-1 text-[0.95rem] text-neutral-700/90 line-clamp-2">
-                                                        {a.description}
-                                                    </p>
-
-                                                    <div className="mt-3 flex items-center justify-between text-[12.5px] text-neutral-600">
-                                                        <span className="inline-flex items-center gap-2">
-                                                            <Clock className="h-4 w-4" />
-                                                            {a.schedule.day} • {a.schedule.time}
-                                                        </span>
-                                                        <span className="inline-flex items-center gap-2">
-                                                            <Users className="h-4 w-4" />
-                                                            {a.enrolled}/{a.capacity}
-                                                        </span>
-                                                    </div>
-
-                                                    {/* “sticker” precio */}
-                                                    <div className="mt-4 inline-flex -rotate-1 items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300/60 shadow-sm">
-                                                        ${a.price}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.article>
-                            ))}
-                        </motion.div>
-
-                        {/* EVENTOS / “cuadros” */}
-                        <motion.div variants={list} className="space-y-7">
-                            <div className="flex items-center justify-between">
-                                <h3 className="boa-heading text-2xl font-semibold text-neutral-900">Eventos especiales</h3>
-                                <Link href="/events" className="inline-flex items-center gap-2 text-emerald-800 hover:text-emerald-900 text-sm font-medium">
-                                    Ver todos <ArrowRight className="h-4 w-4" />
-                                </Link>
-                            </div>
-
-                            {featuredEvents.map((e, idx) => (
-                                <motion.article
-                                    key={e.id}
-                                    variants={item}
-                                    whileHover={{ y: -4 }}
-                                    transition={{ type: "spring", stiffness: 300, damping: 26 }}
-                                    className="relative"
-                                >
-                                    {/* marco madera (tono apenas más oscuro) */}
-                                    <div className="rounded-[28px] p-2 bg-[linear-gradient(135deg,#956b46,#bf9a73)] shadow-[0_14px_40px_rgba(0,0,0,.10)] ring-1 ring-amber-900/25">
-                                        {/* washi */}
-                                        <div
-                                            className="absolute -top-2 left-10 h-6 w-14 rotate-[5deg] bg-emerald-200/70 ring-1 ring-emerald-300/60"
-                                            style={{ borderRadius: "4px" }}
-                                        />
-                                        <div
-                                            className="absolute -top-1 right-8 h-6 w-16 rotate-[-7deg] bg-amber-200/70 ring-1 ring-amber-300/60"
-                                            style={{ borderRadius: "4px" }}
-                                        />
-
-                                        {/* lienzo */}
-                                        <div className="rounded-[22px] overflow-hidden bg-[#FCFAF5] ring-1 ring-black/10">
-                                            {/* textura */}
-                                            <div
-                                                className="absolute inset-0 opacity-[0.22] pointer-events-none"
-                                                style={{
-                                                    backgroundImage:
-                                                        "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'><defs><filter id='t2'><feTurbulence type='fractalNoise' baseFrequency='0.86' numOctaves='1' stitchTiles='stitch'/><feComponentTransfer><feFuncA type='table' tableValues='0 0.05'/></feComponentTransfer></filter></defs><rect width='100%' height='100%' filter='url(%23t2)'/></svg>\")",
-                                                    backgroundSize: "260px 260px",
-                                                }}
-                                            />
-
-                                            <div className="relative p-6 flex gap-5">
-                                                {/* imagen con veladura verdosa */}
-                                                <div className="relative w-28 h-28 md:w-40 md:h-40 rounded-[18px] overflow-hidden ring-1 ring-black/10 flex-shrink-0">
-                                                    <img src={e.image} alt={e.title} className="h-full w-full object-cover transition-transform duration-[1200ms] hover:scale-[1.05]" />
-                                                    <div
-                                                        className="absolute inset-0 pointer-events-none mix-blend-multiply"
-                                                        style={{
-                                                            background:
-                                                                "radial-gradient(70px 42px at 20% 30%, rgba(16,185,129,.20), transparent 60%), radial-gradient(72px 40px at 80% 70%, rgba(15,118,110,.18), transparent 60%)",
-                                                        }}
-                                                    />
-                                                </div>
-
-                                                {/* texto */}
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 className="text-[1.12rem] font-extrabold text-neutral-900 leading-snug">
-                                                        {e.title}
-                                                    </h4>
-                                                    <p className="mt-1 text-[0.95rem] text-neutral-700/90 line-clamp-2">
-                                                        {e.description}
-                                                    </p>
-
-                                                    <div className="mt-3 flex items-center justify-between text-[12.5px] text-neutral-600">
-                                                        <span className="inline-flex items-center gap-2">
-                                                            <Calendar className="h-4 w-4" />
-                                                            {new Date(e.date).toLocaleDateString("es-ES")} • {e.time}
-                                                        </span>
-                                                        <span className="inline-flex items-center gap-2">
-                                                            <Users className="h-4 w-4" />
-                                                            {e.enrolled}/{e.capacity}
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="mt-4 inline-flex rotate-1 items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300/60 shadow-sm">
-                                                        ${e.price}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.article>
-                            ))}
-                        </motion.div>
-                    </div>
-
-                    {/* CTA inferior */}
-                    <div className="mt-14 flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Link
-                            href="/activities"
-                            className="inline-flex items-center gap-2 rounded-full bg-emerald-600 text-white px-6 py-3 text-sm font-semibold shadow
-                   hover:bg-emerald-700 transition ring-1 ring-emerald-400/40"
-                        >
-                            Ver todas las actividades
-                            <ArrowRight className="h-4 w-4" />
-                        </Link>
-                        <Link
-                            href="/events"
-                            className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white text-emerald-800
-                   px-6 py-3 text-sm font-semibold hover:bg-emerald-50 transition"
-                        >
-                            Ver todos los eventos
-                            <ArrowRight className="h-4 w-4" />
-                        </Link>
-                    </div>
-                </div>
-            </motion.section>
-
-
-            {/* Gift Cards Section */}
-            <motion.section
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.2 }}
-                className="py-20 bg-gradient-to-br from-emerald-50 to-neutral-50 font-sans"
-            >
-                <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
-                        <h2 className="boa-heading text-4xl sm:text-5xl font-extrabold text-neutral-900 mb-4">
-                            Gift Cards
-                        </h2>
-                        <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
-                            Gift cards que abren las puertas a momentos únicos de bienestar y conexión
-                        </p>
-
-                        {/* Nota operativa (compra online off por ahora) */}
-                        <p className="mt-3 text-sm text-neutral-500">
-                            <span className="font-semibold">Nota:</span> la compra online podrá habilitarse más adelante.
-                            Por el momento, las gift cards se <span className="font-medium">gestionan internamente</span> por el equipo de BOA.
+                        <p className="mt-3 font-sans text-lg text-neutral-700 max-w-2xl mx-auto">
+                            Regalos que abrazan: café, arte y comunidad en una tarjeta especial.
                         </p>
                     </div>
 
-                    {/* Toggle simple para compra online */}
-                    {(() => {
-                        const ALLOW_GC_PURCHASE = false;
-
-                        // Variants locales (stagger + fade/raise)
-                        const gridV = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.12, delayChildren: 0.08 } } };
-                        const cardV = { hidden: { opacity: 0, y: 14, scale: 0.98 }, visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.45, ease: "easeOut" } } };
-
-                        return (
+                    {/* Tarjetas */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+                        {giftCards.slice(0, 3).map((gc) => (
                             <motion.div
-                                variants={gridV}
-                                initial="hidden"
-                                animate="visible"
-                                className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto"
+                                key={gc.id}
+                                whileHover={{ y: -8 }}
+                                transition={{ type: "spring", stiffness: 260, damping: 26 }}
+                                className="relative group"
                             >
-                                {featuredGiftCards.map((giftCard) => (
-                                    <motion.div
-                                        key={giftCard.id}
-                                        variants={cardV}
-                                        whileHover={{ y: -6, rotateX: -1.2, rotateY: 1.2, scale: 1.01 }}
-                                        transition={{ type: "spring", stiffness: 300, damping: 26 }}
-                                        style={{ transformStyle: "preserve-3d" }}
-                                        onMouseMove={(e) => {
-                                            const el = e.currentTarget as HTMLDivElement;
-                                            const r = el.getBoundingClientRect();
-                                            el.style.setProperty("--x", `${e.clientX - r.left}px`);
-                                            el.style.setProperty("--y", `${e.clientY - r.top}px`);
-                                        }}
-                                        className="
-      group relative overflow-hidden rounded-3xl p-[1px]
-      bg-gradient-to-br from-slate-300/50 via-slate-200/30 to-slate-300/50
-      transition-all duration-500 ring-0 hover:ring-1 hover:ring-emerald-300/40
-    "
-                                    >
-                                        {/* (REMOVIDO) Glow radial que teñía el fondo al hover */}
-                                        {/* <div
-      className="absolute -inset-12 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[2rem]"
-      style={{
-        background:
-          'radial-gradient(36rem 36rem at var(--x,50%) var(--y,50%), rgba(16,185,129,.18), transparent 75%)',
-      }}
-    /> */}
-
-                                        {/* Sheen diagonal: ahora se recorta dentro de la tarjeta gracias a overflow-hidden */}
+                                {/* Marco artístico (paleta BOA) */}
+                                <div
+                                    className="relative p-[16px] rounded-[30px] shadow-xl"
+                                    style={{
+                                        backgroundImage: `
+                linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18)),
+                radial-gradient(180px 180px at 0% 0%, rgba(0,0,0,.06), transparent),
+                radial-gradient(200px 200px at 100% 100%, rgba(0,0,0,.06), transparent)
+              `,
+                                        backgroundBlendMode: "overlay, normal, normal",
+                                        boxShadow: "inset 0 0 0 2px rgba(255,255,255,.28), 0 18px 32px rgba(0,0,0,.18)",
+                                        borderRadius: "30px",
+                                    }}
+                                >
+                                    {/* Lienzo crema interior */}
+                                    <div className="relative rounded-[22px] overflow-hidden bg-[#FAF8F2] ring-1 ring-black/10">
+                                        {/* Textura papel sutil */}
                                         <div
-                                            className="pointer-events-none absolute -left-1/3 top-0 h-full w-1/3 -skew-x-12
-                 bg-gradient-to-r from-transparent via-white/30 to-transparent
-                 opacity-0 group-hover:opacity-35 mix-blend-soft-light
-                 group-hover:translate-x-[220%] transition-all duration-700 rounded-[2rem]"
+                                            className="absolute inset-0 opacity-[0.08] pointer-events-none"
+                                            style={{
+                                                backgroundImage:
+                                                    "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>\")",
+                                                backgroundSize: "260px 260px",
+                                            }}
+                                            aria-hidden
                                         />
 
-                                        {/* Card interior */}
-                                        <Card className="relative border border-white/50 rounded-3xl overflow-hidden bg-white/95">
-                                            <CardContent className="relative p-8">
-                                                <div className="text-center space-y-6">
-                                                    <div
-                                                        className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center
-                       bg-gradient-to-br from-neutral-100 to-neutral-200 ring-1 ring-white/60"
-                                                    >
-                                                        <Gift className="h-8 w-8 text-emerald-600 transition-transform duration-500 group-hover:scale-110" />
-                                                    </div>
+                                        {/* Contenido */}
+                                        <div className="p-8 relative z-10">
+                                            <h3 className="font-sans text-2xl font-extrabold text-neutral-900 mb-2">{gc.name}</h3>
+                                            <p className="font-sans text-base text-neutral-700 mb-5">{gc.description}</p>
 
-                                                    <div>
-                                                        <h3 className="boa-heading text-2xl font-bold text-neutral-900 mb-2">
-                                                            {giftCard.name}
-                                                        </h3>
-                                                        <p className="text-neutral-600 mb-5">{giftCard.description}</p>
+                                            <div className="font-sans text-3xl font-extrabold text-neutral-900 mb-5">
+                                                ${gc.value.toLocaleString()}
+                                            </div>
 
-                                                        <div className="text-3xl font-extrabold text-neutral-900 mb-5">
-                                                            ${giftCard.value.toLocaleString()}
-                                                        </div>
+                                            <ul className="space-y-2 font-sans text-sm text-neutral-800 mb-6">
+                                                {gc.benefits.slice(0, 3).map((b: string, i: number) => (
+                                                    <li key={i} className="flex items-center gap-2">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-boa-green" />
+                                                        {b}
+                                                    </li>
+                                                ))}
+                                                {gc.benefits.length > 3 && (
+                                                    <li className="text-neutral-500 text-xs">+ {gc.benefits.length - 3} más</li>
+                                                )}
+                                            </ul>
 
-                                                        <ul className="text-left inline-block mx-auto space-y-2 text-sm text-neutral-700">
-                                                            {giftCard.benefits.slice(0, 4).map((benefit: string, idx: number) => (
-                                                                <li key={idx} className="flex items-center gap-2">
-                                                                    <svg className="h-4 w-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                                        <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                                    </svg>
-                                                                    <span>{benefit}</span>
-                                                                </li>
-                                                            ))}
-                                                            {giftCard.benefits.length > 4 && (
-                                                                <li className="text-neutral-500">+ {giftCard.benefits.length - 4} beneficios más</li>
-                                                            )}
-                                                        </ul>
-
-                                                        <div className="mt-7">
-                                                            <Button
-                                                                size="lg"
-                                                                className={`px-6 py-3 rounded-2xl transition-all duration-300
-                  ${ALLOW_GC_PURCHASE
-                                                                        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                                                                        : "bg-neutral-200 text-neutral-600 cursor-not-allowed"}`}
-                                                                disabled={!ALLOW_GC_PURCHASE}
-                                                            >
-                                                                {ALLOW_GC_PURCHASE ? "Comprar Gift Card" : "Compra online próximamente"}
-                                                            </Button>
-
-                                                            {!ALLOW_GC_PURCHASE && (
-                                                                <p className="mt-2 text-xs text-neutral-500">
-                                                                    Consultá en el local o por WhatsApp para obtener una gift card.
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    </motion.div>
-                                ))}
-
+                                            <Link
+                                                href="https://wa.me/5491112345678"
+                                                target="_blank"
+                                                className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-sans font-semibold
+                             bg-boa-green text-white hover:bg-boa-green/90 transition"
+                                            >
+                                                Coordinar por WhatsApp
+                                            </Link>
+                                        </div>
+                                    </div>
+                                </div>
                             </motion.div>
-                        );
-                    })()}
+                        ))}
+                    </div>
 
-                    <div className="text-center mt-12">
-                        <Link href="/giftcards">
-                            <Button
-                                size="lg"
-                                variant="outline"
-                                className="bg-white hover:bg-neutral-50 hover:text-neutral-900 hover:border-neutral-300 px-8 py-3 rounded-2xl transition-all duration-300"
-                            >
-                                <Gift className="mr-2 h-5 w-5" />
-                                Ver todas las Gift Cards
-                            </Button>
-                        </Link>
+                    {/* CTA final con animación de “relleno” verde */}
+                    <div className="mt-12 text-center">
+                        <p className="font-sans text-sm">
+                            <span className="boa-fill-text">
+                                “En BOA creemos que los mejores regalos son los que se comparten.”
+                            </span>
+                        </p>
                     </div>
                 </div>
+
+                {/* Animación local del texto */}
+                <style jsx>{`
+    .boa-fill-text {
+      background: linear-gradient(
+        90deg,
+        rgba(17,24,39,0.6) 0%,
+        rgba(17,24,39,0.6) 40%,
+        var(--boa-green-rgb, rgb(16,185,129)) 60%,
+        var(--boa-green-rgb, rgb(16,185,129)) 100%
+      );
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      background-size: 200% 100%;
+      animation: boa-fill 4.2s ease-in-out infinite alternate;
+    }
+    @keyframes boa-fill {
+      0%   { background-position: 0% 50%; }
+      100% { background-position: 100% 50%; }
+    }
+  `}</style>
             </motion.section>
+
+
 
             {/* About BOA Preview */}
-            <section className="py-20 bg-white">
-                <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="max-w-4xl mx-auto text-center">
-                        <div className="mb-8">
-                            <h2 className="boa-heading text-4xl sm:text-5xl font-semibold text-neutral-900 mb-6">
-                                Más que un Café
+            <motion.section
+                id="about-boa"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.25 }}
+                className="relative py-28 font-sans overflow-hidden"
+            >
+                {/* Fondo cálido */}
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,#FAF8F2_0%,#FFFFFF_85%)]" />
+
+                {/* Pinceladas artísticas (sin ReferenceError) */}
+                <div
+                    className="absolute top-0 left-1/2 -translate-x-1/2 w-[320px] h-[60px] opacity-[0.15]
+               bg-[url('/assets/pincelada-verde.png')] bg-no-repeat bg-cover"
+                    aria-hidden
+                />
+                <div
+                    className="absolute bottom-0 right-1/4 w-[280px] h-[50px] rotate-180 opacity-[0.15]
+               bg-[url('/assets/pincelada-verde.png')] bg-no-repeat bg-cover"
+                    aria-hidden
+                />
+
+                <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                        {/* Texto breve */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, ease: "easeOut" }}
+                            className="space-y-6"
+                        >
+                            <h2 className="text-4xl sm:text-5xl font-extrabold text-neutral-900 leading-tight">
+                                BOA es comunidad.
+                                <br />Es energía que se comparte.
                             </h2>
-                            <p className="text-xl text-neutral-600 leading-relaxed mb-8">
-                                BOA es un espacio donde convergen la tradición cafetera, el arte, el bienestar y la comunidad.
-                                Desde nuestras raíces históricas, hemos evolucionado para crear un lugar único donde cada visita
-                                es una experiencia transformadora.
+
+                            <p className="text-lg text-neutral-700 leading-relaxed">
+                                Un lugar para encontrarnos, charlar, crear y disfrutar.
+                                Donde cada café, cada idea y cada sonrisa suman algo único.
                             </p>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-                                <div className="text-center">
-                                    <div className="text-3xl font-bold text-emerald-600 mb-2">100+</div>
-                                    <div className="text-sm text-neutral-600">Años de Historia</div>
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-3xl font-bold text-emerald-600 mb-2">15+</div>
-                                    <div className="text-sm text-neutral-600">Actividades Semanales</div>
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-3xl font-bold text-emerald-600 mb-2">500+</div>
-                                    <div className="text-sm text-neutral-600">Miembros de la Comunidad</div>
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-3xl font-bold text-emerald-600 mb-2">3</div>
-                                    <div className="text-sm text-neutral-600">Espacios Únicos</div>
-                                </div>
+
+                            <Link
+                                href="/about"
+                                className="inline-flex items-center gap-2 rounded-full bg-emerald-700 text-white px-6 py-3 text-sm font-semibold shadow hover:bg-emerald-800 transition"
+                            >
+                                Conocer más
+                                <ArrowRight className="h-4 w-4" />
+                            </Link>
+                        </motion.div>
+
+                        {/* Imagen */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.7, ease: "easeOut" }}
+                            className="relative"
+                        >
+                            <div className="rounded-[28px] overflow-hidden shadow-2xl ring-1 ring-black/10">
+                                <Image
+                                    src="https://res.cloudinary.com/dfrhrnwwi/image/upload/v1756339994/ai-render-6923122_k6pwhi.jpg"
+                                    alt="Gente compartiendo en BOA"
+                                    width={800}
+                                    height={600}
+                                    className="object-cover"
+                                />
                             </div>
-                        </div>
-                        <Link href="/about">
-                            <Button size="lg" className="bg-neutral-900 hover:bg-neutral-800 text-white px-8 py-3 rounded-2xl">
-                                <Users className="mr-2 h-5 w-5" />
-                                Conoce Nuestra Historia
-                            </Button>
-                        </Link>
+                        </motion.div>
                     </div>
                 </div>
-            </section>
+            </motion.section>
+
         </Layout>
+    );
+}
+
+function ExperiencesSlider({ items }: { items: ExpItem[] }) {
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const [index, setIndex] = useState(0);
+    const slideCount = items?.length ?? 0;
+
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+        const onScroll = () => {
+            const w = el.clientWidth || 1;
+            const i = Math.round(el.scrollLeft / w);
+            setIndex(Math.max(0, Math.min(slideCount - 1, i)));
+        };
+        el.addEventListener("scroll", onScroll, { passive: true });
+        return () => el.removeEventListener("scroll", onScroll);
+    }, [slideCount]);
+
+    const pausedRef = useRef(false);
+    useEffect(() => {
+        if (!slideCount) return;
+        const el = containerRef.current!;
+        const id = setInterval(() => {
+            if (pausedRef.current) return;
+            const next = (index + 1) % slideCount;
+            el.scrollTo({ left: el.clientWidth * next, behavior: "smooth" });
+        }, 5500);
+        return () => clearInterval(id);
+    }, [index, slideCount]);
+
+    const goto = (i: number) => {
+        const el = containerRef.current;
+        if (!el) return;
+        const clamped = Math.max(0, Math.min(slideCount - 1, i));
+        el.scrollTo({ left: el.clientWidth * clamped, behavior: "smooth" });
+    };
+
+    if (!slideCount) return null;
+
+    return (
+        <div
+            className="relative"
+            onMouseEnter={() => (pausedRef.current = true)}
+            onMouseLeave={() => (pausedRef.current = false)}
+            onFocusCapture={() => (pausedRef.current = true)}
+            onBlurCapture={() => (pausedRef.current = false)}
+        >
+            {/* Viewport */}
+            <div
+                ref={containerRef}
+                role="region"
+                aria-roledescription="carousel"
+                aria-label="Slider de actividades y experiencias"
+                tabIndex={0}
+                className="
+          w-full overflow-x-auto snap-x snap-mandatory scroll-smooth
+          flex touch-pan-x gap-6 [scrollbar-width:none] [-ms-overflow-style:none]
+        "
+                style={{ scrollSnapType: "x mandatory" }}
+            >
+                {items.map((item, i) => {
+                    const isEvent = item._kind === "event" || (!item.schedule && !!item.date);
+                    const title = item.title ?? "Experiencia BOA";
+                    const desc = item.description ?? "";
+                    const img =
+                        item.image ||
+                        "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=90&w=2400";
+                    const href = item.href ?? (isEvent ? "/events" : "/activities");
+                    const day = isEvent && item.date ? new Date(item.date).toLocaleDateString("es-ES") : item?.schedule?.day;
+                    const time = isEvent ? item.time : item?.schedule?.time;
+                    const price = item?.price;
+                    const cap = typeof item.capacity === "number" ? item.capacity : null;
+                    const enr = typeof item.enrolled === "number" ? item.enrolled : null;
+                    const tag = isEvent ? "Evento" : "Actividad";
+
+                    return (
+                        <article
+                            key={`${tag}-${item.id ?? i}`}
+                            aria-roledescription="slide"
+                            aria-label={`${i + 1} de ${slideCount}`}
+                            className="snap-center shrink-0 w-full"
+                        >
+                            <div className="relative h-[480px] md:h-[560px] lg:h-[550px] rounded-[30px] overflow-hidden ring-1 ring-boa-ink/10 shadow-[0_18px_48px_rgba(2,6,23,.12)]">
+                                {/* Imagen de fondo */}
+                                <Image
+                                    src={img}
+                                    alt={title}
+                                    fill
+                                    priority={i === 0}
+                                    quality={90}
+                                    sizes="100vw"
+                                    className="object-cover"
+                                />
+                                {/* Viñeta + veladura cálida (para foto) */}
+                                <div className="absolute inset-0 bg-[radial-gradient(120%_70%_at_50%_80%,rgba(0,0,0,.35)_0%,rgba(0,0,0,.08)_55%,transparent_80%)]" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-boa-ink/40 via-boa-ink/10 to-transparent" />
+
+                                {/* Card editorial con mayor opacidad/contraste */}
+                                <div className="absolute inset-x-4 sm:inset-x-6 md:left-8 md:right-auto md:max-w-[560px] bottom-6 md:bottom-8">
+                                    <div className="rounded-[22px] bg-boa-cream opacity-90 ring-1 ring-boa-ink/20 shadow-[0_14px_40px_rgba(2,6,23,.22)] overflow-hidden">
+                                        {/* header */}
+                                        <div className="px-6 py-4 flex items-center justify-between">
+                                            <span className="text-[11px] uppercase tracking-[0.12em] text-boa-ink/80">
+                                                {tag}
+                                            </span>
+                                            {(day || time) && (
+                                                <span className="inline-flex items-center gap-2 text-[12.5px] text-boa-ink/85">
+                                                    <Calendar className="h-4 w-4" />
+                                                    {day}{time ? ` • ${time}` : ""}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {/* contenido */}
+                                        <div className="px-6 pb-5">
+                                            <h3 className="text-[26px] sm:text-[30px] font-extrabold text-boa-ink leading-tight">
+                                                {title}
+                                            </h3>
+                                            {desc && (
+                                                <p className="mt-2 text-boa-ink/90 text-[1rem] leading-relaxed">
+                                                    {desc}
+                                                </p>
+                                            )}
+                                            {/* meta secundaria */}
+                                            <div className="mt-3 flex flex-wrap items-center gap-3 text-[13px] text-boa-ink/85">
+                                                {enr !== null && cap !== null && (
+                                                    <span className="inline-flex items-center gap-2">
+                                                        <Users className="h-4 w-4" />
+                                                        {enr}/{cap}
+                                                    </span>
+                                                )}
+                                                {price && (
+                                                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-white text-boa-ink ring-1 ring-boa-ink/15 font-semibold">
+                                                        ${price}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {/* CTA */}
+                                            <div className="mt-5">
+                                                <Link
+                                                    href={href}
+                                                    className="inline-flex items-center gap-2 rounded-full border border-boa-ink/20 bg-white px-5 py-2.5 text-sm font-medium text-boa-ink shadow-[inset_0_1px_0_rgba(255,255,255,.7)] hover:bg-white transition"
+                                                >
+                                                    {isEvent ? "Reservar" : "Inscribirme"}
+                                                    <ArrowRight className="h-4 w-4" />
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                {/* indicador índice */}
+                                <div className="absolute top-4 right-5 text-[12px] text-white/90 bg-black/35 px-2.5 py-1 rounded-full ring-1 ring-white/25">
+                                    {i + 1} / {slideCount}
+                                </div>
+                            </div>
+                        </article>
+                    );
+                })}
+            </div>
+
+            {/* Controles */}
+            <div className="mt-6 flex items-center justify-between gap-4">
+                {/* Flechas */}
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        aria-label="Anterior"
+                        onClick={() => goto(index - 1)}
+                        className="rounded-full p-2.5 ring-1 ring-boa-ink/15 bg-white hover:bg-boa-cream/90 text-boa-ink shadow-sm transition disabled:opacity-50"
+                        disabled={index <= 0}
+                    >
+                        <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <button
+                        type="button"
+                        aria-label="Siguiente"
+                        onClick={() => goto(index + 1)}
+                        className="rounded-full p-2.5 ring-1 ring-boa-ink/15 bg-white hover:bg-boa-cream/90 text-boa-ink shadow-sm transition disabled:opacity-50"
+                        disabled={index >= slideCount - 1}
+                    >
+                        <ChevronRight className="h-5 w-5" />
+                    </button>
+                </div>
+
+                {/* Dots */}
+                <div className="flex items-center gap-2">
+                    {Array.from({ length: slideCount }).map((_, i) => (
+                        <button
+                            key={i}
+                            type="button"
+                            aria-label={`Ir al slide ${i + 1}`}
+                            onClick={() => goto(i)}
+                            className={[
+                                "h-2.5 rounded-full transition-all",
+                                i === index ? "w-6 bg-boa-green" : "w-2.5 bg-boa-ink/25 hover:bg-boa-ink/35",
+                            ].join(" ")}
+                        />
+                    ))}
+                </div>
+            </div>
+        </div>
     );
 }

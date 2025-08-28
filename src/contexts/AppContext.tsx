@@ -176,6 +176,14 @@ export function AppContextProvider({ children }: { children: React.ReactNode }) 
                     value: 15000,
                     benefits: ["5 cafés premium", "1 taller de barismo", "Descuento en granos"],
                     popular: false
+                },
+                {
+                    id: "2",
+                    name: "Tarot",
+                    description: "Para los amantes del tarot de calidad",
+                    value: 12500,
+                    benefits: ["2 sesiónes gratis", "1 taller de instruccion", "Descuento en actividades relacionadas"],
+                    popular: false
                 }
             ];
 
