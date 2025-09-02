@@ -1,267 +1,156 @@
+"use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Layout from "@/components/Layout";
-import { Button } from "@/components/ui/button";
-import Image from "next/image";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import Link from "next/link";
-import {
-    BookOpen,
-    Search,
-    Filter,
-    Calendar,
-    Clock,
-    Heart,
-    Share2,
-    ArrowRight,
-    Sparkles,
-    ChevronLeft,
-    ChevronRight,
-    Play,
-    Pause,
-    Coffee,
-    Leaf,
-    Palette,
-    MapPin,
-    Star,
-    Mail,
-    CheckCircle
-} from "lucide-react";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Search, Filter, Clock, ArrowRight, Heart, Coffee } from "lucide-react";
+
+/* ================= Animations ================= */
+const container = {
+    hidden: { opacity: 0, y: 8 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: { staggerChildren: 0.12, delayChildren: 0.18 },
+    },
+};
+const item = {
+    hidden: { opacity: 0, y: 16 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
+};
+
+/* ================= Mock data ================= */
+type Post = {
+    id: string;
+    title: string;
+    slug: string;
+    excerpt: string;
+    image: string;
+    category: string;
+    readTime: string;
+    featured: boolean;
+    publishedAt: string;
+};
+
+const RAW_POSTS: Post[] = [
+    {
+        id: "yoga-1",
+        title: "Rutina de Yoga Matutina de 20 minutos",
+        slug: "yoga-matutino-20-minutos",
+        excerpt:
+            "Una secuencia accesible para activar el cuerpo, despejar la mente y arrancar el día con energía.",
+        image:
+            "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1600&auto=format&fit=crop&q=80",
+        category: "Bienestar",
+        readTime: "10 min",
+        featured: true,
+        publishedAt: "2024-08-01",
+    },
+    {
+        id: "arte-1",
+        title: "El poder de la Arteterapia: cómo la expresión creativa sana",
+        slug: "arteterapia-expresion-creativa",
+        excerpt:
+            "Por qué crear arte ayuda a procesar emociones, reducir estrés y mejorar el bienestar mental.",
+        image:
+            "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=1600&auto=format&fit=crop&q=80",
+        category: "Arte",
+        readTime: "8 min",
+        featured: true,
+        publishedAt: "2025-01-30",
+    },
+    {
+        id: "nutricion-1",
+        title: "Comer con atención plena: guía práctica de mindful eating",
+        slug: "alimentacion-consciente-mindful-eating",
+        excerpt:
+            "Estrategias simples para comer más despacio, reconocer saciedad y disfrutar la comida.",
+        image:
+            "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1600&auto=format&fit=crop&q=80",
+        category: "Nutrición",
+        readTime: "7 min",
+        featured: true,
+        publishedAt: "2022-06-07",
+    },
+    {
+        id: "cafe-1",
+        title: "¿Qué es el café de especialidad?",
+        slug: "que-es-cafe-especialidad",
+        excerpt:
+            "La definición de la SCA y qué significa para productores, tostadores y amantes del café.",
+        image:
+            "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=1600&auto=format&fit=crop&q=80",
+        category: "Café",
+        readTime: "6 min",
+        featured: false,
+        publishedAt: "2023-05-01",
+    },
+    {
+        id: "mindfulness-1",
+        title: "Cómo practicar mindfulness en la vida cotidiana",
+        slug: "mindfulness-vida-cotidiana",
+        excerpt:
+            "Técnicas sencillas para integrar atención plena en tus rutinas y estar más presente.",
+        image:
+            "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=1600&auto=format&fit=crop&q=80",
+        category: "Bienestar",
+        readTime: "6 min",
+        featured: false,
+        publishedAt: "2023-08-03",
+    },
+];
 
 export default function BlogPage() {
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedCategory, setSelectedCategory] = useState("all");
+    const [term, setTerm] = useState("");
+    const [cat, setCat] = useState("all");
     const [mounted, setMounted] = useState(false);
 
-    // Slider states
-    const [currentSlide, setCurrentSlide] = useState(0);
-    const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-    const [isTransitioning, setIsTransitioning] = useState(false);
+    // Featured (snap como Home)
+    const viewportRef = useRef<HTMLDivElement | null>(null);
+    const [idx, setIdx] = useState(0);
+    const featured = RAW_POSTS.filter((p) => p.featured);
 
+    useEffect(() => setMounted(true), []);
+
+    // Autoplay suave (pausa en hover/focus)
+    const paused = useRef(false);
     useEffect(() => {
-        setMounted(true);
-    }, []);
+        if (!featured.length) return;
+        const el = viewportRef.current;
+        const id = setInterval(() => {
+            if (paused.current || !el) return;
+            const next = (idx + 1) % featured.length;
+            el.scrollTo({ left: el.clientWidth * next, behavior: "smooth" });
+            setIdx(next);
+        }, 5000);
+        return () => clearInterval(id);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [idx, featured.length]);
 
-    // Mock data - updated with real articles and accurate information
-    const blogPosts = [
-        {
-            id: "yoga-1",
-            title: "Rutina de Yoga Matutina de 20 minutos",
-            slug: "yoga-matutino-20-minutos",
-            excerpt:
-                "Una secuencia corta y accesible para activar el cuerpo, despejar la mente y arrancar el día con energía.",
-            content: "Práctica guiada enfocada en respiración, estiramientos suaves y equilibrio.",
-            // Imagen relacionada (yoga por la mañana)
-            image:
-                "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1600&auto=format&fit=crop&q=80",
-            category: "Bienestar",
-            author: {
-                name: "Yoga Journal",
-                avatar: "https://images.unsplash.com/photo-1494790108755-2616b4b12eb1?w=100",
-                bio: "Guías y prácticas de yoga",
-            },
-            publishedAt: "2024-08-01",
-            publishedFormatted: "ago 2024",
-            readTime: "10 min",
-            tags: ["yoga", "mañana", "bienestar", "movilidad"],
-            featured: true,
-            sortOrder: 1,
-            icon: Heart,
-            subtitle: "Yoga, meditación y bienestar",
-            externalUrl:
-                "https://www.yogajournal.com/practice/a-superquick-20-minute-morning-yoga-routine/"
-        },
+    const categories = ["all", ...Array.from(new Set(RAW_POSTS.map((p) => p.category)))];
 
-        {
-            id: "arte-1",
-            title: "El poder de la Arteterapia: cómo la expresión creativa sana",
-            slug: "arteterapia-expresion-creativa",
-            excerpt:
-                "Por qué crear arte es una vía efectiva para procesar emociones, reducir estrés y mejorar el bienestar mental.",
-            content: "Principios de la arteterapia y evidencia clínica reciente.",
-            // Imagen de pinceles/arte
-            image:
-                "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=1600&auto=format&fit=crop&q=80",
-            category: "Arte",
-            author: {
-                name: "Psychology Today",
-                avatar: "https://images.unsplash.com/photo-1494790108755-2616b4b12eb1?w=100",
-                bio: "Publicación de psicología y salud mental",
-            },
-            publishedAt: "2025-01-30",
-            publishedFormatted: "ene 2025",
-            readTime: "8 min",
-            tags: ["arte", "terapia", "emociones", "salud mental"],
-            featured: true,
-            sortOrder: 2,
-            icon: Palette,
-            subtitle: "Creatividad, expresión y talleres artísticos",
-            externalUrl:
-                "https://www.psychologytoday.com/intl/blog/arts-and-health/202501/the-magic-of-art-therapy"
-        },
-
-        {
-            id: "nutricion-1",
-            title: "Comer con atención plena: guía práctica de mindful eating",
-            slug: "alimentacion-consciente-mindful-eating",
-            excerpt:
-                "Estrategias simples para comer más despacio, reconocer saciedad y disfrutar más la comida.",
-            content: "Mindful eating aplicado al día a día, con base en investigación.",
-            // Imagen comida saludable
-            image:
-                "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1600&auto=format&fit=crop&q=80",
-            category: "Nutrición",
-            author: {
-                name: "Harvard Health Publishing",
-                avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100",
-                bio: "Harvard Medical School",
-            },
-            publishedAt: "2022-06-07",
-            publishedFormatted: "jun 2022",
-            readTime: "7 min",
-            tags: ["alimentación", "consciente", "nutrición", "salud"],
-            featured: true,
-            sortOrder: 3,
-            icon: Leaf,
-            subtitle: "Alimentación consciente y opciones saludables",
-            externalUrl:
-                "https://www.health.harvard.edu/blog/slow-down-and-try-mindful-eating-202206072764"
-        },
-
-        {
-            id: "cafe-1",
-            title: "¿Qué es el café de especialidad? (definición SCA)",
-            slug: "que-es-cafe-especialidad-sca",
-            excerpt:
-                "La definición basada en atributos de la Specialty Coffee Association y qué significa para productores, tostadores y consumidores.",
-            content: "Marco de calidad de la SCA y puntos clave para entender el concepto.",
-            // Imagen café de especialidad
-            image:
-                "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=1600&auto=format&fit=crop&q=80",
-            category: "Café",
-            author: {
-                name: "Specialty Coffee Association",
-                avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100",
-                bio: "Organización líder del sector",
-            },
-            publishedAt: "2023-05-01",
-            publishedFormatted: "may 2023",
-            readTime: "6 min",
-            tags: ["café", "especialidad", "calidad", "SCA"],
-            featured: false,
-            sortOrder: 4,
-            icon: Coffee,
-            subtitle: "Café de especialidad, procesos y cultura",
-            externalUrl:
-                "https://sca.coffee/research/definition-of-specialty-coffee"
-        },
-
-        {
-            id: "mindfulness-1",
-            title: "Cómo practicar mindfulness en la vida cotidiana",
-            slug: "mindfulness-vida-cotidiana",
-            excerpt:
-                "Técnicas sencillas para integrar atención plena en tus rutinas y estar más presente en lo diario.",
-            content: "Respiración, anclajes y hábitos micro para el día a día.",
-            // Imagen mindfulness
-            image:
-                "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=1600&auto=format&fit=crop&q=80",
-            category: "Bienestar",
-            author: {
-                name: "Mindful Magazine",
-                avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100",
-                bio: "Expertos en mindfulness y meditación",
-            },
-            publishedAt: "2023-08-03",
-            publishedFormatted: "ago 2023",
-            readTime: "6 min",
-            tags: ["mindfulness", "meditación", "rutina"],
-            featured: false,
-            sortOrder: 5,
-            icon: Heart,
-            subtitle: "Atención plena y equilibrio",
-            externalUrl:
-                "https://www.mindful.org/how-to-practice-mindfulness-in-daily-life/"
-        }
-    ];
-
-    const filteredPosts = useMemo(() => {
-        return blogPosts
-            .filter((post) => {
-                const term = searchTerm.toLowerCase();
-                const matchesSearch =
-                    post.title.toLowerCase().includes(term) ||
-                    post.excerpt.toLowerCase().includes(term) ||
-                    post.tags.some((tag) => tag.toLowerCase().includes(term));
-                const matchesCategory =
-                    selectedCategory === "all" || post.category === selectedCategory;
-
-                return matchesSearch && matchesCategory;
-            })
-            .sort((a, b) => a.sortOrder - b.sortOrder);
-    }, [searchTerm, selectedCategory]);
-
-    const categories = Array.from(new Set(blogPosts.map((p) => p.category)));
-    const featuredPosts = blogPosts.filter((p) => p.featured);
-
-    // Slider logic
-    const nextSlide = useCallback(() => {
-        if (isTransitioning) return;
-        setIsTransitioning(true);
-        setCurrentSlide((prev) => (prev + 1) % featuredPosts.length);
-        setTimeout(() => setIsTransitioning(false), 500);
-    }, [featuredPosts.length, isTransitioning]);
-
-    const prevSlide = useCallback(() => {
-        if (isTransitioning) return;
-        setIsTransitioning(true);
-        setCurrentSlide((prev) => (prev - 1 + featuredPosts.length) % featuredPosts.length);
-        setTimeout(() => setIsTransitioning(false), 500);
-    }, [featuredPosts.length, isTransitioning]);
-
-    const goToSlide = useCallback((index: number) => {
-        if (isTransitioning || index === currentSlide) return;
-        setIsTransitioning(true);
-        setCurrentSlide(index);
-        setTimeout(() => setIsTransitioning(false), 500);
-    }, [currentSlide, isTransitioning]);
-
-    // Auto-play effect
-    useEffect(() => {
-        if (!isAutoPlaying || featuredPosts.length <= 1) return;
-
-        const interval = setInterval(nextSlide, 2500); // Reduced from 4000 to 2500ms
-        return () => clearInterval(interval);
-    }, [isAutoPlaying, nextSlide, featuredPosts.length]);
-
-    // Pause auto-play on user interaction
-    const handleUserInteraction = () => {
-        setIsAutoPlaying(false);
-        setTimeout(() => setIsAutoPlaying(true), 10000);
-    };
+    const posts = useMemo(() => {
+        const t = term.toLowerCase();
+        return RAW_POSTS.filter((p) => {
+            const hit =
+                p.title.toLowerCase().includes(t) ||
+                p.excerpt.toLowerCase().includes(t) ||
+                p.category.toLowerCase().includes(t);
+            const okCat = cat === "all" || p.category === cat;
+            return hit && okCat;
+        });
+    }, [term, cat]);
 
     if (!mounted) {
         return (
             <Layout>
-                <div className="font-sans min-h-screen bg-white">
-                    <div className="py-24 bg-gradient-to-br from-neutral-50 via-emerald-50/30 to-white">
-                        <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                            <div className="text-center max-w-4xl mx-auto">
-                                <div className="h-8 w-8 mx-auto mb-6 bg-emerald-100 rounded animate-pulse" />
-                                <div className="h-12 bg-neutral-100 rounded mx-auto mb-6 max-w-md animate-pulse" />
-                                <div className="h-6 bg-neutral-100 rounded mx-auto max-w-2xl animate-pulse" />
-                            </div>
-                        </div>
-                    </div>
+                <div className="min-h-[60vh] grid place-items-center">
+                    <div className="animate-pulse text-emerald-600">Cargando…</div>
                 </div>
             </Layout>
         );
@@ -269,401 +158,304 @@ export default function BlogPage() {
 
     return (
         <Layout>
-            <div className="font-sans">
-                {/* Hero Section */}
-                <section className="relative min-h-[64vh] md:min-h-[72vh] flex items-center justify-center overflow-hidden">
-                    {/* Fondo */}
-                    <div className="absolute inset-0 -z-10">
-                        <Image
-                            src="https://res.cloudinary.com/dfrhrnwwi/image/upload/f_auto,q_80,w_2000/v1756150406/hrushi-chavhan-R_z0epttP-E-unsplash_qcwnqw.jpg"
-                            alt="Ambiente de café con plantas en BOA"
-                            fill
-                            priority
-                            className="object-cover opacity-[0.8]"
-                            sizes="100vw"
-                        />
-                    </div>
-                    {/* Overlays para legibilidad */}
-                    <div className="absolute inset-0 bg-black/45 -z-10" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/25 to-black/10 -z-10" />
+            <main className="font-sans">
+                {/* ======================= HERO ======================= */}
+                <motion.section
+                    initial="hidden"
+                    animate="visible"
+                    variants={container}
+                    className="relative isolate min-h-[70vh] flex items-end overflow-hidden"
+                >
+                    <Image
+                        src="https://res.cloudinary.com/dfrhrnwwi/image/upload/f_auto,q_80,w_2200/v1756150406/hrushi-chavhan-R_z0epttP-E-unsplash_qcwnqw.jpg"
+                        alt="Ambiente BOA con plantas y luz cálida"
+                        fill
+                        priority
+                        sizes="100vw"
+                        className="object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-boa-cocoa/55 via-boa-cocoa/25 to-transparent" />
+                    <div className="pointer-events-none absolute -bottom-24 -left-24 w-[26rem] h-[26rem] rounded-full bg-boa-green/12 blur-3xl" />
+                    <div className="pointer-events-none absolute -top-24 right-[-60px] w-[24rem] h-[24rem] rounded-full bg-boa-terra/14 blur-3xl" />
 
-                    <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 py-16 md:py-24">
-                        <div className="text-center max-w-4xl mx-auto">
-                            <div className="flex items-center justify-center gap-3 mb-6">
-                                {/* Marca de agua del logo (decorativo) */}
+                    <div className="relative z-10 container mx-auto px-5 pb-14 sm:pb-20 text-center">
+                        <motion.h1
+                            variants={item}
+                            className="text-white text-4xl sm:text-6xl font-extrabold tracking-tight drop-shadow-[0_10px_30px_rgba(0,0,0,.45)]"
+                        >
+                            Historias que se saborean
+                        </motion.h1>
+                        <motion.p variants={item} className="mt-4 max-w-3xl mx-auto text-white/95 text-lg sm:text-xl">
+                            Bienestar, arte y café de especialidad. Notas cercanas, útiles y con la vibra BOA.
+                        </motion.p>
+
+                        {/* Buscador rápido */}
+                        <motion.div variants={item} className="mt-6 flex justify-center">
+                            <div className="relative w-full max-w-xl">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/70" />
+                                <Input
+                                    value={term}
+                                    onChange={(e) => setTerm(e.target.value)}
+                                    placeholder="Buscar artículos, temas, autores…"
+                                    className="pl-10 h-12 bg-white/15 border-white/30 text-white placeholder:text-white/70 backdrop-blur-md"
+                                />
                             </div>
-
-                            <h1 className="font-sans text-white text-5xl sm:text-6xl font-extrabold mb-6 drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">
-                                Blog
-                            </h1>
-                            <p className="font-sans text-white/90 text-xl leading-relaxed max-w-3xl mx-auto drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
-                                Descubre artículos inspiradores sobre bienestar, café de especialidad, mindfulness
-                                y todo lo que nos apasiona en el universo BOA.
-                            </p>
-                        </div>
+                        </motion.div>
                     </div>
-                </section>
+                </motion.section>
 
-                {/* Featured Posts Slider */}
-                {featuredPosts.length > 0 && (
-                    <section className="py-20 bg-gradient-to-br from-emerald-50 via-neutral-50 to-amber-50/30 overflow-hidden">
-                        <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                            <div className="text-center mb-16">
-                                <h2 className="font-sans text-4xl sm:text-5xl font-extrabold text-neutral-900 mb-6">
-                                    Artículos <span className="text-emerald-600 font-extrabold">Destacados</span>
+                {/* Brush decor */}
+                <div
+                    className="relative h-8 -mt-3 opacity-[0.18] bg-[url('/assets/pincelada-verde.png')] bg-no-repeat bg-center bg-contain"
+                    aria-hidden
+                />
+
+                {/* ======================= FEATURED (snap) ======================= */}
+                {featured.length > 0 && (
+                    <section className="relative py-16 overflow-hidden">
+                        <div className="absolute inset-0 bg-[linear-gradient(180deg,#FEFCF7_0%,#FFFFFF_78%)]" />
+                        <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="text-center mb-8">
+                                <h2 className="text-4xl sm:text-5xl font-extrabold text-boa-ink">
+                                    Destacados <span className="text-boa-green">de la semana</span>
                                 </h2>
+                                <p className="mt-3 text-boa-ink/70 max-w-2xl mx-auto">
+                                    Lecturas elegidas por el equipo: cortas, útiles y con mucha calidez.
+                                </p>
                             </div>
 
-                            {/* Slider Container */}
-                            <div className="relative max-w-8xl mx-auto">
-                                {/* Slider Viewport */}
-                                <div className="relative h-[520px] overflow-hidden rounded-[2rem] shadow-2xl">
-                                    <div
-                                        className="flex transition-all duration-1000 ease-in-out h-full"
-                                        style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-                                    >
-                                        {featuredPosts.map((post, index) => {
-                                            const IconComponent = post.icon || Heart;
-                                            return (
-                                                <div
-                                                    key={post.id}
-                                                    className="relative flex-shrink-0 w-full h-full"
-                                                >
-                                                    {/* Background Image */}
-                                                    <div className="absolute inset-0">
-                                                        <img
-                                                            src={post.image}
-                                                            alt={post.title}
-                                                            className="w-full h-full object-cover"
-                                                        />
+                            <div
+                                ref={viewportRef}
+                                role="region"
+                                aria-roledescription="carousel"
+                                aria-label="Artículos destacados"
+                                tabIndex={0}
+                                className="relative w-full overflow-x-auto snap-x snap-mandatory scroll-smooth flex gap-6 [scrollbar-width:none] [-ms-overflow-style:none]"
+                                onMouseEnter={() => (paused.current = true)}
+                                onMouseLeave={() => (paused.current = false)}
+                                onFocusCapture={() => (paused.current = true)}
+                                onBlurCapture={() => (paused.current = false)}
+                                style={{ scrollSnapType: "x mandatory" }}
+                            >
+                                {featured.map((p, i) => (
+                                    <article key={p.id} className="snap-center shrink-0 w-full">
+                                        <div className="relative h-[480px] md:h-[560px] rounded-[28px] overflow-hidden ring-1 ring-boa-ink/10 shadow-[0_18px_48px_rgba(2,6,23,.12)]">
+                                            <Image src={p.image} alt={p.title} fill priority={i === 0} sizes="100vw" className="object-cover" />
+                                            <div className="absolute inset-0 bg-[radial-gradient(120%_70%_at_50%_80%,rgba(0,0,0,.35)_0%,rgba(0,0,0,.08)_55%,transparent_80%)]" />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-boa-ink/45 via-boa-ink/15 to-transparent" />
+
+                                            <div className="absolute inset-x-4 sm:inset-x-6 md:left-8 md:right-auto md:max-w-[560px] bottom-6 md:bottom-8">
+                                                <div className="rounded-[20px] bg-boa-cream/95 ring-1 ring-boa-ink/20 shadow-[0_14px_40px_rgba(2,6,23,.22)]">
+                                                    <div className="px-6 py-4 flex items-center justify-between">
+                                                        <span className="text-[11px] uppercase tracking-[0.12em] text-boa-ink/80">{p.category}</span>
+                                                        <span className="inline-flex items-center gap-2 text-[12.5px] text-boa-ink/85">
+                                                            <Clock className="h-4 w-4" /> {p.readTime}
+                                                        </span>
                                                     </div>
-
-                                                    {/* Overlay Gradient */}
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-neutral-900/85 via-neutral-900/45 to-neutral-900/20" />
-
-                                                    {/* Content */}
-                                                    <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-8 md:p-12">
-                                                        <div className="max-w-2xl">
-
-
-                                                            {/* Title - Centered */}
-                                                            <h3 className="font-sans text-white text-2xl md:text-3xl font-bold mb-3 leading-tight">
-                                                                {post.category === "Bienestar" && "BOA Actividades"}
-                                                                {post.category === "Arte" && "BOA Arte"}
-                                                                {post.category === "Nutrición" && "BOA Gastronomía"}
-                                                            </h3>
-
-                                                            {/* Subtitle - Centered */}
-                                                            <p className="font-sans text-white/90 text-lg md:text-xl mb-8 leading-relaxed">
-                                                                {post.subtitle}
-                                                            </p>
-
-                                                            {/* CTA Button - Centered */}
-                                                            <div className="flex justify-center">
-                                                                <a
-                                                                    href={post.externalUrl}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="inline-flex"
-                                                                >
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        size="lg"
-                                                                        className="font-sans bg-white/10 hover:bg-white/20 border-white/30 hover:border-white/50 text-white backdrop-blur-sm transition-all duration-300 group"
-                                                                    >
-                                                                        Explorar
-                                                                        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                                                                    </Button>
-                                                                </a>
-                                                            </div>
+                                                    <div className="px-6 pb-5">
+                                                        <h3 className="text-[26px] sm:text-[30px] font-extrabold text-boa-ink leading-tight">{p.title}</h3>
+                                                        <p className="mt-2 text-boa-ink/90 text-[1rem] leading-relaxed">{p.excerpt}</p>
+                                                        <div className="mt-5 flex gap-3">
+                                                            <Link
+                                                                href={`/blog/${p.slug}`}
+                                                                className="inline-flex items-center gap-2 rounded-full border border-boa-ink/20 bg-white px-5 py-2.5 text-sm font-medium text-boa-ink shadow-[inset_0_1px_0_rgba(255,255,255,.7)] hover:bg-white"
+                                                            >
+                                                                Leer ahora <ArrowRight className="h-4 w-4" />
+                                                            </Link>
+                                                            <button className="rounded-full border border-boa-ink/15 bg-white px-3 py-2 text-boa-ink/80 hover:text-boa-ink">
+                                                                <Heart className="h-4 w-4" />
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
+                                            </div>
 
-                                {/* Navigation Arrows - Updated with green-cream gradient */}
-                                <Button
-                                    onClick={() => { prevSlide(); handleUserInteraction(); }}
-                                    variant="outline"
-                                    size="icon"
-                                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-transparent shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-110 text-white hover:text-white"
-                                    aria-label="Artículo anterior"
-                                >
-                                    <ChevronLeft className="h-5 w-5" />
-                                </Button>
+                                            {/* contador */}
+                                            <div className="absolute top-4 right-5 text-[12px] text-white/90 bg-black/35 px-2.5 py-1 rounded-full ring-1 ring-white/25">
+                                                {i + 1} / {featured.length}
+                                            </div>
+                                        </div>
+                                    </article>
+                                ))}
+                            </div>
 
-                                <Button
-                                    onClick={() => { nextSlide(); handleUserInteraction(); }}
-                                    variant="outline"
-                                    size="icon"
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-transparent shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-110 text-white hover:text-white"
-                                    aria-label="Siguiente artículo"
-                                >
-                                    <ChevronRight className="h-5 w-5" />
-                                </Button>
-
-                                {/* Dots Indicator */}
-                                <div className="flex justify-center mt-8 space-x-3">
-                                    {featuredPosts.map((_, index) => (
-                                        <button
-                                            key={index}
-                                            onClick={() => { goToSlide(index); handleUserInteraction(); }}
-                                            className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentSlide
-                                                    ? 'bg-emerald-600 w-8'
-                                                    : 'bg-neutral-300 hover:bg-neutral-400'
-                                                }`}
-                                            aria-label={`Ir al artículo ${index + 1}`}
-                                        />
-                                    ))}
-                                </div>
+                            <div className="mt-5 flex items-center justify-center gap-2">
+                                {featured.map((_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => {
+                                            const el = viewportRef.current;
+                                            if (!el) return;
+                                            setIdx(i);
+                                            el.scrollTo({ left: el.clientWidth * i, behavior: "smooth" });
+                                        }}
+                                        aria-label={`Ir al slide ${i + 1}`}
+                                        className={[
+                                            "h-2.5 rounded-full transition-all",
+                                            i === idx ? "w-6 bg-boa-green" : "w-2.5 bg-boa-ink/25 hover:bg-boa-ink/35",
+                                        ].join(" ")}
+                                    />
+                                ))}
                             </div>
                         </div>
                     </section>
                 )}
 
-                {/* Search & Filters - MOVED BELOW THE SLIDER */}
-                <section className="py-8 bg-white border-b border-neutral-100">
-                    <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
-                        <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-                            <div className="flex items-center space-x-2 text-neutral-600">
-                                <Filter className="h-5 w-5" aria-hidden="true" />
-                                <span className="font-sans font-medium">Explorar artículos</span>
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-                                {/* Search */}
-                                <div className="relative">
-                                    <Search
-                                        className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400"
-                                        aria-hidden="true"
-                                    />
-                                    <Input
-                                        placeholder="Buscar artículos..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="font-sans pl-10 w-full sm:w-64"
-                                    />
-                                </div>
-
-                                {/* Category Filter */}
-                                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                                    <SelectTrigger className="font-sans w-full sm:w-40">
-                                        <SelectValue placeholder="Categoría" />
-                                    </SelectTrigger>
-                                    <SelectContent className="font-sans">
-                                        <SelectItem value="all" className="font-sans">Todas</SelectItem>
-                                        {categories.map((category) => (
-                                            <SelectItem key={category} value={category} className="font-sans">
-                                                {category}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                {/* ======================= FILTROS ======================= */}
+                <section className="py-8 border-y border-neutral-100 bg-white">
+                    <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
+                        <div className="flex items-center gap-2 text-neutral-600">
+                            <Filter className="h-5 w-5" />
+                            <span className="font-medium">Explorar artículos</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {categories.map((c) => (
+                                <button
+                                    key={c}
+                                    onClick={() => setCat(c)}
+                                    className={[
+                                        "px-4 py-2 rounded-full text-sm ring-1 transition",
+                                        cat === c
+                                            ? "bg-boa-green text-white ring-boa-green/50"
+                                            : "bg-white text-boa-ink ring-boa-ink/15 hover:ring-boa-ink/25",
+                                    ].join(" ")}
+                                >
+                                    {c === "all" ? "Todas" : c}
+                                </button>
+                            ))}
                         </div>
                     </div>
                 </section>
 
-                {/* All Posts */}
-                <section className="py-16 bg-white">
-                    <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        {filteredPosts.length === 0 ? (
+                {/* ======================= LISTA (cards estilo Home) ======================= */}
+                <section className="py-16 bg-white relative">
+                    <div
+                        className="absolute inset-0 pointer-events-none opacity-[0.04]"
+                        style={{
+                            backgroundImage:
+                                "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'><defs><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0.1'/><feComponentTransfer><feFuncA type='table' tableValues='0 0.04'/></feComponentTransfer></filter></defs><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")",
+                            backgroundSize: "320px 320px",
+                        }}
+                    />
+                    <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        {posts.length === 0 ? (
                             <div className="text-center py-20">
-                                <BookOpen className="h-16 w-16 text-neutral-300 mx-auto mb-4" aria-hidden="true" />
-                                <h3 className="font-sans text-2xl font-semibold text-neutral-600 mb-2">
-                                    No se encontraron artículos
-                                </h3>
-                                <p className="font-sans text-neutral-500 mb-6">Intenta ajustar tus filtros de búsqueda</p>
-                                <Button
-                                    onClick={() => {
-                                        setSearchTerm("");
-                                        setSelectedCategory("all");
-                                    }}
-                                    variant="outline"
-                                    className="font-sans"
-                                >
-                                    Limpiar filtros
-                                </Button>
+                                <div className="text-neutral-500">No se encontraron artículos. Probá otra búsqueda.</div>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {filteredPosts.map((post) => (
-                                    <Card
-                                        key={post.id}
-                                        className="group cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white"
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                                {posts.map((p) => (
+                                    <Link
+                                        key={p.id}
+                                        href={`/blog/${p.slug}`}
+                                        aria-label={`Leer ${p.title}`}
+                                        className="group relative block h-[480px] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
+                    [background:linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18))]
+                    hover:[background:linear-gradient(135deg,rgba(30,122,102,.32),rgba(213,149,121,.28))]"
                                     >
-                                        <div className="relative overflow-hidden rounded-t-lg">
-                                            <img
-                                                src={post.image}
-                                                alt={`Imagen del artículo: ${post.title}`}
-                                                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                                        <div className="relative h-full w-full rounded-[30px] overflow-hidden ring-1 ring-boa-ink/5 bg-black shadow-[0_12px_28px_rgba(2,6,23,.10)] group-hover:shadow-[0_18px_40px_rgba(2,6,23,.15)] transition-shadow duration-500">
+                                            <Image
+                                                src={p.image}
+                                                alt={p.title}
+                                                fill
+                                                quality={90}
+                                                sizes="(min-width:1280px) 33vw, (min-width:768px) 50vw, 100vw"
+                                                className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
                                             />
+                                            {/* veladuras / viñeta */}
+                                            <div className="absolute inset-0 bg-gradient-to-b from-boa-ink/10 via-boa-ink/35 to-boa-ink/60" />
+                                            <div className="absolute inset-0 bg-white/6 backdrop-blur-[1px]" />
+                                            <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
+
+                                            {/* contenido como Home */}
+                                            <Card className="relative h-full bg-transparent border-0 text-white">
+                                                <CardContent className="p-7 h-full flex flex-col justify-end">
+                                                    {/* chip */}
+                                                    <div className="absolute top-6 left-6 inline-flex items-center gap-2 rounded-full bg-white/75 text-boa-green px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
+                                                        <Coffee className="h-3.5 w-3.5" />
+                                                        {p.category}
+                                                    </div>
+
+                                                    <h3 className="text-3xl sm:text-[32px] font-extrabold leading-tight drop-shadow-sm">{p.title}</h3>
+                                                    <p className="mt-2 text-sm/relaxed sm:text-base text-white/90 line-clamp-3">{p.excerpt}</p>
+
+                                                    <div className="mt-5 flex items-center gap-3">
+                                                        <span className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-4 py-2 text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,.25)] transition-all group-hover:bg-white/25 group-hover:border-white/60">
+                                                            Leer <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                                                        </span>
+                                                        <span className="inline-flex items-center text-white/85 text-sm">
+                                                            <Clock className="h-4 w-4 mr-1" /> {p.readTime}
+                                                        </span>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
                                         </div>
-
-                                        <CardHeader>
-                                            <div className="flex items-center gap-2 mb-3">
-                                                <Badge variant="secondary" className="font-sans">{post.category}</Badge>
-                                                <div className="flex items-center text-sm text-neutral-500 font-sans">
-                                                    <Clock className="h-3 w-3 mr-1" aria-hidden="true" />
-                                                    {post.readTime}
-                                                </div>
-                                            </div>
-                                            <h3 className="font-sans text-lg font-semibold text-neutral-900 group-hover:text-emerald-600 transition-colors line-clamp-2">
-                                                {post.title}
-                                            </h3>
-                                        </CardHeader>
-
-                                        <CardContent className="space-y-4">
-                                            <p className="font-sans text-neutral-600 text-sm leading-relaxed line-clamp-3">
-                                                {post.excerpt}
-                                            </p>
-
-                                            <div className="flex items-center justify-between pt-4">
-                                                <div className="font-sans text-xs text-neutral-500">
-                                                    {post.publishedFormatted}
-                                                </div>
-
-                                                <div className="flex items-center gap-2">
-                                                    <Button size="sm" variant="ghost" className="p-1" aria-label="Me gusta">
-                                                        <Heart className="h-3 w-3" aria-hidden="true" />
-                                                    </Button>
-                                                    <Button size="sm" variant="ghost" className="p-1" aria-label="Compartir">
-                                                        <Share2 className="h-3 w-3" aria-hidden="true" />
-                                                    </Button>
-                                                    <a
-                                                        href={post.externalUrl}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        title={`Leer: ${post.title}`}
-                                                    >
-                                                        <Button size="sm" className="font-sans bg-emerald-600 hover:bg-emerald-700 text-white">
-                                                            Leer
-                                                        </Button>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                    </Link>
                                 ))}
                             </div>
                         )}
                     </div>
                 </section>
 
-                {/* Enhanced Newsletter Section */}
+                {/* ======================= CTA NEWSLETTER ======================= */}
                 <section className="relative py-24 overflow-hidden">
-                    {/* Background with Patterns */}
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-neutral-900 to-emerald-800" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(16,185,129,0.1)_0%,transparent_50%)]" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(34,197,94,0.08)_0%,transparent_50%)]" />
 
-                    {/* Decorative Elements */}
-                    <div className="absolute top-12 left-12 w-24 h-24 bg-emerald-500/10 rounded-[2rem] animate-pulse" style={{ animationDelay: "0s", animationDuration: "6s" }} />
-                    <div className="absolute bottom-16 right-16 w-32 h-32 bg-emerald-400/5 rounded-[2rem] animate-pulse" style={{ animationDelay: "3s", animationDuration: "8s" }} />
-                    <div className="absolute top-1/2 right-1/4 w-16 h-16 bg-emerald-300/8 rounded-full animate-pulse" style={{ animationDelay: "1.5s", animationDuration: "7s" }} />
-
-                    <div className="container max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <div className="container relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="grid lg:grid-cols-2 gap-16 items-center">
-                            {/* Left Content */}
-                            <div className="text-left space-y-8">
-                                {/* Logo/Icon */}
+                            <div className="text-left space-y-6">
                                 <div className="flex items-center space-x-4">
                                     <div className="flex items-center justify-center w-16 h-16 bg-emerald-600/20 backdrop-blur-sm rounded-2xl">
                                         <Coffee className="h-8 w-8 text-emerald-300" />
                                     </div>
                                     <div>
-                                        <h3 className="font-sans text-emerald-300 text-lg font-semibold">Newsletter BOA</h3>
-                                        <p className="font-sans text-emerald-200/80 text-sm">Únete a nuestra comunidad</p>
+                                        <h3 className="text-emerald-300 text-lg font-semibold">Newsletter BOA</h3>
+                                        <p className="text-emerald-200/80 text-sm">Únite a nuestra comunidad</p>
                                     </div>
                                 </div>
-
-                                {/* Main Heading */}
-                                <div className="space-y-4">
-                                    <h2 className="font-sans text-4xl sm:text-5xl font-extrabold text-white leading-tight">
-                                        Inspírate cada
-                                        <span className="text-emerald-300 block">semana con BOA</span>
-                                    </h2>
-                                </div>
-
-                                {/* Features List */}
-                                <div className="space-y-4">
-                                    {[
-                                        "Artículos exclusivos sobre bienestar y mindfulness",
-                                        "Recetas saludables y tips de alimentación consciente",
-                                        "Invitaciones especiales a eventos y talleres",
-                                        "Descuentos exclusivos para suscriptores"
-                                    ].map((feature, index) => (
-                                        <div key={index} className="flex items-center space-x-3">
-                                            <CheckCircle className="h-5 w-5 text-emerald-400 flex-shrink-0" />
-                                            <span className="font-sans text-neutral-300">{feature}</span>
-                                        </div>
-                                    ))}
-                                </div>
+                                <h2 className="text-4xl sm:text-5xl font-extrabold text-white leading-tight">
+                                    Ideas ricas cada <span className="text-emerald-300">semana</span>
+                                </h2>
+                                <p className="text-emerald-100/90">Recibí recetas, prácticas de bienestar y agenda de talleres en tu mail.</p>
                             </div>
 
-                            {/* Right Content - Newsletter Form */}
                             <div className="lg:pl-8">
                                 <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-2xl shadow-emerald-900/20">
-                                    <CardHeader className="text-center pb-6">
-                                        <div className="flex justify-center mb-4">
-                                            <div className="flex items-center justify-center w-12 h-12 bg-emerald-100 rounded-xl">
-                                                <Mail className="h-6 w-6 text-emerald-600" />
-                                            </div>
-                                        </div>
-                                        <h3 className="font-sans text-2xl font-bold text-neutral-900 mb-2">
-                                            Suscríbete
-                                        </h3>
-
+                                    <CardHeader className="text-center pb-1">
+                                        <h3 className="text-2xl font-bold text-neutral-900">Suscribite</h3>
                                     </CardHeader>
-
-                                    <CardContent className="space-y-6">
-                                        {/* Email Input */}
-                                        <div className="space-y-4">
-                                            <div className="relative">
-                                                <Input
-                                                    type="email"
-                                                    placeholder="tu@email.com"
-                                                    className="font-sans h-12 pl-12 text-base border-neutral-200 focus:border-emerald-500 focus:ring-emerald-500/20"
-                                                    aria-label="Correo electrónico"
-                                                />
-                                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                                            </div>
-
-                                            <Button
-                                                className="font-sans w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-base font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-                                            >
-                                                Suscribirme ahora
-                                                <ArrowRight className="ml-2 h-4 w-4" />
-                                            </Button>
+                                    <CardContent className="space-y-4">
+                                        <div className="relative">
+                                            <Input
+                                                type="email"
+                                                placeholder="tu@email.com"
+                                                className="h-12 pl-11 text-base border-neutral-200 focus:border-emerald-500 focus:ring-emerald-500/20"
+                                            />
+                                            <svg className="absolute left-4 top-1/2 -translate-y-1/2" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                                <path d="M4 4h16v16H4z" fill="none" />
+                                                <path d="M4 8l8 5 8-5" stroke="#9ca3af" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
                                         </div>
-
-                                        {/* Trust Indicators */}
-                                        <div className="pt-4 border-t border-neutral-100">
-                                            <div className="flex items-center justify-center space-x-6 text-sm text-neutral-500">
-                                                <div className="flex items-center space-x-2">
-
-
-                                                </div>
-                                                <div className="flex items-center justify-center space-x-2">
-                                                    <CheckCircle className="h-4 w-4 text-emerald-500" />
-                                                    <span className="font-sans items-center">Cancela cuando quieras</span>
-                                                </div>
-                                            </div>
-
-                                            <div className="text-center mt-3">
-
-                                            </div>
-                                        </div>
+                                        <Button className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-base font-semibold">
+                                            Suscribirme <ArrowRight className="ml-2 h-4 w-4" />
+                                        </Button>
+                                        <p className="text-center text-xs text-neutral-500">Podés cancelar cuando quieras.</p>
                                     </CardContent>
                                 </Card>
                             </div>
                         </div>
                     </div>
                 </section>
-            </div>
+            </main>
+
+            {/* util local */}
+            <style jsx>{`
+        :global(.boa-cream) {
+          background-color: #faf8f2;
+        }
+      `}</style>
         </Layout>
     );
 }

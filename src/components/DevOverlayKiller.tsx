@@ -14,6 +14,7 @@ export default function DevOverlayKiller() {
                     n.style.display = "none";
                     n.style.visibility = "hidden";
                     n.style.pointerEvents = "none";
+
                 });
         };
         kill();
