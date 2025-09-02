@@ -62,7 +62,7 @@ export default function ActivitiesPage() {
 
     return (
         <Layout>
-            {/* Hero — imagen BOA + detalles cálidos en el contenido */}
+            {/* Hero */}
             <section
                 className="relative min-h-[100vh] pt-28 pb-16 font-sans overflow-hidden grid place-items-center"
                 onMouseMove={(e) => {
