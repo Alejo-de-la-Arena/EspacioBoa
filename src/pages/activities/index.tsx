@@ -458,7 +458,7 @@ export default function ActivitiesPage() {
                                     <Card className="group border-0 rounded-3xl bg-[#FFFCF7] ring-1 ring-[#EEDCC9] shadow-[0_18px_50px_rgba(82,47,0,.08)] hover:shadow-[0_22px_60px_rgba(30,122,102,.18)] transition-all duration-300 hover:-translate-y-1">
                                         {/* Imagen con degradé y textura */}
                                         <div className="relative overflow-hidden rounded-t-3xl">
-                                            <img
+                                            {/* <img
                                                 src={activity.image}
                                                 alt={activity.title}
                                                 className="w-full h-48 object-cover group-hover:scale-[1.03] transition-transform duration-300"
@@ -468,7 +468,7 @@ export default function ActivitiesPage() {
                                                     maskImage:
                                                         "linear-gradient(to bottom, rgba(0,0,0,1) 85%, rgba(0,0,0,0) 100%)",
                                                 }}
-                                            />
+                                            /> */}
                                             <div className="absolute inset-0 bg-gradient-to-t from-boa-ink/25 to-transparent" />
                                             <div
                                                 aria-hidden
