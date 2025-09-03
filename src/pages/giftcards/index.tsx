@@ -1,358 +1,196 @@
-
-import { useState } from "react";
+// pages/giftcards/index.tsx
 import Layout from "@/components/Layout";
 import { useApp } from "@/contexts/AppContext";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import {
-    Gift,
-    Heart,
-    Star,
-    Sparkles,
-    Check,
-    CreditCard,
-    Mail,
-    Calendar,
-    Users
-} from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 
 export default function GiftCardsPage() {
-    const { giftCards, loading } = useApp();
-    const [selectedCard, setSelectedCard] = useState<any>(null);
-    const [customAmount, setCustomAmount] = useState("");
-    const [recipientName, setRecipientName] = useState("");
-    const [recipientEmail, setRecipientEmail] = useState("");
-    const [personalMessage, setPersonalMessage] = useState("");
-    const [senderName, setSenderName] = useState("");
-    const [deliveryDate, setDeliveryDate] = useState("");
+    const { giftCards = [] } = useApp();
 
-    const handlePurchase = async () => {
-        // Simulate purchase process
-        alert("¡Gift Card creada exitosamente! Recibirás un email de confirmación con los detalles.");
-        setSelectedCard(null);
-        // Reset form
-        setCustomAmount("");
-        setRecipientName("");
-        setRecipientEmail("");
-        setPersonalMessage("");
-        setSenderName("");
-        setDeliveryDate("");
+    // Variants (mismos que Home)
+    const container = {
+        hidden: { opacity: 0, y: 8 },
+        visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.12, delayChildren: 0.15 } },
     };
-
-    if (loading) {
-        return (
-            <Layout>
-                <div className="min-h-screen flex items-center justify-center">
-                    <div className="animate-pulse text-emerald-600">
-                        <Gift className="h-12 w-12" />
-                    </div>
-                </div>
-            </Layout>
-        );
-    }
+    const item = {
+        hidden: { opacity: 0, y: 16, scale: 0.98 },
+        visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.45, ease: "easeOut" } },
+    };
 
     return (
         <Layout>
-            {/* Hero Section */}
-            <section className="relative py-24 bg-gradient-to-br from-emerald-50 via-white to-neutral-50 overflow-hidden">
-                <div className="absolute inset-0">
-                    <div className="absolute top-16 left-10 w-28 h-28 bg-emerald-100/50 organic-shape floating-animation" />
-                    <div className="absolute bottom-20 right-12 w-24 h-24 bg-neutral-100/70 organic-shape floating-animation" style={{ animationDelay: '2s' }} />
-                    <div className="absolute top-1/2 left-1/3 w-16 h-16 bg-emerald-200/30 rounded-full floating-animation" style={{ animationDelay: '4s' }} />
-                </div>
+            {/* ================= HERO — GIFTCARDS (vibra cultural BOA) ================= */}
+            <motion.section
+                initial="hidden"
+                animate="visible"
+                variants={container}
+                className="relative isolate min-h-[78vh] flex items-end overflow-hidden"
+            >
+                {/* Collage cálido (2 capas) */}
+                <Image
+                    src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=90&w=2400"
+                    alt="Texturas cálidas, madera y verde de BOA"
+                    fill
+                    sizes="100vw"
+                    priority
+                    className="object-cover"
+                />
+                <Image
+                    src="https://images.unsplash.com/photo-1552196570-9b2f4c7e8847?auto=format&fit=crop&q=90&w=2000"
+                    alt=""
+                    fill
+                    sizes="100vw"
+                    className="object-cover mix-blend-overlay opacity-70"
+                />
 
-                <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                    <div className="text-center max-w-4xl mx-auto">
-                        <div className="flex items-center justify-center space-x-2 mb-6">
-                            <Gift className="h-8 w-8 text-emerald-600" />
-                            <Sparkles className="h-6 w-6 text-emerald-500" />
-                        </div>
-                        <h1 className="boa-heading text-5xl sm:text-6xl font-semibold text-neutral-900 mb-6">
-                            Gift Cards
-                        </h1>
-                        <p className="text-xl text-neutral-600 leading-relaxed max-w-3xl mx-auto">
-                            Regala momentos únicos de bienestar, conexión y creatividad.
-                            Nuestras gift cards abren las puertas a experiencias transformadoras en BOA.
+                {/* veladuras/viñetas */}
+                <div className="absolute inset-0 bg-gradient-to-t from-boa-ink/50 via-boa-ink/20 to-transparent" />
+                <div className="pointer-events-none absolute inset-0 [box-shadow:inset_0_-90px_140px_rgba(0,0,0,.22)]" />
+
+                {/* Ornamentos suaves BOA */}
+                <div
+                    aria-hidden
+                    className="pointer-events-none absolute -left-24 -bottom-24 w-[26rem] h-[26rem] rounded-full bg-boa-green/14 blur-3xl"
+                />
+                <div
+                    aria-hidden
+                    className="pointer-events-none absolute -right-16 -top-16 w-[22rem] h-[22rem] rounded-full bg-boa-terra/16 blur-3xl"
+                />
+
+                {/* Pincelada sutil (decorativa) */}
+                <div
+                    aria-hidden
+                    className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[360px] h-[62px] opacity-[0.18] bg-[url('/assets/pincelada-verde.png')] bg-no-repeat bg-contain"
+                />
+            </motion.section>
+
+            {/* ================= SECTION — TARJETAS (mismo formato del Home) ================= */}
+            <motion.section
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.2 }}
+                variants={container}
+                className="relative py-24 font-sans overflow-hidden"
+            >
+                {/* Fondo cálido + halo BOA */}
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,#FEFCF7_0%,#FFFFFF_85%)]" />
+                <div className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full bg-emerald-300/12 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-10 -right-10 h-72 w-72 rounded-full bg-amber-300/12 blur-3xl" />
+
+                <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl sm:text-5xl font-extrabold text-boa-ink">
+                            Gift <span className="text-boa-green">Cards</span>
+                        </h2>
+                        <p className="mt-3 text-base sm:text-lg text-boa-ink/75 max-w-2xl mx-auto">
+                            Elegí tu experiencia BOA. Tres opciones que abrazan lo rico y lo que hace bien.
                         </p>
                     </div>
-                </div>
-            </section>
 
-            {/* Gift Cards Grid */}
-            <section className="py-16 bg-white">
-                <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {giftCards.map((giftCard) => (
-                            <Card key={giftCard.id} className="group cursor-pointer border-0 shadow-lg shadow-emerald-200/60 hover:shadow-2xl hover:shadow-emerald-500/30 transition-all duration-500 hover:-translate-y-1 bg-white">
-                                <div className="relative overflow-hidden rounded-t-lg">
-                                    <div className="h-48 bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-600 flex items-center justify-center">
-                                        <div className="text-center text-white">
-                                            <Gift className="h-16 w-16 mx-auto mb-4 opacity-90" />
-                                            <div className="text-3xl font-bold mb-2">${giftCard.value.toLocaleString()}</div>
-                                            <div className="text-sm opacity-90">Gift Card BOA</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                        {(giftCards.length ? giftCards.slice(0, 3) : fallbackGC).map((gc: any, i: number) => (
+                            <motion.div key={`${gc.id ?? gc.name}-${i}`} variants={item} whileHover={{ y: -8 }}>
+                                <GiftCardShell>
+                                    <div className="p-8 relative z-10">
+                                        <h3 className="text-2xl font-extrabold text-neutral-900 mb-1">{gc.name}</h3>
+                                        <p className="text-neutral-700 mb-5">{gc.description}</p>
+
+                                        <div className="text-3xl font-extrabold text-neutral-900 mb-5">
+                                            ${Number(gc.value ?? 0).toLocaleString()}
                                         </div>
+
+                                        <ul className="space-y-2 text-sm text-neutral-800 mb-6">
+                                            {(gc.benefits ?? []).slice(0, 3).map((b: string, j: number) => (
+                                                <li key={j} className="flex items-center gap-2">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-boa-green" />
+                                                    {b}
+                                                </li>
+                                            ))}
+                                        </ul>
+
+                                        <Link
+                                            href="https://wa.me/5491112345678"
+                                            target="_blank"
+                                            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold bg-boa-green text-white hover:bg-boa-green/90 transition"
+                                        >
+                                            Coordinar por WhatsApp
+                                            <ArrowRight className="h-4 w-4" />
+                                        </Link>
                                     </div>
-                                    {giftCard.popular && (
-                                        <Badge className="absolute top-4 left-4 bg-amber-500 text-white">
-                                            <Star className="h-3 w-3 mr-1" />
-                                            Popular
-                                        </Badge>
-                                    )}
-                                </div>
-
-                                <CardHeader>
-                                    <h3 className="boa-heading text-xl font-semibold text-neutral-900 group-hover:text-emerald-600 transition-colors">
-                                        {giftCard.name}
-                                    </h3>
-                                    <p className="text-neutral-600 text-sm leading-relaxed">
-                                        {giftCard.description}
-                                    </p>
-                                </CardHeader>
-
-                                <CardContent className="space-y-4">
-                                    <div className="space-y-2">
-                                        <h4 className="font-medium text-neutral-900 text-sm">Incluye:</h4>
-                                        {giftCard.benefits.map((benefit, index) => (
-                                            <div key={index} className="flex items-center text-sm text-neutral-600">
-                                                <Check className="h-3 w-3 mr-2 text-emerald-500" />
-                                                {benefit}
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <div className="pt-4">
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <Button
-                                                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl"
-                                                    onClick={() => setSelectedCard(giftCard)}
-                                                >
-                                                    <CreditCard className="mr-2 h-4 w-4" />
-                                                    Comprar Gift Card
-                                                </Button>
-                                            </DialogTrigger>
-                                            <DialogContent className="max-w-2xl">
-                                                <DialogHeader>
-                                                    <DialogTitle className="boa-heading text-2xl">
-                                                        Personalizar Gift Card
-                                                    </DialogTitle>
-                                                </DialogHeader>
-
-                                                {selectedCard && (
-                                                    <div className="space-y-6">
-                                                        {/* Gift Card Preview */}
-                                                        <div className="bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-2xl p-8 text-white text-center">
-                                                            <Gift className="h-12 w-12 mx-auto mb-4 opacity-90" />
-                                                            <div className="text-2xl font-bold mb-2">
-                                                                ${selectedCard.value.toLocaleString()}
-                                                            </div>
-                                                            <div className="text-sm opacity-90">{selectedCard.name}</div>
-                                                        </div>
-
-                                                        {/* Form */}
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                            <div>
-                                                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                                                    Tu nombre
-                                                                </label>
-                                                                <Input
-                                                                    value={senderName}
-                                                                    onChange={(e) => setSenderName(e.target.value)}
-                                                                    placeholder="Nombre del remitente"
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                                                    Nombre del destinatario
-                                                                </label>
-                                                                <Input
-                                                                    value={recipientName}
-                                                                    onChange={(e) => setRecipientName(e.target.value)}
-                                                                    placeholder="Para quién es el regalo"
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                                                    Email del destinatario
-                                                                </label>
-                                                                <Input
-                                                                    type="email"
-                                                                    value={recipientEmail}
-                                                                    onChange={(e) => setRecipientEmail(e.target.value)}
-                                                                    placeholder="correo@ejemplo.com"
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                                                    Fecha de entrega
-                                                                </label>
-                                                                <Input
-                                                                    type="date"
-                                                                    value={deliveryDate}
-                                                                    onChange={(e) => setDeliveryDate(e.target.value)}
-                                                                />
-                                                            </div>
-                                                        </div>
-
-                                                        <div>
-                                                            <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                                                Mensaje personal
-                                                            </label>
-                                                            <Textarea
-                                                                value={personalMessage}
-                                                                onChange={(e) => setPersonalMessage(e.target.value)}
-                                                                placeholder="Escribe un mensaje especial..."
-                                                                rows={3}
-                                                            />
-                                                        </div>
-
-                                                        <Button
-                                                            onClick={handlePurchase}
-                                                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-2xl"
-                                                            size="lg"
-                                                        >
-                                                            <CreditCard className="mr-2 h-5 w-5" />
-                                                            Comprar por ${selectedCard.value.toLocaleString()}
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                            </DialogContent>
-                                        </Dialog>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                                </GiftCardShell>
+                            </motion.div>
                         ))}
-
-                        {/* Custom Amount Card */}
-                        <Card className="group cursor-pointer border-2 border-dashed border-emerald-200 hover:border-emerald-400 transition-all duration-300 hover:-translate-y-1 bg-emerald-50/50">
-                            <CardContent className="p-8 text-center space-y-6">
-                                <div className="w-16 h-16 mx-auto bg-emerald-100 rounded-2xl flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
-                                    <Heart className="h-8 w-8 text-emerald-600" />
-                                </div>
-                                <div>
-                                    <h3 className="boa-heading text-xl font-semibold text-neutral-900 mb-2">
-                                        Monto Personalizado
-                                    </h3>
-                                    <p className="text-neutral-600 text-sm leading-relaxed mb-4">
-                                        Crea una gift card con el monto exacto que desees regalar
-                                    </p>
-                                    <Input
-                                        type="number"
-                                        placeholder="Ingresa el monto"
-                                        value={customAmount}
-                                        onChange={(e) => setCustomAmount(e.target.value)}
-                                        className="mb-4"
-                                    />
-                                </div>
-                                <Button
-                                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl"
-                                    disabled={!customAmount || parseFloat(customAmount) < 1000}
-                                >
-                                    <CreditCard className="mr-2 h-4 w-4" />
-                                    Crear Gift Card
-                                </Button>
-                                <p className="text-xs text-neutral-500">
-                                    Monto mínimo: $1,000 CLP
-                                </p>
-                            </CardContent>
-                        </Card>
                     </div>
-                </div>
-            </section>
 
-            {/* How it Works */}
-            <section className="py-20 bg-neutral-50">
-                <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-16">
-                        <h2 className="boa-heading text-4xl font-semibold text-neutral-900 mb-4">
-                            ¿Cómo Funciona?
-                        </h2>
-                        <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
-                            Regalar experiencias nunca fue tan fácil
+                    {/* Cierre identitario */}
+                    <div className="mt-12 text-center">
+                        <p className="text-sm">
+                            <span className="inline-block bg-gradient-to-r from-boa-ink/70 via-boa-ink/70 to-boa-green bg-clip-text text-transparent">
+                                En BOA creemos que los mejores regalos se comparten.
+                            </span>
                         </p>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div className="text-center">
-                            <div className="w-16 h-16 mx-auto bg-emerald-100 rounded-2xl flex items-center justify-center mb-6">
-                                <CreditCard className="h-8 w-8 text-emerald-600" />
-                            </div>
-                            <h3 className="boa-heading text-xl font-semibold text-neutral-900 mb-3">
-                                1. Elige y Personaliza
-                            </h3>
-                            <p className="text-neutral-600 leading-relaxed">
-                                Selecciona la gift card perfecta y personalízala con un mensaje especial
-                            </p>
-                        </div>
-
-                        <div className="text-center">
-                            <div className="w-16 h-16 mx-auto bg-emerald-100 rounded-2xl flex items-center justify-center mb-6">
-                                <Mail className="h-8 w-8 text-emerald-600" />
-                            </div>
-                            <h3 className="boa-heading text-xl font-semibold text-neutral-900 mb-3">
-                                2. Envío Digital
-                            </h3>
-                            <p className="text-neutral-600 leading-relaxed">
-                                La gift card se envía por email al destinatario en la fecha que elijas
-                            </p>
-                        </div>
-
-                        <div className="text-center">
-                            <div className="w-16 h-16 mx-auto bg-emerald-100 rounded-2xl flex items-center justify-center mb-6">
-                                <Sparkles className="h-8 w-8 text-emerald-600" />
-                            </div>
-                            <h3 className="boa-heading text-xl font-semibold text-neutral-900 mb-3">
-                                3. Disfruta en BOA
-                            </h3>
-                            <p className="text-neutral-600 leading-relaxed">
-                                El destinatario puede canjearla en cualquier experiencia o producto de BOA
-                            </p>
-                        </div>
-                    </div>
                 </div>
-            </section>
-
-            {/* Corporate Gifts */}
-            <section className="py-20 bg-gradient-to-br from-neutral-900 to-neutral-800 text-white">
-                <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="max-w-4xl mx-auto text-center">
-                        <h2 className="boa-heading text-4xl sm:text-5xl font-semibold mb-6">
-                            Regalos Corporativos
-                        </h2>
-                        <p className="text-xl text-neutral-300 leading-relaxed mb-8">
-                            ¿Buscas el regalo perfecto para tu equipo, clientes o socios de negocio?
-                            Nuestras gift cards corporativas ofrecen experiencias de bienestar que fortalecen vínculos.
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                            <div className="text-center">
-                                <div className="text-3xl font-bold text-emerald-400 mb-2">25+</div>
-                                <div className="text-sm text-neutral-400">Gift Cards = 10% descuento</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-3xl font-bold text-emerald-400 mb-2">50+</div>
-                                <div className="text-sm text-neutral-400">Gift Cards = 15% descuento</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-3xl font-bold text-emerald-400 mb-2">100+</div>
-                                <div className="text-sm text-neutral-400">Gift Cards = 20% descuento</div>
-                            </div>
-                        </div>
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-2xl">
-                                <Users className="mr-2 h-5 w-5" />
-                                Consultar Regalos Corporativos
-                            </Button>
-                            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-neutral-900 px-8 py-3 rounded-2xl">
-                                Descargar Catálogo
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            </motion.section>
         </Layout>
     );
 }
+
+/** ============= Shell reutilizable (idéntico look & feel al Home) ============= */
+function GiftCardShell({ children }: { children: React.ReactNode }) {
+    return (
+        <div
+            className="relative p-[16px] rounded-[30px] shadow-xl"
+            style={{
+                backgroundImage: `
+          linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18)),
+          radial-gradient(180px 180px at 0% 0%, rgba(0,0,0,.06), transparent),
+          radial-gradient(200px 200px at 100% 100%, rgba(0,0,0,.06), transparent)
+        `,
+                backgroundBlendMode: "overlay, normal, normal",
+                boxShadow: "inset 0 0 0 2px rgba(255,255,255,.28), 0 18px 32px rgba(0,0,0,.18)",
+                borderRadius: 30,
+            }}
+        >
+            {/* Lienzo crema, textura papel sutil */}
+            <div className="relative rounded-[22px] overflow-hidden bg-[#FAF8F2] ring-1 ring-black/10">
+                <div
+                    className="absolute inset-0 opacity-[0.08] pointer-events-none"
+                    style={{
+                        backgroundImage:
+                            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>\")",
+                        backgroundSize: "260px 260px",
+                    }}
+                />
+                {children}
+            </div>
+        </div>
+    );
+}
+
+/** Fallback por si el contexto aún no cargó giftCards */
+const fallbackGC = [
+    {
+        id: "gc1",
+        name: "Experiencia Bienestar",
+        description: "Movimiento, calma y café de bienvenida.",
+        value: 25000,
+        benefits: ["3 clases de yoga", "1 sesión de meditación", "Café de bienvenida"],
+    },
+    {
+        id: "gc2",
+        name: "Café Lover",
+        description: "Para amantes del café de especialidad.",
+        value: 15000,
+        benefits: ["5 cafés premium", "1 taller de barismo", "Descuento en granos"],
+    },
+    {
+        id: "gc3",
+        name: "Tarot",
+        description: "Conexión y claridad con guías especializadas.",
+        value: 12500,
+        benefits: ["2 sesiones", "1 taller de introducción", "Descuentos en actividades"],
+    },
+];
