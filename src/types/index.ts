@@ -14,20 +14,21 @@ export interface Person {
     email?: string;
 }
 
-export interface Activity {
-    id: string;
+export type Activity = {
+    id: string | number;
     title: string;
     description: string;
-    image: string;
+    images: string[];                
+    image?: string;                   
     category: string;
-    schedule: Schedule;
-    capacity: number;
-    enrolled: number;
-    price: number;
-    instructor?: Person;
+    price?: number;
     featured?: boolean;
+    schedule: { day: string; time: string };
     location: string;
-}
+    enrolled: number;
+    capacity: number;
+    instructor: Person;
+};
 
 export interface Event {
     id: string;

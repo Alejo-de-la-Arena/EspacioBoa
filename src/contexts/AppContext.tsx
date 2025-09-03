@@ -17,6 +17,8 @@ export function AppContextProvider({ children }: { children: React.ReactNode }) 
     const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
     const [loading, setLoading] = useState(true);
 
+
+
     useEffect(() => {
         const initializeData = () => {
             // Mock instructors/facilitators
@@ -53,8 +55,13 @@ export function AppContextProvider({ children }: { children: React.ReactNode }) 
                 {
                     id: "1",
                     title: "Yoga Matutino",
-                    description: "Comenzá tu día con energía positiva a través de una práctica de yoga suave y meditación guiada.",
-                    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800",
+                    description:
+                        "Comenzá tu día con energía positiva a través de una práctica de yoga suave y meditación guiada.",
+                    images: [
+                        "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800",
+                        "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=800",
+                        "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800",
+                    ],
                     category: "Bienestar",
                     schedule: { day: "Lunes", time: "08:00 - 09:00" },
                     capacity: 15,
@@ -62,13 +69,18 @@ export function AppContextProvider({ children }: { children: React.ReactNode }) 
                     price: 12000,
                     instructor: instructor1,
                     featured: true,
-                    location: "Terraza Zen"
+                    location: "Terraza Zen",
                 },
                 {
                     id: "2",
                     title: "Arte Terapia",
-                    description: "Sesiones de expresión artística para liberar emociones y conectar con tu creatividad interior.",
-                    image: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=800",
+                    description:
+                        "Sesiones de expresión artística para liberar emociones y conectar con tu creatividad interior.",
+                    images: [
+                        "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=800",
+                        "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800",
+                        "https://images.unsplash.com/photo-1496317899792-9d7dbcd928a1?w=800",
+                    ],
                     category: "Arte",
                     schedule: { day: "Miércoles", time: "19:00 - 20:30" },
                     capacity: 10,
@@ -76,13 +88,18 @@ export function AppContextProvider({ children }: { children: React.ReactNode }) 
                     price: 18000,
                     instructor: instructor2,
                     featured: false,
-                    location: "Salón de Eventos"
+                    location: "Salón de Eventos",
                 },
                 {
                     id: "3",
                     title: "Meditación Mindfulness",
-                    description: "Práctica de atención plena para reducir el estrés y encontrar paz interior.",
-                    image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800",
+                    description:
+                        "Práctica de atención plena para reducir el estrés y encontrar paz interior.",
+                    images: [
+                        "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800",
+                        "https://images.unsplash.com/photo-1518183214770-9cffbec72538?w=800",
+                        "https://images.unsplash.com/photo-1523248822161-8fa923c92b51?w=800",
+                    ],
                     category: "Bienestar",
                     schedule: { day: "Viernes", time: "18:30 - 19:30" },
                     capacity: 20,
@@ -90,9 +107,68 @@ export function AppContextProvider({ children }: { children: React.ReactNode }) 
                     price: 10000,
                     instructor: instructor3,
                     featured: true,
-                    location: "Café Principal"
-                }
+                    location: "Café Principal",
+                },
+                {
+                    id: "4",
+                    title: "AeroYoga Flow",
+                    description:
+                        "Práctica en columpios de tela para trabajar fuerza, elongación y juego en suspensión. No se requiere experiencia.",
+                    images: [
+                        "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=800",
+                        "https://images.unsplash.com/photo-1540206395-68808572332f?w=800",
+                        "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=800",
+                    ],
+                    category: "Aeroyoga",
+                    schedule: { day: "Martes", time: "19:00 - 20:00" },
+                    capacity: 12,
+                    enrolled: 9,
+                    price: 16000,
+                    instructor: instructor1,
+                    featured: false,
+                    location: "Sala Aérea",
+                },
+                {
+                    id: "5",
+                    title: "Astrología: Carta Natal",
+                    description:
+                        "Encuentro introductorio para explorar tu carta natal y entender energías presentes. Traé tu fecha y hora de nacimiento.",
+                    images: [
+                        "https://images.unsplash.com/photo-1637757935037-a7837f36807d?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                        "https://plus.unsplash.com/premium_photo-1701001123089-c86e2a5f5ad9?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                        "https://images.unsplash.com/photo-1612323272007-3e7c28f6eb05?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                    ],
+                    category: "Astrología",
+                    schedule: { day: "Jueves", time: "18:30 - 20:00" },
+                    capacity: 18,
+                    enrolled: 14,
+                    price: 14000,
+                    instructor: instructor2,
+                    featured: true,
+                    location: "Salón Luz",
+                },
+                {
+                    id: "6",
+                    title: "Taller de Café de Autor",
+                    description:
+                        "Introducción al barismo: molienda, proporciones, métodos de filtrado (V60, prensa) y latte art básico. Degustación incluida.",
+                    images: [
+                        "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                        "https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1061&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                        "https://images.unsplash.com/photo-1494314671902-399b18174975?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                    ],
+                    category: "Café",
+                    schedule: { day: "Sábado", time: "11:00 - 12:30" },
+                    capacity: 16,
+                    enrolled: 11,
+                    price: 15000,
+                    instructor: instructor3,
+                    featured: false,
+                    location: "Café Principal",
+                },
             ];
+
+
 
             // Mock events
             const mockEvents: Event[] = [
@@ -187,7 +263,13 @@ export function AppContextProvider({ children }: { children: React.ReactNode }) 
                 }
             ];
 
-            setActivities(mockActivities);
+            const normalizedActivities: Activity[] = mockActivities.map((a) => ({
+                ...a,
+                images: a.images?.length ? a.images : (a.image ? [a.image] : []),
+                image: a.images?.[0] ?? a.image, // compatibilidad legacy
+            }));
+
+            setActivities(normalizedActivities);
             setEvents(mockEvents);
             setMenuItems(mockMenuItems);
             setGiftCards(mockGiftCards);
@@ -195,7 +277,8 @@ export function AppContextProvider({ children }: { children: React.ReactNode }) 
         };
 
         // Simulate loading time
-        setTimeout(initializeData, 1000);
+        const t = setTimeout(initializeData, 1000);
+        return () => clearTimeout(t);
     }, []);
 
     const value: AppContextType = {
