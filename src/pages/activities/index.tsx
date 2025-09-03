@@ -199,7 +199,7 @@ export default function ActivitiesPage() {
                                 transition={{ delay: 0.05 }}
                                 className="group mt-10 inline-flex items-center gap-2 text-boa-green/90 hover:text-boa-green transition-colors"
                             >
-                                <button className="d-flex inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 rounded-md rounded-xl2 bg-boa-green text-white hover:bg-boa-green/90 shadow-[0_10px_28px_rgba(30,122,102,.35)] px-8">
+                                <button className="d-flex inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-10 rounded-md bg-boa-green text-white hover:bg-boa-green/90 shadow-[0_10px_28px_rgba(30,122,102,.35)] px-8">
                                     Explorar Actividades
                                     <span className="inline-block h-2.5 w-2.5 border-b-2 border-r-2 border-current rotate-45 translate-y-0 group-hover:translate-y-[2px] transition-transform" />
                                 </button>
