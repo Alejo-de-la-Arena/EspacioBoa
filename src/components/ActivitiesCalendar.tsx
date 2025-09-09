@@ -152,7 +152,12 @@ export default function ActivitiesCalendar({ activities }: { activities: Activit
                 />
                 <div aria-hidden className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: "var(--boa-noise)", backgroundSize: "420px 420px" }} />
             </div>
-
+            <div className=" flex justify-center align-center">
+                <h2 className="font-sans text-4xl sm:text-5xl font-extrabold tracking-tight text-boa-ink">
+                    Calendario <span className="text-boa-green">Actividades</span>
+                </h2>
+            </div>
+            ¿
             <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header calendario */}
                 <motion.div variants={fade} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }}

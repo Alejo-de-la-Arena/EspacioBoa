@@ -6,100 +6,87 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 
+
 export default function GiftCardsPage() {
     const { giftCards = [] } = useApp();
 
-    // Variants (mismos que Home)
+
+    // Animations
     const container = {
         hidden: { opacity: 0, y: 8 },
-        visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.12, delayChildren: 0.15 } },
+        visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.12, delayChildren: 0.12 } },
     };
     const item = {
         hidden: { opacity: 0, y: 16, scale: 0.98 },
         visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.45, ease: "easeOut" } },
     };
 
+
+    // 🔁 Reemplazá esta URL cuando tengas la imagen final de nanobanana
+    const DECOR_BG =
+        "https://res.cloudinary.com/dfrhrnwwi/image/upload/v1756867726/nano-banana-no-bg-2025-09-03T02-47-52_1_jb6zay.jpg"
+    const list = giftCards.length ? giftCards.slice(0, 3) : fallbackGC;
+
+
     return (
         <Layout>
-            {/* ================= HERO — GIFTCARDS (vibra cultural BOA) ================= */}
-            <motion.section
-                initial="hidden"
-                animate="visible"
-                variants={container}
-                className="relative isolate min-h-[78vh] flex items-end overflow-hidden"
-            >
-                {/* Collage cálido (2 capas) */}
-                <Image
-                    src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=90&w=2400"
-                    alt="Texturas cálidas, madera y verde de BOA"
-                    fill
-                    sizes="100vw"
-                    priority
-                    className="object-cover"
-                />
-                <Image
-                    src="https://images.unsplash.com/photo-1552196570-9b2f4c7e8847?auto=format&fit=crop&q=90&w=2000"
-                    alt=""
-                    fill
-                    sizes="100vw"
-                    className="object-cover mix-blend-overlay opacity-70"
-                />
-
-                {/* veladuras/viñetas */}
-                <div className="absolute inset-0 bg-gradient-to-t from-boa-ink/50 via-boa-ink/20 to-transparent" />
-                <div className="pointer-events-none absolute inset-0 [box-shadow:inset_0_-90px_140px_rgba(0,0,0,.22)]" />
-
-                {/* Ornamentos suaves BOA */}
-                <div
-                    aria-hidden
-                    className="pointer-events-none absolute -left-24 -bottom-24 w-[26rem] h-[26rem] rounded-full bg-boa-green/14 blur-3xl"
-                />
-                <div
-                    aria-hidden
-                    className="pointer-events-none absolute -right-16 -top-16 w-[22rem] h-[22rem] rounded-full bg-boa-terra/16 blur-3xl"
-                />
-
-                {/* Pincelada sutil (decorativa) */}
-                <div
-                    aria-hidden
-                    className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[360px] h-[62px] opacity-[0.18] bg-[url('/assets/pincelada-verde.png')] bg-no-repeat bg-contain"
-                />
-            </motion.section>
-
-            {/* ================= SECTION — TARJETAS (mismo formato del Home) ================= */}
+            {/* ================= SECTION — GIFTCARDS (arriba + fondo decorativo detrás) ================= */}
             <motion.section
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, amount: 0.2 }}
                 variants={container}
-                className="relative py-24 font-sans overflow-hidden"
+                className="relative py-16 sm:py-20 font-sans overflow-hidden"
             >
-                {/* Fondo cálido + halo BOA */}
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,#FEFCF7_0%,#FFFFFF_85%)]" />
-                <div className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full bg-emerald-300/12 blur-3xl" />
-                <div className="pointer-events-none absolute -bottom-10 -right-10 h-72 w-72 rounded-full bg-amber-300/12 blur-3xl" />
+                {/* Fondo crema base */}
+
+
+
+                {/* Capa: imagen decorativa detrás (sutil) */}
+                <div className="absolute inset-0 -z-10">
+                    {/* Imagen con baja opacidad y blur leve para no competir */}
+                    <div className="absolute inset-0 opacity-15 [mask-image:linear-gradient(to bottom,rgba(0,0,0,.7),rgba(0,0,0,.4),rgba(0,0,0,.1))]">
+                        <Image
+                            src={DECOR_BG}
+                            alt="Fondo decorativo BOA — acuarelas, papel y guiños de café"
+                            fill
+                            priority={true}
+                            sizes="100vw"
+                            className="object-cover"
+                        />
+                    </div>
+                    {/* Halos BOA suaves */}
+                    <div aria-hidden className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full bg-emerald-300/10 blur-3xl" />
+                    <div aria-hidden className="pointer-events-none absolute -bottom-10 -right-10 h-72 w-72 rounded-full bg-amber-300/10 blur-3xl" />
+                </div>
+
 
                 <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-12">
-                        <h2 className="text-4xl sm:text-5xl font-extrabold text-boa-ink">
+                    {/* Encabezado minimal */}
+                    <div className="text-center mb-10 sm:mb-14">
+                        <h1 className="text-[32px] sm:text-5xl font-extrabold tracking-tight text-boa-ink">
                             Gift <span className="text-boa-green">Cards</span>
-                        </h2>
-                        <p className="mt-3 text-base sm:text-lg text-boa-ink/75 max-w-2xl mx-auto">
-                            Elegí tu experiencia BOA. Tres opciones que abrazan lo rico y lo que hace bien.
+                        </h1>
+                        <p className="mt-3 text-base sm:text-lg text-boa-ink/70 max-w-2xl mx-auto">
+                            Regalos simples y con alma: café, arte y bienestar para compartir.
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                        {(giftCards.length ? giftCards.slice(0, 3) : fallbackGC).map((gc: any, i: number) => (
-                            <motion.div key={`${gc.id ?? gc.name}-${i}`} variants={item} whileHover={{ y: -8 }}>
+
+                    {/* Grid de tarjetas (formato del Home) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
+                        {list.map((gc: any, i: number) => (
+                            <motion.div key={`${gc.id ?? gc.name}-${i}`} variants={item} whileHover={{ y: -6 }}>
                                 <GiftCardShell>
-                                    <div className="p-8 relative z-10">
-                                        <h3 className="text-2xl font-extrabold text-neutral-900 mb-1">{gc.name}</h3>
+                                    <div className="p-7 sm:p-8 relative z-10">
+                                        <h3 className="text-xl sm:text-2xl font-extrabold text-neutral-900 mb-1">{gc.name}</h3>
                                         <p className="text-neutral-700 mb-5">{gc.description}</p>
 
-                                        <div className="text-3xl font-extrabold text-neutral-900 mb-5">
+
+                                        <div className="text-2xl sm:text-3xl font-extrabold text-neutral-900 mb-5">
                                             ${Number(gc.value ?? 0).toLocaleString()}
                                         </div>
+
 
                                         <ul className="space-y-2 text-sm text-neutral-800 mb-6">
                                             {(gc.benefits ?? []).slice(0, 3).map((b: string, j: number) => (
@@ -109,6 +96,7 @@ export default function GiftCardsPage() {
                                                 </li>
                                             ))}
                                         </ul>
+
 
                                         <Link
                                             href="https://wa.me/5491112345678"
@@ -124,7 +112,8 @@ export default function GiftCardsPage() {
                         ))}
                     </div>
 
-                    {/* Cierre identitario */}
+
+                    {/* Remate identitario */}
                     <div className="mt-12 text-center">
                         <p className="text-sm">
                             <span className="inline-block bg-gradient-to-r from-boa-ink/70 via-boa-ink/70 to-boa-green bg-clip-text text-transparent">
@@ -137,6 +126,7 @@ export default function GiftCardsPage() {
         </Layout>
     );
 }
+
 
 /** ============= Shell reutilizable (idéntico look & feel al Home) ============= */
 function GiftCardShell({ children }: { children: React.ReactNode }) {
@@ -154,7 +144,7 @@ function GiftCardShell({ children }: { children: React.ReactNode }) {
                 borderRadius: 30,
             }}
         >
-            {/* Lienzo crema, textura papel sutil */}
+            {/* Lienzo crema con textura papel sutil */}
             <div className="relative rounded-[22px] overflow-hidden bg-[#FAF8F2] ring-1 ring-black/10">
                 <div
                     className="absolute inset-0 opacity-[0.08] pointer-events-none"
@@ -169,6 +159,7 @@ function GiftCardShell({ children }: { children: React.ReactNode }) {
         </div>
     );
 }
+
 
 /** Fallback por si el contexto aún no cargó giftCards */
 const fallbackGC = [
@@ -194,3 +185,6 @@ const fallbackGC = [
         benefits: ["2 sesiones", "1 taller de introducción", "Descuentos en actividades"],
     },
 ];
+
+
+

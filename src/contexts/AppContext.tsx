@@ -249,7 +249,7 @@ export function AppContextProvider({ children }: { children: React.ReactNode }) 
                     id: "2",
                     name: "Café Lover",
                     description: "Para los amantes del café de especialidad",
-                    value: 15000,
+                    value: 40000,
                     benefits: ["5 cafés premium", "1 taller de barismo", "Descuento en granos"],
                     popular: false
                 },

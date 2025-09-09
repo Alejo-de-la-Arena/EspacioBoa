@@ -103,12 +103,20 @@ export default function Header() {
 
                     {/* Contact Button */}
                     <div className="hidden md:flex items-center space-x-4">
-                        <Link href="/contact">
+                        <Link href="/login">
                             <Button
                                 variant="outline"
                                 className="font-sans bg-transparent hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-300 transition-all duration-300"
                             >
-                                Reservar actividad
+                                Iniciar Sesión
+                            </Button>
+                        </Link>
+                        <Link href="/register">
+                            <Button
+                                variant="outline"
+                                className="font-sans hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-300 transition-all duration-300"
+                            >
+                                Registrarse
                             </Button>
                         </Link>
                     </div>

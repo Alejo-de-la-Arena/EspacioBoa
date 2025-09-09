@@ -70,12 +70,18 @@ export default function EventsPage() {
     return (
         <Layout>
             {/* Hero Section */}
-            <section className="relative py-24 bg-gradient-to-br from-neutral-50 via-emerald-50/30 to-white overflow-hidden">
-                <div className="absolute inset-0">
-                    <div className="absolute top-16 left-12 w-28 h-28 bg-emerald-100/50 organic-shape floating-animation" />
-                    <div className="absolute bottom-20 right-14 w-20 h-20 bg-neutral-100/70 organic-shape floating-animation" style={{ animationDelay: '2s' }} />
-                    <div className="absolute top-1/2 left-1/4 w-12 h-12 bg-emerald-200/30 rounded-full floating-animation" style={{ animationDelay: '4s' }} />
-                </div>
+            <section className="relative min-h-[92vh] overflow-hidden font-sans py-24">
+
+                <div
+                    aria-hidden
+                    className="absolute inset-0"
+                    style={{
+                        backgroundImage:
+                            "url('https://res.cloudinary.com/dasch1s5i/image/upload/v1757016089/boa-events-bg_lcgamh.png')",
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                    }}
+                />
 
                 <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div className="text-center max-w-4xl mx-auto">

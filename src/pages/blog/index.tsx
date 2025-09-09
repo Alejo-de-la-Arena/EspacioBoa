@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Clock, ArrowRight, Heart, Coffee } from "lucide-react";
+import { Search, ArrowRight, Heart, Coffee } from "lucide-react";
 
 /* ================= Animations ================= */
 const container = {
@@ -27,7 +27,7 @@ type Post = {
     excerpt: string;
     image: string;
     category: string;
-    readTime: string;
+    readTime: string; // queda en el tipo/datos pero ya no se muestra
     featured: boolean;
     publishedAt: string;
 };
@@ -40,7 +40,7 @@ const RAW_POSTS: Post[] = [
         excerpt:
             "Una secuencia accesible para activar el cuerpo, despejar la mente y arrancar el día con energía.",
         image:
-            "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1600&auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1510894347713-fc3ed6fdf539?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
         category: "Bienestar",
         readTime: "10 min",
         featured: true,
@@ -173,18 +173,6 @@ export default function BlogPage() {
                                             className="pl-10 h-12 bg-white border-neutral-200"
                                         />
                                     </div>
-
-                                    <div className="flex flex-wrap gap-2">
-                                        {["Café", "Bienestar", "Arte", "Nutrición"].map((t) => (
-                                            <button
-                                                key={t}
-                                                onClick={() => setCat(t === "Todas" ? "all" : t)}
-                                                className="px-3 py-1.5 rounded-full text-sm bg-neutral-100 hover:bg-neutral-200 text-neutral-700"
-                                            >
-                                                #{t}
-                                            </button>
-                                        ))}
-                                    </div>
                                 </div>
                             </motion.div>
 
@@ -194,7 +182,7 @@ export default function BlogPage() {
                                     {/* alto */}
                                     <div className="col-span-2 row-span-2 relative rounded-3xl overflow-hidden ring-1 ring-boa-ink/10 shadow-xl">
                                         <Image
-                                            src="https://images.unsplash.com/photo-1503602642458-232111445657?w=1800&auto=format&fit=crop&q=80"
+                                            src="https://images.unsplash.com/photo-1631130650210-e3863c8d9f8d?q=80&w=1169&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                                             alt="Café de especialidad en mesa cálida"
                                             fill
                                             className="object-cover"
@@ -203,7 +191,7 @@ export default function BlogPage() {
                                     {/* dos piezas chicas */}
                                     <div className="relative rounded-3xl overflow-hidden ring-1 ring-boa-ink/10">
                                         <Image
-                                            src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=1200&auto=format&fit=crop&q=80"
+                                            src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=799&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                                             alt="Cuaderno y lápiz — escribir y crear"
                                             fill
                                             className="object-cover"
@@ -211,7 +199,7 @@ export default function BlogPage() {
                                     </div>
                                     <div className="relative rounded-3xl overflow-hidden ring-1 ring-boa-ink/10">
                                         <Image
-                                            src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&auto=format&fit=crop&q=80"
+                                            src="https://res.cloudinary.com/dasch1s5i/image/upload/v1755904741/boa-bowl_v6wn6a.jpg"
                                             alt="Charla entre amigos"
                                             fill
                                             className="object-cover"
@@ -256,12 +244,9 @@ export default function BlogPage() {
                                     <div className="absolute inset-0 bg-gradient-to-t from-boa-ink/60 via-boa-ink/20 to-transparent" />
                                     <div className="absolute bottom-6 left-6 right-6">
                                         <div className="max-w-xl rounded-2xl bg-white/95 ring-1 ring-boa-ink/15 p-6 backdrop-blur">
-                                            <div className="flex items-center justify-between text-[12px] mb-1">
+                                            <div className="flex items-center text-[12px] mb-1">
                                                 <span className={`px-2 py-1 rounded-full ${catColor(featured[0].category)}`}>
                                                     {featured[0].category}
-                                                </span>
-                                                <span className="inline-flex items-center gap-1.5 text-boa-ink/80">
-                                                    <Clock className="h-4 w-4" /> {featured[0].readTime}
                                                 </span>
                                             </div>
                                             <h3 className="text-2xl sm:text-3xl font-extrabold text-boa-ink leading-tight">
@@ -291,11 +276,8 @@ export default function BlogPage() {
                                             <div className="absolute inset-0 bg-gradient-to-t from-boa-ink/55 via-boa-ink/25 to-transparent" />
                                             <div className="absolute bottom-4 left-4 right-4">
                                                 <div className="rounded-xl bg-white/95 ring-1 ring-boa-ink/15 p-4 backdrop-blur">
-                                                    <div className="flex items-center justify-between text-[12px] mb-1">
+                                                    <div className="flex items-center text-[12px] mb-1">
                                                         <span className={`px-2 py-1 rounded-full ${catColor(p.category)}`}>{p.category}</span>
-                                                        <span className="inline-flex items-center gap-1.5 text-boa-ink/80">
-                                                            <Clock className="h-4 w-4" /> {p.readTime}
-                                                        </span>
                                                     </div>
                                                     <h3 className="text-[18px] font-extrabold text-boa-ink leading-tight line-clamp-2">
                                                         {p.title}
@@ -375,9 +357,7 @@ export default function BlogPage() {
                                                 </h3>
                                                 <p className="mt-2 text-neutral-700 line-clamp-3">{p.excerpt}</p>
                                                 <div className="mt-4 flex items-center gap-4 text-sm text-neutral-600">
-                                                    <span className="inline-flex items-center">
-                                                        <Clock className="h-4 w-4 mr-1" /> {p.readTime}
-                                                    </span>
+                                                    {/* quitado: tiempo de lectura */}
                                                     <span className="inline-flex items-center">
                                                         <Heart className="h-4 w-4 mr-1" /> Guardar
                                                     </span>
