@@ -18,8 +18,8 @@ export type Activity = {
     id: string | number;
     title: string;
     description: string;
-    images: string[];                
-    image?: string;                   
+    images: string[];
+    image?: string;
     category: string;
     price?: number;
     featured?: boolean;
@@ -35,6 +35,8 @@ export interface Event {
     title: string;
     description: string;
     image: string;
+    flyerVertical?: string;   // <- ahora opcional
+    poster?: string;          // <- alias opcional (si lo querés usar)
     date: string;
     time: string;
     capacity: number;
@@ -44,7 +46,17 @@ export interface Event {
     category: string;
     location?: string;
     facilitator?: Person;
+
+    // opcionales para el “flyer signature”
+    artist?: string;
+    dj?: string;
+    speaker?: string;
+    facilitatorName?: string;
+    host?: string;
+    teacher?: string;
+    guide?: string;
 }
+
 
 export interface MenuItem {
     id: string;
