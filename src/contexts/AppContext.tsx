@@ -178,7 +178,7 @@ export function AppContextProvider({ children }: { children: React.ReactNode }) 
                     title: "Taller de Café de Especialidad",
                     description: "Aprende sobre el proceso completo del café, desde el grano hasta la taza perfecta.",
                     image: "https://plus.unsplash.com/premium_photo-1675435644687-562e8042b9db?q=80&w=749&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                    date: "2024-09-15",
+                    date: "2025-09-25",
                     time: "10:00 - 12:00",
                     capacity: 12,
                     enrolled: 8,
@@ -192,7 +192,7 @@ export function AppContextProvider({ children }: { children: React.ReactNode }) 
                     title: "Noche de Poesía y Café",
                     description: "Una velada íntima donde la poesía se encuentra con el aroma del café de especialidad.",
                     image: "https://images.unsplash.com/photo-1589469264504-e78bf7fc5ab0?q=80&w=1325&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                    date: "2024-09-20",
+                    date: "2025-010-03",
                     time: "19:00 - 21:00",
                     capacity: 25,
                     enrolled: 20,
@@ -207,7 +207,7 @@ export function AppContextProvider({ children }: { children: React.ReactNode }) 
                     description: "Sesión de baile libre con DJ, energía alta y foco en expresión corporal.",
                     image: "https://images.unsplash.com/photo-1504609813442-a8924e83f76e?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",      // fallback horizontal
                     flyerVertical: "https://images.unsplash.com/photo-1504609813442-a8924e83f76e?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // versión vertical para el slider
-                    date: "2025-08-23",
+                    date: "2025-010-27",
                     time: "20:00 - 22:00",
                     capacity: 80,
                     enrolled: 45,
