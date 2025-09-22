@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import HeaderAuth from '@/components/auth/HeaderAuth'
 import { Menu, Coffee, Heart, Calendar, Gift, BookOpen, Users, MapPin } from "lucide-react";
 
 
@@ -107,21 +108,7 @@ export default function Header() {
 
 
                         <div className="flex gap-2">
-                            <Button
-                                asChild
-                                variant="outline"
-                                className="font-sans bg-transparent hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-300 transition-all duration-300"
-                            >
-                                <Link href="/login">Iniciar Sesión</Link>
-                            </Button>
-
-                            <Button
-                                asChild
-                                variant="outline"
-                                className="font-sans hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-300 transition-all duration-300"
-                            >
-                                <Link href="/register">Registrarse</Link>
-                            </Button>
+                            <HeaderAuth />
                         </div>
 
                     </div>

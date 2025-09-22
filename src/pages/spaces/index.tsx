@@ -1,31 +1,27 @@
 // src/pages/spaces/index.tsx
 
-
 import { useState } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
 import {
-    MapPin,
     Users,
     Sparkles,
     Camera,
-    Star,
-    Quote,
     Leaf,
     Coffee,
     LayoutGrid,
     Clock,
     HeartHandshake,
+    Paintbrush,
+    Moon,
+    Feather,
 } from "lucide-react";
-
 
 export default function SpacesPage() {
     const [activeSpace, setActiveSpace] = useState(0);
-
 
     const spaces = [
         {
@@ -41,7 +37,12 @@ export default function SpacesPage() {
                 "Luz natural",
             ],
             atmosphere: "Cálido y acogedor",
-            bestFor: ["Trabajo remoto", "Reuniones informales", "Primera cita", "Lectura"],
+            bestFor: [
+                "Trabajo remoto",
+                "Reuniones informales",
+                "Primera cita",
+                "Lectura",
+            ],
             images: [
                 "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1200&auto=format&fit=crop",
                 "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1200&auto=format&fit=crop",
@@ -51,21 +52,85 @@ export default function SpacesPage() {
             icon: Coffee,
         },
         {
-            id: "salon-eventos",
-            name: "Salón de Eventos",
+            id: "atelier-arte",
+            name: "Atelier de Arte",
             description:
-                "Espacio versátil diseñado para talleres, charlas, exhibiciones y celebraciones privadas.",
-            capacity: 80,
-            features: ["Sistema de sonido", "Proyector HD", "Iluminación ajustable", "Cocina equipada"],
-            atmosphere: "Versátil y dinámico",
-            bestFor: ["Talleres", "Celebraciones", "Conferencias", "Arte"],
-            images: [
-                "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&auto=format&fit=crop",
-                "https://images.unsplash.com/photo-1571624436279-b272aff752b5?w=1200&auto=format&fit=crop",
-                "https://images.unsplash.com/photo-1582653291997-079a1c04e5a1?w=1200&auto=format&fit=crop",
+                "Sala luminosa con caballetes y paredes lavables para pintar, modelar y exponer pequeñas muestras.",
+            capacity: 20,
+            features: [
+                "Luz natural",
+                "Caballetes y mesas altas",
+                "Paredes lavables",
+                "Bacha de lavado",
             ],
-            tag: "Formato flexible",
-            icon: Sparkles,
+            atmosphere: "Creativo y luminoso",
+            bestFor: [
+                "Talleres de pintura",
+                "Clases",
+                "Muestras pequeñas",
+                "Club de dibujo",
+            ],
+            images: [
+                "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=1200&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1200&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&auto=format&fit=crop",
+            ],
+            tag: "Luz norte",
+            icon: Paintbrush,
+        },
+        {
+            id: "rincon-tarot",
+            name: "Rincón de Tarot",
+            description:
+                "Ambiente íntimo con acústica cuidada, aromas suaves y luz cálida para lecturas y encuentros 1:1.",
+            capacity: 6,
+            features: [
+                "Iluminación cálida regulable",
+                "Butacas cómodas",
+                "Aromas y velas",
+                "Aislamiento acústico",
+            ],
+            atmosphere: "Íntimo y místico",
+            bestFor: [
+                "Lecturas 1:1",
+                "Pequeños círculos",
+                "Oráculos",
+                "Meditación guiada",
+            ],
+            images: [
+                "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=1200&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=1200&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1526318472351-c75fcf070305?w=1200&auto=format&fit=crop",
+            ],
+            tag: "Intimidad",
+            icon: Moon,
+        },
+        {
+            id: "estudio-aeroyoga",
+            name: "Estudio de Aeroyoga",
+            description:
+                "Estudio equipado con arneses, espejos y piso de madera para prácticas en suspensión y movimiento.",
+            capacity: 12,
+            features: [
+                "Arneses de aeroyoga",
+                "Espejos de pared",
+                "Equipo de sonido",
+                "Piso de madera",
+            ],
+            atmosphere: "Energético y armónico",
+            bestFor: [
+                "Aeroyoga",
+                "Stretching",
+                "Pilates aéreo",
+                "Workshops",
+            ],
+            images: [
+                "https://images.unsplash.com/photo-1575052814086-f385e2e2ad1b?w=1200&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1540522317476-64606b87aa6e?w=1200&auto=format&fit=crop",
+                "https://images.unsplash.com/photo-1518617840856-0e2f060386fe?w=1200&auto=format&fit=crop",
+            ],
+            tag: "Movimiento",
+            icon: Feather,
         },
         {
             id: "terraza-zen",
@@ -73,9 +138,19 @@ export default function SpacesPage() {
             description:
                 "Un oasis urbano al aire libre, rodeado de plantas y diseñado para la contemplación y relajación.",
             capacity: 25,
-            features: ["Jardín vertical", "Agua corriente", "Sombra natural", "Mobiliario cómodo"],
+            features: [
+                "Jardín vertical",
+                "Agua corriente",
+                "Sombra natural",
+                "Mobiliario cómodo",
+            ],
             atmosphere: "Zen y natural",
-            bestFor: ["Meditación", "Yoga matutino", "Lecturas", "Desconexión digital"],
+            bestFor: [
+                "Meditación",
+                "Yoga matutino",
+                "Lecturas",
+                "Desconexión digital",
+            ],
             images: [
                 "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&auto=format&fit=crop",
                 "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop",
@@ -86,122 +161,27 @@ export default function SpacesPage() {
         },
     ] as const;
 
-
-    const testimonials = [
-        {
-            id: 1,
-            name: "María González",
-            role: "Freelancer",
-            avatar:
-                "https://images.unsplash.com/photo-1494790108755-2616b4b12eb1?w=200&auto=format&fit=crop",
-            text:
-                "BOA se siente como casa: luz linda, café rico y un ritmo que inspira a enfocarse sin aislarse.",
-            rating: 5,
-        },
-        {
-            id: 2,
-            name: "Carlos Mendez",
-            role: "Organizador de eventos",
-            avatar:
-                "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop",
-            text:
-                "Hicimos un workshop y la energía del lugar sumó muchísimo. Equipo atento y espacio súper adaptable.",
-            rating: 5,
-        },
-        {
-            id: 3,
-            name: "Ana Rodríguez",
-            role: "Instructora de yoga",
-            avatar:
-                "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&auto=format&fit=crop",
-            text:
-                "La terraza, al sol de la tarde, es mágica. Mis alumnos salen renovados, yo también.",
-            rating: 5,
-        },
-    ];
-
-
     const ActiveIcon = spaces[activeSpace].icon;
-
 
     return (
         <Layout>
-            {/* ===== HERO (sin botón de agendar visita) ===== */}
-            <section className="relative min-h-[72vh] sm:min-h-[80vh] overflow-hidden font-sans">
-                <div
-                    aria-hidden
-                    className="absolute inset-0"
-                    style={{
-                        backgroundImage:
-                            "url('https://images.unsplash.com/photo-1519710164239-da123dc03ef4?q=80&w=1920&auto=format&fit=crop')",
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                    }}
-                />
-                <div className="absolute inset-0 bg-[radial-gradient(80%_60%_at_50%_0%,rgba(16,185,129,0.12),transparent)]" />
-                <svg
-                    className="absolute inset-0 w-full h-full opacity-[0.12] text-emerald-900/30"
-                    preserveAspectRatio="none"
-                    aria-hidden
-                >
-                    <defs>
-                        <pattern id="boa-motif" width="120" height="120" patternUnits="userSpaceOnUse">
-                            <path d="M0 60 Q30 30 60 60 T120 60" fill="none" stroke="currentColor" strokeWidth="0.8" />
-                            <path d="M0 90 Q30 60 60 90 T120 90" fill="none" stroke="currentColor" strokeWidth="0.8" />
-                        </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#boa-motif)" />
-                </svg>
-
-
-                <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 py-16 sm:py-24">
-                    <div className="max-w-3xl rounded-3xl bg-white/70 backdrop-blur-md shadow-[0_10px_40px_-10px_rgba(0,0,0,.25)] p-6 sm:p-8">
-                        <div className="flex items-center gap-2 text-emerald-700 mb-3">
-                            <MapPin className="h-5 w-5" />
-                            <span className="text-sm font-medium">Elegí tu lugar en BOA</span>
-                        </div>
-
-
-                        <h1 className="boa-heading text-4xl sm:text-6xl font-semibold text-neutral-900 leading-[1.08]">
-                            Tres espacios para{" "}
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-700 to-emerald-500">
-                                crear
-                            </span>
-                            ,{" "}
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-700 to-emerald-500">
-                                conectar
-                            </span>{" "}
-                            y{" "}
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-700 to-emerald-500">
-                                disfrutar
-                            </span>
-                        </h1>
-
-
-                        <p className="mt-4 text-lg sm:text-xl text-neutral-800/90">
-                            Café cálido, salón versátil y terraza zen. Elegí el ambiente que mejor acompañe tu
-                            momento.
-                        </p>
-
-
-                        {/* Solo un botón, ajustado a su contenido */}
-                        <div className="mt-6">
-                            <a href="#espacios">
-                                <Button className="bg-emerald-600 hover:bg-emerald-700 rounded-2xl px-7 py-3">
-                                    Ver espacios
-                                </Button>
-                            </a>
-                        </div>
-                    </div>
+            {/* ===== ENCABEZADO SIMPLE (sin hero) ===== */}
+            <section className="py-10 sm:py-14 bg-white">
+                <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <h1 className="font-sans text-4xl sm:text-5xl font-semibold text-neutral-900">
+                        Conocé nuestros <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-700 to-emerald-500">espacios</span>
+                    </h1>
+                    <p className="mt-3 text-neutral-700 max-w-2xl mx-auto">
+                        Cada ambiente tiene su propia vibra. Elegí dónde querés crear, conectar y disfrutar.
+                    </p>
                 </div>
             </section>
 
-
-            {/* ===== SECCIÓN ESPACIOS: selector horizontal artístico + display cálido ===== */}
-            <section id="espacios" className="py-16 bg-white">
+            {/* ===== SECCIÓN ESPACIOS ===== */}
+            <section id="espacios" className="pt-2 pb-16 bg-white">
                 <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    {/* Selector horizontal (sin dots verdes) */}
-                    <div className="flex justify-center gap-4 mb-10 flex-wrap">
+                    {/* Selector horizontal */}
+                    <div className="flex justify-center gap-3 sm:gap-4 mb-10 flex-wrap">
                         {spaces.map((s, i) => {
                             const Icon = s.icon;
                             const active = activeSpace === i;
@@ -209,9 +189,14 @@ export default function SpacesPage() {
                                 <button
                                     key={s.id}
                                     onClick={() => setActiveSpace(i)}
-                                    className={`relative px-6 py-3 rounded-2xl border transition-all duration-300 flex items-center gap-2
-                  ${active ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-[0_8px_24px_-12px_rgba(16,185,129,.5)]" : "border-neutral-200 hover:border-emerald-300 hover:bg-neutral-50"}`}
-                                    style={{ clipPath: "path('M0 12 Q0 0 12 0 H100% Q100% 0 100% 12 V100% Q100% 100% 100% 100% H12 Q0 100% 0 88 Z')" }}
+                                    className={`relative px-5 sm:px-6 py-3 rounded-2xl border transition-all duration-300 flex items-center gap-2 ${active
+                                            ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-[0_8px_24px_-12px_rgba(16,185,129,.5)]"
+                                            : "border-neutral-200 hover:border-emerald-300 hover:bg-neutral-50"
+                                        }`}
+                                    style={{
+                                        clipPath:
+                                            "path('M0 12 Q0 0 12 0 H100% Q100% 0 100% 12 V100% Q100% 100% 100% 100% H12 Q0 100% 0 88 Z')",
+                                    }}
                                 >
                                     <Icon className="h-4 w-4" />
                                     <span className="font-medium">{s.name}</span>
@@ -220,8 +205,7 @@ export default function SpacesPage() {
                         })}
                     </div>
 
-
-                    {/* Layout cálido/artistico del espacio activo */}
+                    {/* Layout del espacio activo */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
                         {/* Collage asimétrico */}
                         <div className="relative">
@@ -237,7 +221,6 @@ export default function SpacesPage() {
                                 </Badge>
                                 <div className="absolute -top-3 left-10 w-24 h-5 bg-emerald-200/60 rounded-[2px] rotate-[4deg]" />
                             </div>
-
 
                             <div className="grid grid-cols-2 gap-3 mt-4">
                                 <div className="relative rotate-[2deg]">
@@ -259,8 +242,7 @@ export default function SpacesPage() {
                             </div>
                         </div>
 
-
-                        {/* Detalle en card cálida */}
+                        {/* Detalle en card */}
                         <Card className="border-0 shadow-lg rounded-3xl bg-gradient-to-br from-emerald-50/60 to-white">
                             <CardContent className="p-7 sm:p-8">
                                 <div className="flex items-center gap-2 text-emerald-700 mb-2">
@@ -268,14 +250,12 @@ export default function SpacesPage() {
                                     <span className="text-sm font-medium">{spaces[activeSpace].atmosphere}</span>
                                 </div>
 
-
-                                <h2 className="boa-heading text-4xl font-semibold text-neutral-900">
+                                <h2 className="font-sans text-4xl font-semibold text-neutral-900">
                                     {spaces[activeSpace].name}
                                 </h2>
                                 <p className="text-lg text-neutral-700 mt-2 mb-6">
                                     {spaces[activeSpace].description}
                                 </p>
-
 
                                 {/* Stats */}
                                 <div className="grid grid-cols-2 gap-6 mb-4">
@@ -295,7 +275,6 @@ export default function SpacesPage() {
                                     </div>
                                 </div>
 
-
                                 {/* Features */}
                                 <div className="mb-4">
                                     <h3 className="font-semibold text-neutral-900 mb-2">Características</h3>
@@ -309,35 +288,39 @@ export default function SpacesPage() {
                                     </div>
                                 </div>
 
-
                                 {/* Ideal para */}
                                 <div className="mb-6">
                                     <h3 className="font-semibold text-neutral-900 mb-2">Ideal para</h3>
                                     <div className="flex flex-wrap gap-2">
                                         {spaces[activeSpace].bestFor.map((use, idx) => (
-                                            <Badge key={idx} variant="secondary" className="bg-emerald-100 text-emerald-700">
+                                            <Badge
+                                                key={idx}
+                                                variant="secondary"
+                                                className="bg-emerald-100 text-emerald-700"
+                                            >
                                                 {use}
                                             </Badge>
                                         ))}
                                     </div>
                                 </div>
 
-
-                                {/* CTAs actualizados */}
+                                {/* CTAs */}
                                 <div className="flex flex-col sm:flex-row gap-3">
-                                    <Link href="/spaces">
+                                    <a href="#espacios">
                                         <Button className="bg-emerald-600 hover:bg-emerald-700 text-white px-7 py-3 rounded-2xl">
                                             <LayoutGrid className="mr-2 h-5 w-5" />
                                             Ver todos los espacios
                                         </Button>
+                                    </a>
+                                    <Link href="/contact">
+                                        <Button
+                                            variant="outline"
+                                            className="bg-white hover:bg-neutral-50 px-7 py-3 rounded-2xl border-neutral-300 hover:border-emerald-300 hover:text-emerald-600"
+                                        >
+                                            <Clock className="mr-2 h-5 w-5" />
+                                            Agendar visita
+                                        </Button>
                                     </Link>
-                                    <Button
-                                        variant="outline"
-                                        className="bg-white hover:bg-neutral-50 px-7 py-3 rounded-2xl border-neutral-300 hover:border-emerald-300 hover:text-emerald-600"
-                                    >
-                                        <Clock className="mr-2 h-5 w-5" />
-                                        Agendar visita
-                                    </Button>
                                 </div>
                             </CardContent>
                         </Card>
@@ -345,92 +328,105 @@ export default function SpacesPage() {
                 </div>
             </section>
 
-            {/* ===== EVENTOS PRIVADOS — re-styling + CTA acorde a BOA ===== */}
+            {/* ===== USO PRIVADO & ALQUILER ===== */}
             <section className="py-20 relative overflow-hidden">
-                {/* Motivo sutil de fondo */}
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-neutral-50" />
-                <svg
-                    className="absolute inset-0 w-full h-full opacity-[0.08] text-emerald-900/30"
-                    preserveAspectRatio="none"
-                    aria-hidden
-                >
+                <svg className="absolute inset-0 w-full h-full opacity-[0.08] text-emerald-900/30" preserveAspectRatio="none" aria-hidden>
                     <defs>
-                        <pattern id="boa-motif-2" width="120" height="120" patternUnits="userSpaceOnUse">
-                            <path d="M0 60 Q30 30 60 60 T120 60" fill="none" stroke="currentColor" strokeWidth="0.8" />
-                            <path d="M0 90 Q30 60 60 90 T120 90" fill="none" stroke="currentColor" strokeWidth="0.8" />
+                        <pattern id="boa-motif-3" width="140" height="140" patternUnits="userSpaceOnUse">
+                            <path d="M0 70 Q35 35 70 70 T140 70" fill="none" stroke="currentColor" strokeWidth="0.7" />
+                            <path d="M0 105 Q35 70 70 105 T140 105" fill="none" stroke="currentColor" strokeWidth="0.7" />
                         </pattern>
                     </defs>
-                    <rect width="100%" height="100%" fill="url(#boa-motif-2)" />
+                    <rect width="100%" height="100%" fill="url(#boa-motif-3)" />
                 </svg>
 
-
                 <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <Card className="border-0 rounded-3xl shadow-xl bg-white/80 backdrop-blur-md">
-                        <CardContent className="p-8 sm:p-12">
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-center">
-                                {/* Texto */}
-                                <div className="lg:col-span-2">
-                                    <h2 className="boa-heading text-4xl sm:text-5xl font-semibold text-neutral-900 mb-4">
-                                        Eventos privados con alma BOA
-                                    </h2>
-                                    <p className="text-lg text-neutral-700 mb-6">
-                                        Convertimos cualquiera de nuestros espacios en el escenario de tus ideas:
-                                        íntimo, cálido y con detalles que suman.
-                                    </p>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+                        {/* Texto */}
+                        <div>
+                            <h2 className="font-sans text-4xl sm:text-5xl font-semibold text-neutral-900 mb-4">
+                                Usá BOA para tus momentos privados
+                            </h2>
+                            <p className="text-lg text-neutral-700 mb-6 max-w-xl">
+                                Nuestros espacios se adaptan a círculos íntimos, workshops, lanzamientos, cumpleaños pequeños y sesiones 1:1. Te acompañamos con ambientación, catering estilo café y logística simple.
+                            </p>
 
-
-                                    {/* Chips de beneficios */}
-                                    <div className="flex flex-wrap gap-2 mb-8">
-                                        <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                            Ambientación a medida
-                                        </Badge>
-                                        <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                            Acompañamiento del equipo
-                                        </Badge>
-                                        <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                            Café & luz natural
-                                        </Badge>
-                                    </div>
-
-
-                                    <Link href="/contact">
-                                        <Button className="bg-emerald-600 hover:bg-emerald-700 rounded-2xl px-7 py-3">
-                                            <HeartHandshake className="mr-2 h-5 w-5" />
-                                            Conversemos tu idea
-                                        </Button>
-                                    </Link>
-                                </div>
-
-
-                                {/* Mini collage decorativo */}
-                                <div className="space-y-3">
-                                    <div className="relative rotate-[-2deg]">
-                                        <img
-                                            src="https://images.unsplash.com/photo-1531058020387-3be344556be6?w=1100&auto=format&fit=crop"
-                                            alt="Evento BOA"
-                                            className="h-40 w-full object-cover rounded-2xl border border-neutral-200"
-                                        />
-                                        <div className="absolute -top-2 left-8 w-20 h-4 bg-emerald-200/70 rounded-[2px] rotate-[6deg]" />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <img
-                                            src="https://images.unsplash.com/photo-1511578314322-379afb476865?w=900&auto=format&fit=crop"
-                                            alt="Detalle 1"
-                                            className="h-28 w-full object-cover rounded-xl border border-neutral-200 rotate-[2deg]"
-                                        />
-                                        <img
-                                            src="https://images.unsplash.com/photo-1540573133985-87b6da6d54a9?w=900&auto=format&fit=crop"
-                                            alt="Detalle 2"
-                                            className="h-28 w-full object-cover rounded-xl border border-neutral-200 rotate-[-2deg]"
-                                        />
-                                    </div>
-                                </div>
+                            {/* Etiquetas de disponibilidad */}
+                            <div className="flex flex-wrap gap-2 mb-8">
+                                <Badge className="bg-white text-emerald-700 border border-emerald-200">Disponibilidad semanal</Badge>
+                                <Badge className="bg-white text-emerald-700 border border-emerald-200">Bloques de 2/4 hs</Badge>
+                                <Badge className="bg-white text-emerald-700 border border-emerald-200">Catering opcional</Badge>
+                                <Badge className="bg-white text-emerald-700 border border-emerald-200">Ambientación a medida</Badge>
                             </div>
-                        </CardContent>
-                    </Card>
+
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <Link href="/contact">
+                                    <Button className="bg-emerald-600 hover:bg-emerald-700 rounded-2xl px-7 py-3">
+                                        Consultar disponibilidad
+                                    </Button>
+                                </Link>
+                                <Link href="/events">
+                                    <Button variant="outline" className="bg-white hover:bg-neutral-50 px-7 py-3 rounded-2xl border-neutral-300 hover:border-emerald-300 hover:text-emerald-600">
+                                        Ver formatos y montajes
+                                    </Button>
+                                </Link>
+                            </div>
+                        </div>
+
+                        {/* Galería vertical fina */}
+                        <div className="grid grid-cols-3 gap-3 h-full">
+                            <img src="https://images.unsplash.com/photo-1511578314322-379afb476865?w=900&auto=format&fit=crop" alt="Detalle evento 1" className="h-60 w-full object-cover rounded-2xl border border-neutral-200" />
+                            <img src="https://images.unsplash.com/photo-1540573133985-87b6da6d54a9?w=900&auto=format&fit=crop" alt="Detalle evento 2" className="h-60 w-full object-cover rounded-2xl border border-neutral-200" />
+                            <img src="https://images.unsplash.com/photo-1531058020387-3be344556be6?w=1100&auto=format&fit=crop" alt="Detalle evento 3" className="h-60 w-full object-cover rounded-2xl border border-neutral-200" />
+                        </div>
+                    </div>
                 </div>
+            </section>
+
+            {/* ===== TESTIMONIOS ===== */}
+            <section className="py-20 bg-white relative">
+                <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-10">
+                        <h2 className="font-sans text-4xl sm:text-5xl font-semibold text-neutral-900">Lo que dicen de BOA</h2>
+                        <p className="text-neutral-700 mt-3 max-w-2xl mx-auto">Experiencias reales de quienes eligieron nuestros espacios para crear y celebrar.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[{
+                            name: "María González",
+                            role: "Freelancer",
+                            text: "BOA se siente como casa: luz linda, café rico y un ritmo que inspira a enfocarse sin aislarse.",
+                        }, {
+                            name: "Carlos Méndez",
+                            role: "Organizador de workshops",
+                            text: "Hicimos un workshop y la energía del lugar sumó muchísimo. Equipo atento y espacio súper adaptable.",
+                        }, {
+                            name: "Ana Rodríguez",
+                            role: "Instructora de yoga",
+                            text: "La terraza al sol de la tarde es mágica. Mis alumnos salen renovados, yo también.",
+                        }].map((t, i) => (
+                            <Card key={i} className="rounded-3xl border-0 shadow-xl bg-gradient-to-br from-emerald-50/60 to-white">
+                                <CardContent className="p-7">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="h-10 w-10 rounded-full bg-emerald-600 text-white grid place-content-center font-semibold">
+                                            {t.name.split(" ").map(p => p[0]).join("")}
+                                        </div>
+                                        <div>
+                                            <div className="font-semibold text-neutral-900">{t.name}</div>
+                                            <div className="text-sm text-neutral-600">{t.role}</div>
+                                        </div>
+                                    </div>
+                                    <p className="text-neutral-800 leading-relaxed">“{t.text}”</p>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+
+                {/* banda decorativa sutil */}
+                <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-0 w-[90%] h-24 rounded-t-[2rem] bg-gradient-to-t from-emerald-100/40 to-transparent" />
             </section>
         </Layout>
     );
 }
-

@@ -94,9 +94,17 @@
     .font-sans {
         font-family: 'Inter', sans-serif;
     }
+
+    /* src/styles/globals.css */
+    label {
+        font-family: inherit;
+    }
+
 }
 
 @layer components {
+
+
 
     /* Logotipo y títulos */
     .boa-logo {

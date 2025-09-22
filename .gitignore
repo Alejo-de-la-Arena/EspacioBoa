@@ -9,6 +9,7 @@ lerna-debug.log*
 
 # --- Entornos (mantén un .env.example) ---
 .env*
+.env.local
 !.env.example
 
 # --- Next.js / Build output ---

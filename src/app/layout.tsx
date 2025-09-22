@@ -1,6 +1,7 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
-import "../styles/globals.css"; // tu ruta correcta
+import "../styles/globals.css";
+import AuthInit from "@/components/auth/AuthInit";
 
 export const metadata: Metadata = {
     title: "BOA",
@@ -10,8 +11,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
         <html lang="es" suppressHydrationWarning>
-            {/* añadí suppressHydrationWarning tb en body */}
             <body className="min-h-dvh bg-white antialiased" suppressHydrationWarning>
+                {/* Hidrata sesión y escucha cambios de Auth */}
+                <AuthInit />
                 {children}
             </body>
         </html>
