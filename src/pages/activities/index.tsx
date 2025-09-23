@@ -1,5 +1,4 @@
 // pages/activities/index.tsx
-import Layout from "@/components/Layout";
 import { useApp } from "@/contexts/AppContext";
 import { motion } from "framer-motion";
 import { Heart, Sparkles } from "lucide-react";
@@ -11,18 +10,18 @@ export default function ActivitiesPage() {
 
     if (loading) {
         return (
-            <Layout>
+            <section>
                 <div className="min-h-screen flex items-center justify-center">
                     <div className="animate-pulse text-emerald-600">
                         <Heart className="h-12 w-12" />
                     </div>
                 </div>
-            </Layout>
+            </section>
         );
     }
 
     return (
-        <Layout>
+        <section>
             {/* Hero */}
             <section
                 className="relative min-h-[100vh] pt-28 pb-16 font-sans overflow-hidden grid place-items-center"
@@ -199,6 +198,6 @@ export default function ActivitiesPage() {
             <ActivitiesCalendar activities={activities} />
 
 
-        </Layout>
+        </section>
     );
 }

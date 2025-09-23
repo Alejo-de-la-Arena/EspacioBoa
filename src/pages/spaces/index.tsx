@@ -1,7 +1,6 @@
 // src/pages/spaces/index.tsx
 
 import { useState } from "react";
-import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -164,7 +163,7 @@ export default function SpacesPage() {
     const ActiveIcon = spaces[activeSpace].icon;
 
     return (
-        <Layout>
+        <section>
             {/* ===== ENCABEZADO SIMPLE (sin hero) ===== */}
             <section className="py-10 sm:py-14 bg-white">
                 <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -427,6 +426,6 @@ export default function SpacesPage() {
                 {/* banda decorativa sutil */}
                 <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-0 w-[90%] h-24 rounded-t-[2rem] bg-gradient-to-t from-emerald-100/40 to-transparent" />
             </section>
-        </Layout>
+        </section>
     );
 }

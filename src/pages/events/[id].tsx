@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import Layout from "@/components/Layout";
 import { useApp } from "@/contexts/AppContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -139,32 +138,32 @@ export default function EventDetailPage() {
 
     if (loading) {
         return (
-            <Layout>
+            <section>
                 <div className="min-h-screen flex items-center justify-center">
                     <div className="animate-pulse text-emerald-600">
                         <Calendar className="h-12 w-12" />
                     </div>
                 </div>
-            </Layout>
+            </section>
         );
     }
 
     if (!event) {
         return (
-            <Layout>
+            <section>
                 <div className="min-h-screen flex items-center justify-center">
                     <div className="text-center">
                         <h1 className="text-2xl font-bold text-neutral-900 mb-4">Evento no encontrado</h1>
                         <Button onClick={() => router.push("/events")}>Volver a eventos</Button>
                     </div>
                 </div>
-            </Layout>
+            </section>
         );
     }
 
     /* ---------- Render ---------- */
     return (
-        <Layout>
+        <section>
             {/* Back (dentro del contenedor, buen padding) */}
             <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
                 <Button
@@ -395,7 +394,7 @@ export default function EventDetailPage() {
                     <Carousel relatedEvents={relatedEvents} now={now} onOpen={(id) => router.push(`/events/${id}`)} />
                 </div>
             </section>
-        </Layout>
+        </section>
     );
 }
 

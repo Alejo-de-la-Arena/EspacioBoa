@@ -1,7 +1,8 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/router";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import HeaderAuth from '@/components/auth/HeaderAuth'
@@ -20,10 +21,10 @@ const navigation = [
 ];
 
 export default function Header() {
+    const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const [progress, setProgress] = useState(0);
-    const router = useRouter();
 
     useEffect(() => {
         const onScroll = () => {
@@ -76,7 +77,7 @@ export default function Header() {
                     {/* Desktop Navigation */}
                     <nav className="hidden lg:flex items-center gap-1">
                         {navigation.map((item) => {
-                            const isActive = router.pathname === item.href;
+                            const isActive = pathname === item.href;
                             return (
                                 <Link
                                     key={item.name}
@@ -138,7 +139,7 @@ export default function Header() {
                                 <nav className="flex flex-col space-y-2">
                                     {navigation.map((item) => {
                                         const Icon = item.icon;
-                                        const isActive = router.pathname === item.href;
+                                        const isActive = pathname === item.href;
                                         return (
                                             <Link
                                                 key={item.name}

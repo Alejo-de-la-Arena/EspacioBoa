@@ -47,13 +47,23 @@ export default function LoginView() {
     const [serverError, setServerError] = useState<string | null>(null);
     const [showPw, setShowPw] = useState(false);
 
+    function withTimeout<T>(p: Promise<T>, ms = 8000): Promise<T> {
+        return Promise.race([
+            p,
+            new Promise<T>((_, rej) => setTimeout(() => rej(new Error("TIMEOUT")), ms)),
+        ]) as Promise<T>;
+    }
+
     const onSubmit = async (values: any) => {
         setServerError(null);
-        const { error } = await supabase.auth.signInWithPassword(values);
+        const { data, error } = await supabase.auth.signInWithPassword(values);
         if (error) { setServerError(error.message); return; }
+        // refrescá el store y navegá
         await setUserFromSession();
-        router.push("/"); // o "/cuenta"
+        router.push("/");
     };
+
+
 
     return (
         <main className="relative min-h-dvh bg-[#F7F5EF] font-sans">

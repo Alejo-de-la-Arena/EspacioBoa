@@ -1,6 +1,5 @@
 // pages/blog/index.tsx
 import { useState, useMemo, useEffect } from "react";
-import Layout from "@/components/Layout";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -123,11 +122,11 @@ export default function BlogPage() {
 
     if (!mounted) {
         return (
-            <Layout>
+            <section>
                 <div className="min-h-[60vh] grid place-items-center">
                     <div className="animate-pulse text-emerald-600">Cargando…</div>
                 </div>
-            </Layout>
+            </section>
         );
     }
 
@@ -142,7 +141,7 @@ export default function BlogPage() {
                     : "bg-sky-100 text-sky-900";
 
     return (
-        <Layout>
+        <section>
             <main className="font-sans">
                 {/* ======================= HERO (nuevo — editorial split) ======================= */}
                 <motion.section
@@ -448,6 +447,6 @@ export default function BlogPage() {
           background-color: #faf8f2;
         }
       `}</style>
-        </Layout>
+        </section>
     );
 }

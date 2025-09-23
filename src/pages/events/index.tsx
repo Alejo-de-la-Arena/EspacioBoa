@@ -1,6 +1,5 @@
 
 import { useState, useMemo } from "react";
-import Layout from "@/components/Layout";
 import { useApp } from "@/contexts/AppContext";
 import { Button } from "@/components/ui/button";
 import { motion, useMotionValue, useTransform } from "framer-motion";
@@ -158,18 +157,18 @@ export default function EventsPage() {
     // loading
     if (loading) {
         return (
-            <Layout>
+            <section>
                 <div className="min-h-screen flex items-center justify-center">
                     <div className="animate-pulse text-emerald-600">
                         <Calendar className="h-12 w-12" />
                     </div>
                 </div>
-            </Layout>
+            </section>
         );
     }
 
     return (
-        <Layout>
+        <section>
             <EventsHero events={events} />
 
             {/* ===== Filtros + Listado de Eventos ===== */}
@@ -500,6 +499,6 @@ export default function EventsPage() {
                     </div>
                 </div>
             </section>
-        </Layout>
+        </section>
     );
 }

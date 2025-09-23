@@ -2,7 +2,6 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import Layout from "@/components/Layout";
 import { useApp } from "@/contexts/AppContext";
 import { motion } from "framer-motion";
 
@@ -52,19 +51,19 @@ export default function ActivityDetailPage() {
 
     if (loading) {
         return (
-            <Layout>
+            <section>
                 <div className="min-h-[60vh] grid place-items-center">
                     <div className="animate-pulse text-boa-green">
                         <Heart className="h-12 w-12" />
                     </div>
                 </div>
-            </Layout>
+            </section>
         );
     }
 
     if (!activity) {
         return (
-            <Layout>
+            <section>
                 <div className="min-h-[60vh] grid place-items-center text-center">
                     <h1 className="text-2xl font-bold text-boa-ink mb-4">
                         Actividad no encontrada
@@ -73,7 +72,7 @@ export default function ActivityDetailPage() {
                         Volver a actividades
                     </Button>
                 </div>
-            </Layout>
+            </section>
         );
     }
 
@@ -100,7 +99,7 @@ export default function ActivityDetailPage() {
                 : "instructor";
 
     return (
-        <Layout>
+        <section>
             {/* BG crema (coherente, sin repetir “brush”) */}
             <div className="absolute inset-0 -z-10">
                 <div
@@ -413,7 +412,7 @@ export default function ActivityDetailPage() {
                     </div>
                 </div>
             </section>
-        </Layout>
+        </section>
     );
 }
 

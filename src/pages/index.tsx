@@ -83,18 +83,18 @@ export default function HomePage() {
 
     if (loading) {
         return (
-            <Layout>
+            <section>
                 <div className="min-h-screen flex items-center justify-center">
                     <div className="animate-pulse text-emerald-600">
                         <Coffee className="h-12 w-12" />
                     </div>
                 </div>
-            </Layout>
+            </section>
         );
     }
 
     return (
-        <Layout>
+        <section>
 
             {/* ======= HERO — BOA ======= */}
             {/*
@@ -699,7 +699,7 @@ export default function HomePage() {
                 </div>
             </motion.section>
 
-        </Layout>
+        </section>
     );
 }
 

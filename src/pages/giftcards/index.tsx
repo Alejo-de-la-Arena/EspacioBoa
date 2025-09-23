@@ -1,5 +1,4 @@
 // pages/giftcards/index.tsx
-import Layout from "@/components/Layout";
 import { useApp } from "@/contexts/AppContext";
 import Link from "next/link";
 import Image from "next/image";
@@ -29,7 +28,7 @@ export default function GiftCardsPage() {
 
 
     return (
-        <Layout>
+        <section>
             {/* ================= SECTION — GIFTCARDS (arriba + fondo decorativo detrás) ================= */}
             <motion.section
                 initial="hidden"
@@ -123,7 +122,7 @@ export default function GiftCardsPage() {
                     </div>
                 </div>
             </motion.section>
-        </Layout>
+        </section>
     );
 }
 

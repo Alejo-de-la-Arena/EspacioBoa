@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -105,7 +104,7 @@ export default function ContactPage() {
     ];
 
     return (
-        <Layout>
+        <section>
             {/* Hero Section */}
             <section className="relative py-24 bg-gradient-to-br from-emerald-50 via-white to-neutral-50 overflow-hidden">
                 <div className="absolute inset-0">
@@ -465,6 +464,6 @@ export default function ContactPage() {
                     </div>
                 </div>
             </section>
-        </Layout>
+        </section>
     );
 }

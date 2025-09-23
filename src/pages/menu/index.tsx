@@ -2,7 +2,6 @@
 
 
 import React, { useMemo, useState, useEffect } from "react";
-import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { X, Leaf, ChevronLeft, ChevronRight } from "lucide-react";
@@ -462,7 +461,7 @@ export default function MenuPage() {
 
 
     return (
-        <Layout>
+        <section>
             {/* HERO */}
             <section className="relative overflow-hidden">
                 <div className="relative bg-[radial-gradient(120%_120%_at_20%_-10%,#E9FBF2_0%,#F6FAF7_40%,#FFFFFF_70%),radial-gradient(120%_120%_at_110%_20%,#F2FFF7_0%,#FFFFFF_60%)] border-b border-emerald-100/60">
@@ -513,7 +512,7 @@ export default function MenuPage() {
                 category={selectedCategory}
                 onClose={() => setOpenCategory(false)}
             />
-        </Layout>
+        </section>
     );
 }
 

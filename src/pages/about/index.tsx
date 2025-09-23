@@ -1,6 +1,5 @@
 // pages/about/index.tsx
 import { useState, useEffect, useCallback } from "react";
-import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -156,7 +155,7 @@ export default function AboutPage() {
 
 
     return (
-        <Layout>
+        <section>
             <div className="font-sans">
                 {/* ===== 1) HISTORIA DEL LUGAR ===== */}
                 <SectionSurface className="py-16">
@@ -536,7 +535,7 @@ export default function AboutPage() {
                     />
                 )}
             </AnimatePresence>
-        </Layout>
+        </section>
     );
 }
 

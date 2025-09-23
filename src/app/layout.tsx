@@ -12,8 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
         <html lang="es" suppressHydrationWarning>
             <body className="min-h-dvh bg-white antialiased" suppressHydrationWarning>
-                {/* Hidrata sesión y escucha cambios de Auth */}
-                <AuthInit />
+                <AuthInit />   {/* 👈 hidrata el store apenas carga la app */}
                 {children}
             </body>
         </html>
