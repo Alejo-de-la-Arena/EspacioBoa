@@ -44,7 +44,7 @@ export default function RegisterPage() {
             <section className="relative z-10 grid place-items-center min-h-dvh p-4">
                 <div className="w-full max-w-lg">
                     <div className="text-center mb-6">
-                        <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">
+                        <h1 className="font-sans text-3xl font-semibold tracking-tight text-neutral-900">
                             Crear cuenta
                         </h1>
                         <p className="text-sm text-neutral-700 mt-1.5">
