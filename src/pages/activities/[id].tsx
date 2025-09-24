@@ -2,13 +2,16 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import Layout from "@/components/Layout";
 import { useApp } from "@/contexts/AppContext";
 import { motion } from "framer-motion";
+
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+
 
 import {
     ArrowLeft,
@@ -27,19 +30,23 @@ import {
     Leaf,
 } from "lucide-react";
 
+
 export default function ActivityDetailPage() {
     const router = useRouter();
     const { id } = router.query;
     const activityId = Array.isArray(id) ? id[0] : id;
 
+
     const { activities, loading } = useApp();
     const [isEnrolling, setIsEnrolling] = useState(false);
     const [activeIdx, setActiveIdx] = useState(0);
+
 
     const activity = useMemo(
         () => activities.find((a) => a.id === activityId),
         [activities, activityId]
     );
+
 
     const handleEnroll = async () => {
         if (!activity) return;
@@ -49,21 +56,23 @@ export default function ActivityDetailPage() {
         alert("¡Inscripción exitosa! Te enviamos un email con la confirmación.");
     };
 
+
     if (loading) {
         return (
-            <section>
+            <Layout>
                 <div className="min-h-[60vh] grid place-items-center">
                     <div className="animate-pulse text-boa-green">
                         <Heart className="h-12 w-12" />
                     </div>
                 </div>
-            </section>
+            </Layout>
         );
     }
 
+
     if (!activity) {
         return (
-            <section>
+            <Layout>
                 <div className="min-h-[60vh] grid place-items-center text-center">
                     <h1 className="text-2xl font-bold text-boa-ink mb-4">
                         Actividad no encontrada
@@ -72,9 +81,10 @@ export default function ActivityDetailPage() {
                         Volver a actividades
                     </Button>
                 </div>
-            </section>
+            </Layout>
         );
     }
+
 
     const isFullyBooked = activity.enrolled >= activity.capacity;
     const spotsRemaining = Math.max(0, activity.capacity - activity.enrolled);
@@ -83,9 +93,11 @@ export default function ActivityDetailPage() {
         (activity.enrolled / Math.max(1, activity.capacity)) * 100
     );
 
+
     const gallery: string[] = activity.images?.length
         ? activity.images
         : (activity.image ? [activity.image] : []);
+
 
     const instructorSlug =
         activity.instructor &&
@@ -98,8 +110,9 @@ export default function ActivityDetailPage() {
                     .replace(/(^-|-$)/g, "")
                 : "instructor";
 
+
     return (
-        <section>
+        <Layout>
             {/* BG crema (coherente, sin repetir “brush”) */}
             <div className="absolute inset-0 -z-10">
                 <div
@@ -120,6 +133,7 @@ export default function ActivityDetailPage() {
                 />
             </div>
 
+
             {/* Back */}
             <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
                 <Button variant="ghost" onClick={() => router.back()} className="hover:bg-boa-green/10">
@@ -127,6 +141,7 @@ export default function ActivityDetailPage() {
                     Volver
                 </Button>
             </div>
+
 
             {/* HERO: Galería + Ticket */}
             <section className="pb-14 pt-8">
@@ -171,6 +186,7 @@ export default function ActivityDetailPage() {
                                 </div>
                             </div>
 
+
                             {/* thumbnails tipo filmstrip */}
                             <div className="p-3 border-t border-[#EEDCC9] bg-white/90">
                                 <div className="flex gap-3 overflow-x-auto">
@@ -189,6 +205,7 @@ export default function ActivityDetailPage() {
                             </div>
                         </motion.div>
 
+
                         {/* === Ticket de reserva (sticky) === */}
                         <div className="relative">
                             <div className="mb-5">
@@ -206,12 +223,14 @@ export default function ActivityDetailPage() {
                                 <p className="mt-3 text-boa-ink/75 text-lg leading-relaxed">{activity.description}</p>
                             </div>
 
+
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6 text-boa-ink/80">
                                 <div className="flex items-center"><Calendar className="h-5 w-5 mr-3 text-boa-green" />{activity.schedule.day}</div>
                                 <div className="flex items-center"><Clock className="h-5 w-5 mr-3 text-boa-green" />{activity.schedule.time}</div>
                                 <div className="flex items-center"><MapPin className="h-5 w-5 mr-3 text-boa-green" />{activity.location}</div>
                                 <div className="flex items-center"><Users className="h-5 w-5 mr-3 text-boa-green" />{activity.enrolled}/{activity.capacity} participantes</div>
                             </div>
+
 
                             <div className="lg:sticky lg:top-24">
                                 <Card className="border-0 rounded-3xl bg-[#FFFCF7] ring-1 ring-[#EEDCC9] shadow-[0_16px_48px_rgba(82,47,0,.12)] relative">
@@ -241,6 +260,7 @@ export default function ActivityDetailPage() {
                                             </div>
                                         </div>
 
+
                                         {/* Barra de ocupación */}
                                         <div className="mt-4">
                                             <div className="h-2 rounded-full bg-boa-ink/10 overflow-hidden">
@@ -253,6 +273,7 @@ export default function ActivityDetailPage() {
                                                 {activity.enrolled} de {activity.capacity} inscriptos
                                             </div>
                                         </div>
+
 
                                         <Button
                                             onClick={handleEnroll}
@@ -284,6 +305,7 @@ export default function ActivityDetailPage() {
                 </div>
             </section>
 
+
             {/* Lo que vas a vivir (bullets icónicos) */}
             <section className="pb-6">
                 <div className="container max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -307,75 +329,95 @@ export default function ActivityDetailPage() {
                 </div>
             </section>
 
-            {/* Instructor — versión estética + CTA a su perfil */}
+
+            {/* Instructor — BOA “folded card” */}
             {activity.instructor && (
-                <section className="py-14">
+                <section className="py-14" aria-labelledby="instructor-title">
                     <div className="container max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <Card className="border-0 rounded-3xl ring-1 ring-[#EEDCC9] overflow-hidden shadow-[0_16px_38px_rgba(82,47,0,.10)]">
-                            {/* banda superior con gradiente sutil, distinto al resto */}
-                            <div className="h-24 bg-gradient-to-r from-boa-green/20 via-[#E5F3EC] to-boa-green/10" />
-                            <CardContent className="-mt-12 p-6 md:p-8">
-                                <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
-                                    <Avatar className="w-28 h-28 ring-2 ring-white shadow-xl">
-                                        <AvatarImage src={activity.instructor.image} alt={activity.instructor.name} />
-                                        <AvatarFallback>
-                                            <User className="h-12 w-12" />
-                                        </AvatarFallback>
-                                    </Avatar>
+                        <motion.article
+                            whileHover={{ y: -4 }}
+                            transition={{ type: "spring", stiffness: 220, damping: 20 }}
+                            className="group relative overflow-hidden rounded-3xl border border-boa-green/20 ring-1 ring-boa-green/15 bg-white shadow-[0_12px_30px_rgba(0,0,0,.06)]"
+                        >
 
-                                    <div className="flex-1">
-                                        <div className="flex flex-wrap items-center gap-3">
-                                            <h3 className="text-2xl md:text-3xl font-extrabold text-boa-ink">
-                                                {activity.instructor.name}
-                                            </h3>
-                                            {activity.instructor.experience && (
-                                                <span className="inline-flex items-center text-amber-600 text-sm">
-                                                    <Star className="h-4 w-4 mr-1" />
-                                                    {activity.instructor.experience} años
-                                                </span>
-                                            )}
-                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-semibold bg-boa-green/15 text-boa-green ring-1 ring-boa-green/30">
-                                                {activity.instructor.specialty}
-                                            </span>
+                            {/* header con bruma verde */}
+                            <div className="h-16" />
+
+
+                            <Card className="border-0 items-center shadow-none">
+                                <CardContent className="-mt-16 p-6 md:p-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-[auto,1fr,auto] items-center gap-6 md:gap-8">
+
+
+                                        {/* Avatar centrado y nítido */}
+                                        <div className="relative mx-auto md:mx-0">
+                                            <Avatar className="w-28 h-28 ring-4 ring-white rounded-full shadow-[0_10px_24px_rgba(0,0,0,.10)]">
+                                                <AvatarImage
+                                                    src={activity.instructor.image}
+                                                    alt={activity.instructor.name}
+                                                    className="object-cover object-center"
+                                                />
+                                                <AvatarFallback className="bg-boa-green/10">
+                                                    <User className="h-10 w-10 text-boa-ink/60" />
+                                                </AvatarFallback>
+                                            </Avatar>
                                         </div>
 
-                                        {/* quote en cursiva para darle voz propia */}
-                                        <p className="mt-2 italic text-boa-ink/70">
-                                            “{activity.instructor.bio.slice(0, 140)}…”
-                                        </p>
 
-                                        {/* datos de contacto compactos */}
-                                        <div className="mt-4 flex flex-wrap gap-4 text-sm text-boa-ink/70">
-                                            {activity.instructor.phone && (
-                                                <span className="inline-flex items-center">
-                                                    <Phone className="h-4 w-4 mr-2 text-boa-green" />
-                                                    {activity.instructor.phone}
-                                                </span>
+                                        {/* Texto principal */}
+                                        <div>
+                                            <div className="flex flex-wrap items-center gap-3">
+                                                <h3 id="instructor-title" className="text-2xl md:text-3xl font-extrabold text-boa-ink">
+                                                    {activity.instructor.name}
+                                                </h3>
+
+
+                                                {!!activity.instructor.experience && (
+                                                    <span className="inline-flex items-center text-boa-ink text-sm font-semibold">
+                                                        <Star className="h-4 w-4 mr-1 text-boa-green" />
+                                                        {activity.instructor.experience} años
+                                                    </span>
+                                                )}
+
+
+                                                {!!activity.instructor.specialty && (
+                                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-medium
+                                    bg-boa-green/10 text-boa-ink ring-1 ring-boa-green/25 backdrop-blur-sm">
+                                                        {activity.instructor.specialty}
+                                                    </span>
+                                                )}
+                                            </div>
+
+
+                                            {/* quote breve */}
+                                            {!!activity.instructor.bio && (
+                                                <p className="mt-3 italic text-boa-ink/70">
+                                                    “{activity.instructor.bio.slice(0, 160)}…”
+                                                </p>
                                             )}
-                                            {activity.instructor.email && (
-                                                <span className="inline-flex items-center">
-                                                    <Mail className="h-4 w-4 mr-2 text-boa-green" />
-                                                    {activity.instructor.email}
-                                                </span>
-                                            )}
+
+
+
                                         </div>
-                                    </div>
 
-                                    {/* CTA a su perfil */}
-                                    <div className="w-full md:w-auto">
-                                        <Link href={`/instructors/${instructorSlug}`} className="block">
-                                            <Button className="w-full md:w-auto rounded-full bg-boa-green hover:bg-boa-green/90">
-                                                Ver perfil de {activity.instructor.name}
-                                                <ChevronRight className="ml-1 h-4 w-4" />
-                                            </Button>
-                                        </Link>
+
+
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                </CardContent>
+                            </Card>
+
+
+                            {/* Hover sutil: realce del borde y elevación */}
+                            <div className="pointer-events-none absolute inset-0 rounded-3xl ring-0 group-hover:ring-2 group-hover:ring-boa-green/25 transition-all duration-300" />
+                        </motion.article>
                     </div>
                 </section>
             )}
+
+
+
+
+
 
             {/* Relacionadas — carrusel horizontal para romper la repetición */}
             <section className="py-12">
@@ -392,7 +434,7 @@ export default function ActivityDetailPage() {
                                     onClick={() => router.push(`/activities/${a.id}`)}
                                 >
                                     <div className="relative h-40">
-                                        <img src={a.images?.[0] ?? a.image} alt={a.title}  className="absolute inset-0 w-full h-full object-cover" />
+                                        <img src={a.images?.[0] ?? a.image} alt={a.title} className="absolute inset-0 w-full h-full object-cover" />
                                         <div className="absolute bottom-3 left-3 rounded-full px-2.5 py-1 text-[11px] font-semibold bg-white/85 text-boa-ink/85 ring-1 ring-white/70">
                                             {a.category}
                                         </div>
@@ -412,11 +454,13 @@ export default function ActivityDetailPage() {
                     </div>
                 </div>
             </section>
-        </section>
+        </Layout>
     );
 }
 
+
 /* ---- UI bits ---- */
+
 
 function Feature({
     icon,
@@ -437,3 +481,6 @@ function Feature({
         </div>
     );
 }
+
+
+

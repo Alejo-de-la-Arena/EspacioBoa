@@ -59,49 +59,56 @@ export default function UserMenu() {
     const doLogout = async () => {
         setBusy(true); // muestra overlay
 
-        try {
-            await supabase.auth.signOut();
-        } catch {
-            // ignoramos errores de red / extensiones
-        } finally {
-            removeSupabaseTokens();
-            await signOut(); // limpia el store
+        // Pequeño helper: recarga "a prueba de balas"
+        const hardReloadHome = () => {
+            const url = `${window.location.origin}/`;
 
-            // Toast de confirmación (opcional)
+            // 1) replace (no agrega historial)
+            try { window.location.replace(url); } catch { }
+
+            // 2) href (si replace fue bloqueado)
+            setTimeout(() => {
+                try { if (window.location.pathname !== "/") window.location.href = url; } catch { }
+            }, 120);
+
+            // 3) assign (otro intento)
+            setTimeout(() => {
+                try { if (window.location.pathname !== "/") window.location.assign(url); } catch { }
+            }, 240);
+
+            // 4) reload como último recurso
+            setTimeout(() => {
+                try { if (window.location.pathname !== "/") window.location.reload(); } catch { }
+                // si absolutamente todo falla, apagamos el overlay para no dejarlo colgado
+                setBusy(false);
+            }, 600);
+        };
+
+        try {
+            // no queremos quedar colgados si la promesa tarda (adblock/red)
+            await Promise.race([
+                supabase.auth.signOut(),
+                new Promise((resolve) => setTimeout(resolve, 400)), // timeout "optimista"
+            ]);
+        } catch {
+            // ignoramos errores de red/extensiones
+        } finally {
+            // limpieza defensiva de tokens + estado global
+            removeSupabaseTokens();
+            await signOut();
+
+            // feedback visual (opcional, si usás toast)
             toast({
                 title: "Sesión cerrada",
-                description: "Te llevamos al inicio…",
+                description: "Redirigiendo al inicio…",
             });
 
-            // ===== Navegación con reintentos (3 niveles) =====
-            // 1) replace: no deja historial
-            // 2) href: navegación clásica (por si replace es bloqueado)
-            // 3) reload: último recurso
-            setTimeout(() => {
-                try {
-                    window.location.replace("/");
-                } catch { }
-            }, 200);
-
-            setTimeout(() => {
-                try {
-                    if (window.location.pathname !== "/") {
-                        window.location.href = "/";
-                    }
-                } catch { }
-            }, 900);
-
-            setTimeout(() => {
-                try {
-                    if (window.location.pathname !== "/") {
-                        window.location.reload();
-                    }
-                } catch { }
-                // safety: si todo falló, apagamos overlay para no quedar “pegados”
-                setBusy(false);
-            }, 1800);
+            // forzamos navegación/reload
+            hardReloadHome();
         }
     };
+
+
 
 
     return (
@@ -131,11 +138,6 @@ export default function UserMenu() {
                     <DropdownMenuItem asChild>
                         <Link href="/account/inscripciones" className="flex items-center gap-2">
                             <Ticket className="h-4 w-4" /> Mis inscripciones
-                        </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                        <Link href="/account/configuracion" className="flex items-center gap-2">
-                            <Settings className="h-4 w-4" /> Configuración
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
