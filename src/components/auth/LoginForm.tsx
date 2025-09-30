@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -16,6 +17,8 @@ import {
     AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
+
+
 
 
 /* ===== helpers visuales ===== */
@@ -41,6 +44,7 @@ function floatLabelCls(hasError: boolean) {
     ].join(" ");
 }
 
+
 /* ===== schema ===== */
 const LoginSchema = z.object({
     email: z.string().email("Email inválido"),
@@ -49,9 +53,11 @@ const LoginSchema = z.object({
 });
 type LoginValues = z.infer<typeof LoginSchema>;
 
+
 export default function LoginForm() {
     const [showPw, setShowPw] = useState(false);
     const [serverError, setServerError] = useState<string | null>(null);
+
 
     const {
         register,
@@ -64,10 +70,12 @@ export default function LoginForm() {
         defaultValues: { email: "", password: "", remember: true },
     });
 
+
     const emailVal = watch("email");
     const pwVal = watch("password");
     const emailOk = !!emailVal && !errors.email;
     const pwOk = !!pwVal && !errors.password;
+
 
     const csrfToken = "";
     async function onSubmit(values: LoginValues) {
@@ -90,6 +98,7 @@ export default function LoginForm() {
         }
     }
 
+
     return (
         <div className="relative">
             {/* Borde degradé + glass + textura + blobs */}
@@ -109,14 +118,16 @@ export default function LoginForm() {
                         }}
                     />
 
+
                     {/* ===== form ===== */}
                     <form onSubmit={handleSubmit(onSubmit)} className="relative z-10 space-y-4" noValidate>
                         <input type="hidden" name="csrfToken" value={csrfToken} />
 
+
                         {/* Email */}
                         <div className="font-sans">
                             <div className="relative">
-                                <Mail className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                                <Mail className="pointer-events-none font-sans absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-900" />
                                 <input
                                     id="email"
                                     type="email"
@@ -141,6 +152,7 @@ export default function LoginForm() {
                                 </p>
                             )}
                         </div>
+
 
                         {/* Password */}
                         <div className="font-sans">
@@ -173,6 +185,7 @@ export default function LoginForm() {
                             )}
                         </div>
 
+
                         {/* remember + forgot */}
                         <div className="flex items-center justify-between font-sans text-sm">
                             <label className="inline-flex items-center gap-2 select-none">
@@ -191,12 +204,14 @@ export default function LoginForm() {
                             </Link>
                         </div>
 
+
                         {/* errores server */}
                         {serverError && (
                             <div className="font-sans rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                                 {serverError}
                             </div>
                         )}
+
 
                         {/* submit */}
                         <button
@@ -222,11 +237,13 @@ export default function LoginForm() {
                             )}
                         </button>
 
+
                         {/* sello */}
                         <div className="mt-2 flex items-center justify-center gap-2 text-[11px] text-neutral-500 font-sans">
                             Sesión segura. Usamos cifrado y buenas prácticas.
                         </div>
                     </form>
+
 
                     {/* Google debajo */}
                     <div className="relative z-10 my-5 flex items-center gap-3">
@@ -234,6 +251,7 @@ export default function LoginForm() {
                         <span className="font-sans text-xs text-neutral-500">o</span>
                         <span className="h-px w-full bg-neutral-200" />
                     </div>
+
 
                     <div className="relative z-10">
                         <button
@@ -250,3 +268,6 @@ export default function LoginForm() {
         </div>
     );
 }
+
+
+

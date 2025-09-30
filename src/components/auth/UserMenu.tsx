@@ -2,13 +2,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useAuth } from "@/stores/useAuth";
 import { supabase } from "@/lib/supabaseClient";
-import { LogOut, UserRound, Ticket, Settings, Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast"; // ⬅️ ruta correcta
-import { useRouter } from "next/router"; // ✅ Pages Router
-
+import { LogOut, UserRound, Ticket, Loader2, Settings } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 import {
     DropdownMenu,
@@ -27,15 +25,14 @@ function initialsFrom(user: any) {
         user?.email?.split("@")[0] ||
         "";
     const parts = String(name).trim().split(/\s+/);
-    if (parts.length === 0) return "U";
+    if (!parts.length) return "U";
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
     return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
 function removeSupabaseTokens() {
     try {
-        const keys = Object.keys(localStorage);
-        for (const k of keys) {
+        for (const k of Object.keys(localStorage)) {
             if (k.startsWith("sb-") && k.endsWith("-auth-token")) {
                 localStorage.removeItem(k);
             }
@@ -47,8 +44,46 @@ export default function UserMenu() {
     const { user, signOut } = useAuth();
     const { toast } = useToast();
     const [busy, setBusy] = useState(false);
-    const router = useRouter();
+    const [isAdmin, setIsAdmin] = useState(false);
+    const triggerRef = useRef<HTMLButtonElement>(null);
 
+    // --- Chequeo de admin (metadata + app_metadata + tabla profiles)
+    useEffect(() => {
+        let cancelled = false;
+
+        const metaAdmin =
+            user?.user_metadata?.is_admin === true ||
+            user?.user_metadata?.role === "admin" ||
+            (Array.isArray(user?.app_metadata?.roles) &&
+                user!.app_metadata!.roles!.includes("admin"));
+
+        if (metaAdmin) {
+            setIsAdmin(true);
+            return;
+        }
+
+        if (!user?.id) {
+            setIsAdmin(false);
+            return;
+        }
+
+        // Consulta a profiles.is_admin (RLS: debe existir policy de "own row")
+        supabase
+            .from("profiles")
+            .select("is_admin")
+            .eq("id", user.id)
+            .single()
+            .then(({ data }) => {
+                if (!cancelled) setIsAdmin(Boolean(data?.is_admin));
+            })
+            .catch(() => {
+                if (!cancelled) setIsAdmin(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [user?.id]);
 
     const avatarUrl =
         user?.user_metadata?.avatar_url ||
@@ -56,94 +91,117 @@ export default function UserMenu() {
         user?.user_metadata?.image ||
         "";
 
-    const doLogout = async () => {
-        setBusy(true); // muestra overlay
-
-        // Pequeño helper: recarga "a prueba de balas"
-        const hardReloadHome = () => {
-            const url = `${window.location.origin}/`;
-
-            // 1) replace (no agrega historial)
-            try { window.location.replace(url); } catch { }
-
-            // 2) href (si replace fue bloqueado)
-            setTimeout(() => {
-                try { if (window.location.pathname !== "/") window.location.href = url; } catch { }
-            }, 120);
-
-            // 3) assign (otro intento)
-            setTimeout(() => {
-                try { if (window.location.pathname !== "/") window.location.assign(url); } catch { }
-            }, 240);
-
-            // 4) reload como último recurso
-            setTimeout(() => {
-                try { if (window.location.pathname !== "/") window.location.reload(); } catch { }
-                // si absolutamente todo falla, apagamos el overlay para no dejarlo colgado
-                setBusy(false);
-            }, 600);
-        };
-
+    const doLogout = () => {
+        // 1) UI inmediata
+        setBusy(true);
         try {
-            // no queremos quedar colgados si la promesa tarda (adblock/red)
-            await Promise.race([
-                supabase.auth.signOut(),
-                new Promise((resolve) => setTimeout(resolve, 400)), // timeout "optimista"
-            ]);
-        } catch {
-            // ignoramos errores de red/extensiones
-        } finally {
-            // limpieza defensiva de tokens + estado global
-            removeSupabaseTokens();
-            await signOut();
+            triggerRef.current?.blur();
+        } catch { }
 
-            // feedback visual (opcional, si usás toast)
-            toast({
-                title: "Sesión cerrada",
-                description: "Redirigiendo al inicio…",
-            });
+        // 2) Limpieza defensiva antes de navegar
+        removeSupabaseTokens();
+        Promise.resolve(signOut()).catch(() => { });
 
-            // forzamos navegación/reload
-            hardReloadHome();
-        }
+        // 3) SignOut Supabase en background (no bloquea)
+        Promise.resolve(supabase.auth.signOut({ scope: "local" })).catch(() => { });
+        Promise.resolve(supabase.auth.signOut({ scope: "global" })).catch(() => { });
+
+        // 4) Feedback
+        toast({ title: "Sesión cerrada", description: "Redirigiendo al inicio…" });
+
+        // 5) Redirección dura con cache-buster
+        const url = `${window.location.origin}/?signedout=${Date.now()}`;
+        try {
+            window.location.replace(url);
+        } catch { }
+
+        // 6) Fallbacks
+        setTimeout(() => {
+            try {
+                if (window.location.href !== url) window.location.href = url;
+            } catch { }
+        }, 120);
+        setTimeout(() => {
+            try {
+                if (window.location.href !== url) window.location.assign(url);
+            } catch { }
+        }, 240);
+        setTimeout(() => {
+            try {
+                window.location.reload();
+            } catch { }
+            setBusy(false);
+        }, 700);
     };
-
-
-
 
     return (
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger
-                    className="inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 shadow-sm bg-white hover:bg-neutral-50"
+                    ref={triggerRef}
+                    className="inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 shadow-sm bg-white hover:bg-neutral-50 font-sans"
+                    style={{ fontFamily: "var(--font-sans), Inter, system-ui, sans-serif" }}
                     aria-label="Abrir menú de usuario"
                 >
                     <Avatar className="h-8 w-8">
-                        {avatarUrl ? <AvatarImage src={avatarUrl} alt={user?.email || "Usuario"} /> : null}
-                        <AvatarFallback className="text-[12px]">{initialsFrom(user)}</AvatarFallback>
+                        {avatarUrl ? (
+                            <AvatarImage src={avatarUrl} alt={user?.email || "Usuario"} />
+                        ) : null}
+                        <AvatarFallback className="text-[12px] font-sans">
+                            {initialsFrom(user)}
+                        </AvatarFallback>
                     </Avatar>
-                    <span className="hidden sm:inline text-sm font-medium text-neutral-700">
+                    <span className="hidden sm:inline text-sm font-medium text-neutral-700 font-sans">
                         {user?.user_metadata?.display_name || user?.email}
                     </span>
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent align="end" className="w-60">
-                    <DropdownMenuLabel className="truncate">{user?.email}</DropdownMenuLabel>
+                <DropdownMenuContent
+                    align="end"
+                    className="w-60 font-sans"
+                    style={{ fontFamily: "var(--font-sans), Inter, system-ui, sans-serif" }}
+                >
+                    <DropdownMenuLabel className="truncate font-sans">
+                        {user?.email}
+                    </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                        <Link href="/account" className="flex items-center gap-2">
+
+                    {/* Mi perfil */}
+                    <DropdownMenuItem asChild className="font-sans">
+                        <Link href="/account" className="flex items-center gap-2 font-sans">
                             <UserRound className="h-4 w-4" /> Mi perfil
                         </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                        <Link href="/account/inscripciones" className="flex items-center gap-2">
+
+                    {/* Mis inscripciones */}
+                    <DropdownMenuItem asChild className="font-sans">
+                        <Link
+                            href="/account/inscripciones"
+                            className="flex items-center gap-2 font-sans"
+                        >
                             <Ticket className="h-4 w-4" /> Mis inscripciones
                         </Link>
                     </DropdownMenuItem>
+
+                    {/* Administrar (solo admins) */}
+                    {isAdmin && (
+                        <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild className="font-sans">
+                                <Link href="/admin" className="flex items-center gap-2 font-sans">
+                                    <Settings className="h-4 w-4" /> Administrar BOA
+                                </Link>
+                            </DropdownMenuItem>
+                        </>
+                    )}
+
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                        onSelect={(e) => { e.preventDefault(); doLogout(); }}
-                        className="text-red-600 focus:text-red-600"
+                        onSelect={(e) => {
+                            e.preventDefault();
+                            doLogout();
+                        }}
+                        className="text-red-600 focus:text-red-600 font-sans"
                     >
                         <LogOut className="h-4 w-4" /> Cerrar sesión
                     </DropdownMenuItem>
@@ -156,8 +214,10 @@ export default function UserMenu() {
                         <div className="mx-auto mb-3 h-10 w-10 grid place-items-center rounded-full bg-emerald-100">
                             <Loader2 className="h-5 w-5 animate-spin text-emerald-600" />
                         </div>
-                        <h3 className="text-lg font-semibold">Cerrando sesión…</h3>
-                        <p className="mt-1 text-sm text-neutral-600">Un segundo, por favor.</p>
+                        <h3 className="text-lg font-semibold font-sans">Cerrando sesión…</h3>
+                        <p className="mt-1 text-sm text-neutral-600 font-sans">
+                            Un segundo, por favor.
+                        </p>
                     </div>
                 </div>
             )}
