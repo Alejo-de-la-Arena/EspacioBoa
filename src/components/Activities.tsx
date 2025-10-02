@@ -186,7 +186,7 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                                 <div className="pointer-events-none absolute inset-3 rounded-[22px] ring-1 ring-white/30 shadow-inner" />
 
                                 {/* CATEGORÍA + DESTACADA */}
-                                <div className="absolute top-4 left-4 flex items-center gap-2">
+                                <div className="absolute top-6 left-6 flex items-center gap-2">
                                     <span className="rounded-full px-3 py-1 text-[11px] font-semibold bg-white/80 text-boa-ink/80 ring-1 ring-white/70 backdrop-blur">
                                         {a.category}
                                     </span>
@@ -220,7 +220,7 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                                     </p>
 
                                     {/* REVEAL: sube en hover/focus */}
-                                    <div className="mt-3 translate-y-6 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                                    <div className="mt-3 translate-y-0 transition-all duration-300 group-hover:opacity-100">
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[13px] text-white/90">
                                             <div className="flex items-center"><Calendar className="h-4 w-4 mr-2" />{a.schedule.day}</div>
                                             <div className="flex items-center"><Clock className="h-4 w-4 mr-2" />{a.schedule.time}</div>

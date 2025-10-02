@@ -167,7 +167,7 @@ export default function SpacesPage() {
             {/* ===== ENCABEZADO SIMPLE (sin hero) ===== */}
             <section className="py-10 sm:py-14 bg-white">
                 <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <h1 className="font-sans text-4xl sm:text-5xl font-semibold text-neutral-900">
+                    <h1 className="font-sans text-4xl sm:text-5xl font-bold text-neutral-900">
                         Conocé nuestros <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-700 to-emerald-500">espacios</span>
                     </h1>
                     <p className="mt-3 text-neutral-700 max-w-2xl mx-auto">

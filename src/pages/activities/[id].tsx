@@ -1,16 +1,14 @@
 // pages/activities/[id].tsx
-import { useMemo, useState } from "react";
+import React from "react";
 import { useRouter } from "next/router";
-import Link from "next/link";
-import { useApp } from "@/contexts/AppContext";
 import { motion } from "framer-motion";
-
+import { supabase } from "@/lib/supabaseClient";
+import { useActivitiesLive } from "@/hooks/useActivitiesLive";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-
 
 import {
     ArrowLeft,
@@ -19,9 +17,6 @@ import {
     Users,
     MapPin,
     Sparkles,
-    Star,
-    Phone,
-    Mail,
     User,
     Heart,
     ChevronRight,
@@ -29,32 +24,174 @@ import {
     Leaf,
 } from "lucide-react";
 
+/* ---------- tipos del detalle ---------- */
+type ActivityDb = {
+    id: string;
+    title: string;
+    description: string | null;
+    start_at: string | null;
+    end_at: string | null;
+    capacity: number | null;
+    price: number | null;
+    is_published: boolean | null;
+    category: string | null;
+    location: string | null;
+    hero_image: string | null;
+    gallery: any | null; // jsonb
+    featured: boolean | null;
+};
 
+type UiActivity = {
+    id: string;
+    title: string;
+    description: string;
+    image?: string | null;
+    images?: string[];
+    category: string | null;
+    price: number | null;
+    featured: boolean;
+    schedule: { day: string; time: string };
+    location: string | null;
+    enrolled: number;
+    capacity: number;
+};
+
+function toDayTime(iso?: string | null) {
+    if (!iso) return { day: "", time: "" };
+    const d = new Date(iso);
+    return {
+        day: new Intl.DateTimeFormat("es-AR", { weekday: "long" })
+            .format(d)
+            .replace(/^\w/, (c) => c.toUpperCase()),
+        time: new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(d),
+    };
+}
+
+function mapDbToUi(row: ActivityDb, enrolled = 0): UiActivity {
+    const galleryArr: string[] = Array.isArray(row.gallery)
+        ? row.gallery.filter(Boolean)
+        : row.gallery
+            ? [String(row.gallery)]
+            : [];
+    const hero = row.hero_image || galleryArr[0] || null;
+    const images = hero ? [hero, ...galleryArr.filter((u) => u !== hero)] : galleryArr;
+    const { day, time } = toDayTime(row.start_at);
+
+    return {
+        id: row.id,
+        title: row.title,
+        description: row.description ?? "",
+        image: hero,
+        images,
+        category: row.category,
+        price: row.price ?? null,
+        featured: Boolean(row.featured),
+        schedule: { day, time },
+        location: row.location,
+        enrolled,
+        capacity: row.capacity ?? 0,
+    };
+}
+
+/* ---------- hook: cargar y escuchar un detalle ---------- */
+function useActivityDetail(activityId?: string) {
+    const [activity, setActivity] = React.useState<UiActivity | null>(null);
+    const [loading, setLoading] = React.useState(true);
+
+    const fetchCount = React.useCallback(async (aid: string) => {
+        try {
+            const { count } = await supabase
+                .from("registrations")
+                .select("*", { count: "exact", head: true })
+                .eq("activity_id", aid)
+                .neq("status", "cancelled");
+            return count ?? 0;
+        } catch {
+            return 0;
+        }
+    }, []);
+
+    const load = React.useCallback(async () => {
+        if (!activityId) return;
+        setLoading(true);
+        const { data, error } = await supabase
+            .from("activities")
+            .select(
+                "id,title,description,start_at,end_at,capacity,price,is_published,category,location,hero_image,gallery,featured"
+            )
+            .eq("id", activityId)
+            .maybeSingle();
+
+        if (!data || error) {
+            setActivity(null);
+            setLoading(false);
+            return;
+        }
+        const enrolled = await fetchCount(data.id);
+        setActivity(mapDbToUi(data as ActivityDb, enrolled));
+        setLoading(false);
+    }, [activityId, fetchCount]);
+
+    React.useEffect(() => {
+        if (!activityId) return;
+        load();
+
+        // realtime detalle + conteo
+        const ch = supabase
+            .channel(`rt-activity-${activityId}`)
+            .on(
+                "postgres_changes",
+                { schema: "public", table: "activities", event: "UPDATE", filter: `id=eq.${activityId}` },
+                async (p) => {
+                    const row = p.new as ActivityDb;
+                    const enrolled = await fetchCount(row.id);
+                    setActivity(mapDbToUi(row, enrolled));
+                }
+            )
+            .on(
+                "postgres_changes",
+                { schema: "public", table: "activities", event: "DELETE", filter: `id=eq.${activityId}` },
+                () => setActivity(null)
+            )
+            .on(
+                "postgres_changes",
+                { schema: "public", table: "registrations", event: "*", filter: `activity_id=eq.${activityId}` },
+                async () => {
+                    const n = await fetchCount(activityId);
+                    setActivity((prev) => (prev ? { ...prev, enrolled: n } : prev));
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(ch);
+        };
+    }, [activityId, load, fetchCount]);
+
+    return { activity, loading };
+}
+
+/* ======================= PAGE ======================= */
 export default function ActivityDetailPage() {
     const router = useRouter();
-    const { id } = router.query;
-    const activityId = Array.isArray(id) ? id[0] : id;
+    const rid = router.query.id;
+    const activityId = Array.isArray(rid) ? rid[0] : rid;
 
-
-    const { activities, loading } = useApp();
-    const [isEnrolling, setIsEnrolling] = useState(false);
-    const [activeIdx, setActiveIdx] = useState(0);
-
-
-    const activity = useMemo(
-        () => activities.find((a) => a.id === activityId),
-        [activities, activityId]
+    const { activity, loading } = useActivityDetail(
+        typeof activityId === "string" ? activityId : undefined
     );
+    const { activities: related } = useActivitiesLive();
 
+    const [isEnrolling, setIsEnrolling] = React.useState(false);
+    const [activeIdx, setActiveIdx] = React.useState(0);
 
     const handleEnroll = async () => {
         if (!activity) return;
         setIsEnrolling(true);
-        await new Promise((r) => setTimeout(r, 1200));
+        await new Promise((r) => setTimeout(r, 1200)); // stub
         setIsEnrolling(false);
         alert("¡Inscripción exitosa! Te enviamos un email con la confirmación.");
     };
-
 
     if (loading) {
         return (
@@ -68,51 +205,33 @@ export default function ActivityDetailPage() {
         );
     }
 
-
     if (!activity) {
         return (
             <section>
                 <div className="min-h-[60vh] grid place-items-center text-center">
-                    <h1 className="text-2xl font-bold text-boa-ink mb-4">
-                        Actividad no encontrada
-                    </h1>
-                    <Button onClick={() => router.push("/activities")}>
-                        Volver a actividades
-                    </Button>
+                    <h1 className="text-2xl font-bold text-boa-ink mb-4">Actividad no encontrada</h1>
+                    <Button onClick={() => router.push("/activities")}>Volver a actividades</Button>
                 </div>
             </section>
         );
     }
 
-
-    const isFullyBooked = activity.enrolled >= activity.capacity;
-    const spotsRemaining = Math.max(0, activity.capacity - activity.enrolled);
-    const progress = Math.min(
-        100,
-        (activity.enrolled / Math.max(1, activity.capacity)) * 100
-    );
-
+    const hasCapacity = (activity.capacity ?? 0) > 0;
+    const isFullyBooked = hasCapacity ? activity.enrolled >= activity.capacity : false;
+    const spotsRemaining = hasCapacity ? Math.max(0, activity.capacity - activity.enrolled) : 0;
+    const progress = hasCapacity
+        ? Math.min(100, (activity.enrolled / Math.max(1, activity.capacity)) * 100)
+        : 0;
 
     const gallery: string[] = activity.images?.length
         ? activity.images
-        : (activity.image ? [activity.image] : []);
-
-
-    const instructorSlug =
-        activity.instructor &&
-            (activity.instructor as any).slug
-            ? (activity.instructor as any).slug
-            : activity.instructor
-                ? activity.instructor.name
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, "-")
-                    .replace(/(^-|-$)/g, "")
-                : "instructor";
-
+        : activity.image
+            ? [activity.image]
+            : [];
 
     return (
         <section>
-            {/* BG crema (coherente, sin repetir “brush”) */}
+            {/* BG crema */}
             <div className="absolute inset-0 -z-10">
                 <div
                     className="absolute inset-0"
@@ -132,7 +251,6 @@ export default function ActivityDetailPage() {
                 />
             </div>
 
-
             {/* Back */}
             <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
                 <Button variant="ghost" onClick={() => router.back()} className="hover:bg-boa-green/10">
@@ -141,12 +259,11 @@ export default function ActivityDetailPage() {
                 </Button>
             </div>
 
-
-            {/* HERO: Galería + Ticket */}
+            {/* HERO */}
             <section className="pb-14 pt-8">
                 <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_.85fr] gap-10 items-start">
-                        {/* === Galería con “polaroid” acento === */}
+                        {/* Galería */}
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             whileInView={{ opacity: 1, y: 0 }}
@@ -154,29 +271,30 @@ export default function ActivityDetailPage() {
                             className="relative rounded-[28px] overflow-hidden ring-1 ring-[#EEDCC9] bg-white shadow-[0_18px_56px_rgba(82,47,0,.10)]"
                         >
                             <div className="relative h-[440px]">
-                                <img
-                                    src={gallery[activeIdx]}
-                                    alt={activity.title}
-                                    className="absolute inset-0 w-full h-full object-cover"
-                                />
-                                {/* degradé sutil para legibilidad */}
+                                {gallery[activeIdx] && (
+                                    <img
+                                        src={gallery[activeIdx]}
+                                        alt={activity.title}
+                                        className="absolute inset-0 w-full h-full object-cover"
+                                    />
+                                )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/5 to-transparent" />
-                                {/* “Polaroid” decorativo (rotado) */}
                                 <div className="hidden sm:block absolute -right-6 -bottom-8 w-40 rotate-6">
                                     <div className="bg-white p-2 shadow-xl rounded-sm">
                                         <img
-                                            src={gallery[(activeIdx + 1) % gallery.length] || activity.image}
+                                            src={gallery[(activeIdx + 1) % Math.max(1, gallery.length)] || activity.image || ""}
                                             alt=""
                                             className="h-28 w-full object-cover"
                                         />
                                         <div className="h-8 bg-white" />
                                     </div>
                                 </div>
-                                {/* Categ/featured */}
                                 <div className="absolute top-4 left-4 flex items-center gap-2">
-                                    <span className="rounded-full px-3 py-1 text-[11px] font-semibold bg-white/85 text-boa-ink/85 ring-1 ring-white/70 backdrop-blur">
-                                        {activity.category}
-                                    </span>
+                                    {activity.category && (
+                                        <span className="rounded-full px-3 py-1 text-[11px] font-semibold bg-white/85 text-boa-ink/85 ring-1 ring-white/70 backdrop-blur">
+                                            {activity.category}
+                                        </span>
+                                    )}
                                     {activity.featured && (
                                         <span className="rounded-full px-3 py-1 text-[11px] font-semibold text-white bg-boa-green shadow-md flex items-center gap-1">
                                             <Sparkles className="h-3 w-3" /> Destacada
@@ -185,8 +303,7 @@ export default function ActivityDetailPage() {
                                 </div>
                             </div>
 
-
-                            {/* thumbnails tipo filmstrip */}
+                            {/* Thumbnails */}
                             <div className="p-3 border-t border-[#EEDCC9] bg-white/90">
                                 <div className="flex gap-3 overflow-x-auto">
                                     {gallery.map((src, i) => (
@@ -204,36 +321,48 @@ export default function ActivityDetailPage() {
                             </div>
                         </motion.div>
 
-
-                        {/* === Ticket de reserva (sticky) === */}
+                        {/* Ticket */}
                         <div className="relative">
                             <div className="mb-5">
-                                <Badge className="mb-2 bg-boa-green/15 text-boa-green ring-1 ring-boa-green/30">
-                                    {activity.category}
-                                </Badge>
+                                {activity.category && (
+                                    <Badge className="mb-2 bg-boa-green/15 text-boa-green ring-1 ring-boa-green/30">
+                                        {activity.category}
+                                    </Badge>
+                                )}
                                 <h1 className="text-4xl sm:text-5xl font-extrabold text-boa-ink tracking-tight">
                                     {activity.title}
                                 </h1>
-                                {/* divisor “costura” (sin brush) */}
                                 <div
                                     className="mt-3 h-[2px] w-40"
-                                    style={{ backgroundImage: "repeating-linear-gradient(90deg, rgba(30,122,102,.7) 0 8px, transparent 8px 16px)" }}
+                                    style={{
+                                        backgroundImage:
+                                            "repeating-linear-gradient(90deg, rgba(30,122,102,.7) 0 8px, transparent 8px 16px)",
+                                    }}
                                 />
                                 <p className="mt-3 text-boa-ink/75 text-lg leading-relaxed">{activity.description}</p>
                             </div>
 
-
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6 text-boa-ink/80">
-                                <div className="flex items-center"><Calendar className="h-5 w-5 mr-3 text-boa-green" />{activity.schedule.day}</div>
-                                <div className="flex items-center"><Clock className="h-5 w-5 mr-3 text-boa-green" />{activity.schedule.time}</div>
-                                <div className="flex items-center"><MapPin className="h-5 w-5 mr-3 text-boa-green" />{activity.location}</div>
-                                <div className="flex items-center"><Users className="h-5 w-5 mr-3 text-boa-green" />{activity.enrolled}/{activity.capacity} participantes</div>
+                                <div className="flex items-center">
+                                    <Calendar className="h-5 w-5 mr-3 text-boa-green" />
+                                    {activity.schedule.day}
+                                </div>
+                                <div className="flex items-center">
+                                    <Clock className="h-5 w-5 mr-3 text-boa-green" />
+                                    {activity.schedule.time}
+                                </div>
+                                <div className="flex items-center">
+                                    <MapPin className="h-5 w-5 mr-3 text-boa-green" />
+                                    {activity.location ?? "-"}
+                                </div>
+                                <div className="flex items-center">
+                                    <Users className="h-5 w-5 mr-3 text-boa-green" />
+                                    {activity.enrolled}/{activity.capacity || 0} participantes
+                                </div>
                             </div>
-
 
                             <div className="lg:sticky lg:top-24">
                                 <Card className="border-0 rounded-3xl bg-[#FFFCF7] ring-1 ring-[#EEDCC9] shadow-[0_16px_48px_rgba(82,47,0,.12)] relative">
-                                    {/* “perforado” lateral del ticket */}
                                     <div
                                         className="absolute inset-y-4 -left-3 w-3 rounded-full"
                                         style={{
@@ -245,7 +374,7 @@ export default function ActivityDetailPage() {
                                         <div className="flex items-start justify-between gap-4">
                                             <div>
                                                 <div className="text-3xl font-extrabold text-boa-green leading-none">
-                                                    ${activity.price}
+                                                    {typeof activity.price === "number" ? `$${activity.price}` : "-"}
                                                 </div>
                                                 <div className="text-sm text-boa-ink/60 mt-1">Por clase</div>
                                             </div>
@@ -259,7 +388,6 @@ export default function ActivityDetailPage() {
                                             </div>
                                         </div>
 
-
                                         {/* Barra de ocupación */}
                                         <div className="mt-4">
                                             <div className="h-2 rounded-full bg-boa-ink/10 overflow-hidden">
@@ -269,10 +397,9 @@ export default function ActivityDetailPage() {
                                                 />
                                             </div>
                                             <div className="mt-1 text-[12px] text-boa-ink/60">
-                                                {activity.enrolled} de {activity.capacity} inscriptos
+                                                {activity.enrolled} de {activity.capacity || 0} inscriptos
                                             </div>
                                         </div>
-
 
                                         <Button
                                             onClick={handleEnroll}
@@ -304,8 +431,7 @@ export default function ActivityDetailPage() {
                 </div>
             </section>
 
-
-            {/* Lo que vas a vivir (bullets icónicos) */}
+            {/* Lo que vas a vivir */}
             <section className="pb-6">
                 <div className="container max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -328,102 +454,12 @@ export default function ActivityDetailPage() {
                 </div>
             </section>
 
-
-            {/* Instructor — BOA “folded card” */}
-            {activity.instructor && (
-                <section className="py-14" aria-labelledby="instructor-title">
-                    <div className="container max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <motion.article
-                            whileHover={{ y: -4 }}
-                            transition={{ type: "spring", stiffness: 220, damping: 20 }}
-                            className="group relative overflow-hidden rounded-3xl border border-boa-green/20 ring-1 ring-boa-green/15 bg-white shadow-[0_12px_30px_rgba(0,0,0,.06)]"
-                        >
-
-                            {/* header con bruma verde */}
-                            <div className="h-16" />
-
-
-                            <Card className="border-0 items-center shadow-none">
-                                <CardContent className="-mt-16 p-6 md:p-8">
-                                    <div className="grid grid-cols-1 md:grid-cols-[auto,1fr,auto] items-center gap-6 md:gap-8">
-
-
-                                        {/* Avatar centrado y nítido */}
-                                        <div className="relative mx-auto md:mx-0">
-                                            <Avatar className="w-28 h-28 ring-4 ring-white rounded-full shadow-[0_10px_24px_rgba(0,0,0,.10)]">
-                                                <AvatarImage
-                                                    src={activity.instructor.image}
-                                                    alt={activity.instructor.name}
-                                                    className="object-cover object-center"
-                                                />
-                                                <AvatarFallback className="bg-boa-green/10">
-                                                    <User className="h-10 w-10 text-boa-ink/60" />
-                                                </AvatarFallback>
-                                            </Avatar>
-                                        </div>
-
-
-                                        {/* Texto principal */}
-                                        <div>
-                                            <div className="flex flex-wrap items-center gap-3">
-                                                <h3 id="instructor-title" className="text-2xl md:text-3xl font-extrabold text-boa-ink">
-                                                    {activity.instructor.name}
-                                                </h3>
-
-
-                                                {!!activity.instructor.experience && (
-                                                    <span className="inline-flex items-center text-boa-ink text-sm font-semibold">
-                                                        <Star className="h-4 w-4 mr-1 text-boa-green" />
-                                                        {activity.instructor.experience} años
-                                                    </span>
-                                                )}
-
-
-                                                {!!activity.instructor.specialty && (
-                                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-[12px] font-medium
-                                    bg-boa-green/10 text-boa-ink ring-1 ring-boa-green/25 backdrop-blur-sm">
-                                                        {activity.instructor.specialty}
-                                                    </span>
-                                                )}
-                                            </div>
-
-
-                                            {/* quote breve */}
-                                            {!!activity.instructor.bio && (
-                                                <p className="mt-3 italic text-boa-ink/70">
-                                                    “{activity.instructor.bio.slice(0, 160)}…”
-                                                </p>
-                                            )}
-
-
-
-                                        </div>
-
-
-
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-
-                            {/* Hover sutil: realce del borde y elevación */}
-                            <div className="pointer-events-none absolute inset-0 rounded-3xl ring-0 group-hover:ring-2 group-hover:ring-boa-green/25 transition-all duration-300" />
-                        </motion.article>
-                    </div>
-                </section>
-            )}
-
-
-
-
-
-
-            {/* Relacionadas — carrusel horizontal para romper la repetición */}
+            {/* Relacionadas */}
             <section className="py-12">
                 <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <h2 className="text-2xl font-extrabold text-boa-ink">Te pueden gustar</h2>
                     <div className="mt-5 flex gap-6 overflow-x-auto pb-2">
-                        {activities
+                        {(related || [])
                             .filter((a) => a.id !== activity.id && a.category === activity.category)
                             .slice(0, 10)
                             .map((a) => (
@@ -433,16 +469,26 @@ export default function ActivityDetailPage() {
                                     onClick={() => router.push(`/activities/${a.id}`)}
                                 >
                                     <div className="relative h-40">
-                                        <img src={a.images?.[0] ?? a.image} alt={a.title} className="absolute inset-0 w-full h-full object-cover" />
-                                        <div className="absolute bottom-3 left-3 rounded-full px-2.5 py-1 text-[11px] font-semibold bg-white/85 text-boa-ink/85 ring-1 ring-white/70">
-                                            {a.category}
-                                        </div>
+                                        <img
+                                            src={a.images?.[0] ?? (a as any).image}
+                                            alt={a.title}
+                                            className="absolute inset-0 w-full h-full object-cover"
+                                        />
+                                        {a.category && (
+                                            <div className="absolute bottom-3 left-3 rounded-full px-2.5 py-1 text-[11px] font-semibold bg-white/85 text-boa-ink/85 ring-1 ring-white/70">
+                                                {a.category}
+                                            </div>
+                                        )}
                                     </div>
+
                                     <div className="p-4">
                                         <h3 className="font-semibold text-boa-ink">{a.title}</h3>
                                         <p className="text-sm text-boa-ink/70 line-clamp-2 mt-1">{a.description}</p>
+
                                         <div className="mt-3 flex items-center justify-between">
-                                            <span className="font-bold text-boa-green">${a.price}</span>
+                                            <span className="font-bold text-boa-green">
+                                                {typeof a.price === "number" ? `$${a.price}` : "-"}
+                                            </span>
                                             <Button size="sm" className="rounded-full">
                                                 Ver detalles
                                             </Button>
@@ -453,14 +499,12 @@ export default function ActivityDetailPage() {
                     </div>
                 </div>
             </section>
+
         </section>
     );
 }
 
-
-/* ---- UI bits ---- */
-
-
+/* ---------- UI bits ---------- */
 function Feature({
     icon,
     title,
@@ -480,6 +524,3 @@ function Feature({
         </div>
     );
 }
-
-
-

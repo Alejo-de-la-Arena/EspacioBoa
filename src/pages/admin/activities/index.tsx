@@ -39,6 +39,86 @@ function slugify(s: string) {
         .replace(/(^-|-$)+/g, "");
 }
 
+// Límite de tiempo a una promesa (sirve para refreshSession)
+async function withCap<T>(p: Promise<T>, ms = 3000): Promise<T> {
+    let t: any;
+    const timeout = new Promise<never>((_, rej) => {
+        t = setTimeout(() => rej(new Error("timeout")), ms);
+    });
+    try {
+        return await Promise.race([p, timeout]);
+    } finally {
+        clearTimeout(t);
+    }
+}
+
+
+// ====== TOKEN ROBUSTO + CACHÉ ======
+let _cachedToken: string | null = null;
+let _cachedAt = 0;
+
+async function getTokenRobust(maxWaitMs = 8000): Promise<string | null> {
+    const now = Date.now();
+    // usa token cacheado si no es viejo (5 min)
+    if (_cachedToken && now - _cachedAt < 5 * 60_000) return _cachedToken;
+
+    // 1) intento rápido: sesión actual
+    try {
+        const { data } = await supabase.auth.getSession();
+        const t = data?.session?.access_token ?? null;
+        if (t) { _cachedToken = t; _cachedAt = Date.now(); return t; }
+    } catch { }
+
+    // 2) intento con refresh, pero CAPEADO (evita cuelgues)
+    try {
+        const { data } = await withCap(supabase.auth.refreshSession(), 3000);
+        const t = data?.session?.access_token ?? null;
+        if (t) { _cachedToken = t; _cachedAt = Date.now(); return t; }
+    } catch { }
+
+    // 3) último recurso: esperamos un evento de auth por un rato
+    const token = await new Promise<string | null>((resolve) => {
+        const to = setTimeout(() => { sub?.subscription?.unsubscribe?.(); resolve(null); }, maxWaitMs);
+        const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+            const t = session?.access_token ?? null;
+            if (t) {
+                clearTimeout(to);
+                sub?.subscription?.unsubscribe?.();
+                _cachedToken = t; _cachedAt = Date.now();
+                resolve(t);
+            }
+        });
+    });
+
+    return token;
+}
+
+// ====== POST A LA API, PASANDO TOKEN EXPLÍCITAMENTE ======
+async function postUpsertActivity(body: any, token: string, timeoutMs = 15000) {
+    const hasTimeout = typeof (AbortSignal as any).timeout === "function";
+    const signal = hasTimeout ? (AbortSignal as any).timeout(timeoutMs) : undefined;
+
+    const resp = await fetch("/api/admin/activities/upsert", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+        cache: "no-store",
+        keepalive: true,
+        ...(signal ? { signal } : {}),
+    });
+
+    let json: any = null;
+    try { json = await resp.json(); } catch { }
+    if (!resp.ok) throw new Error(json?.error || `HTTP ${resp.status}`);
+    return json?.data ?? null;
+}
+
+
+
+
 export default function AdminActivities() {
     const { user } = useAuth();
     const { toast } = useToast();
@@ -158,6 +238,22 @@ export default function AdminActivities() {
         };
     }, [isAdmin]);
 
+    // Refresca token cuando la pestaña recupera foco/visibilidad
+    React.useEffect(() => {
+        const onFocus = async () => {
+            try { await supabase.auth.refreshSession(); } catch { }
+        };
+        const onVisibility = () => { if (!document.hidden) onFocus(); };
+
+        window.addEventListener("focus", onFocus);
+        document.addEventListener("visibilitychange", onVisibility);
+        return () => {
+            window.removeEventListener("focus", onFocus);
+            document.removeEventListener("visibilitychange", onVisibility);
+        };
+    }, []);
+
+
     function resetForm() {
         setEditingId(null);
         setTitle("");
@@ -209,8 +305,7 @@ export default function AdminActivities() {
 
         setSaving(true);
 
-        // preparar payload para API
-        const body = {
+        const payload = {
             id: editingId ?? null,
             slug: (slug || slugify(title)) || null,
             title,
@@ -227,29 +322,38 @@ export default function AdminActivities() {
             featured: false,
         };
 
+        // Watchdog: SIEMPRE libera el UI
+        let watchdog: any = null;
+        const armWatchdog = () => {
+            clearTimeout(watchdog);
+            watchdog = setTimeout(() => {
+                setSaving(false);
+                toast({
+                    title: "La red tardó demasiado",
+                    description: "Revisá tu conexión o intentá nuevamente.",
+                    variant: "destructive",
+                });
+            }, 30000);
+        };
+        armWatchdog();
+
         try {
-            // Tomamos el access token actual del usuario
-            const { data: sess } = await supabase.auth.getSession();
-            const token = sess?.session?.access_token;
+            // ⛑️ 1) aseguramos token robusto (con caché) antes de llamar a la API
+            const token = await getTokenRobust();
+            if (!token) {
+                throw new Error("Necesitás iniciar sesión nuevamente (token no disponible).");
+            }
 
-            const resp = await fetch("/api/admin/activities/upsert", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
-                body: JSON.stringify(body),
-            });
+            // ⛑️ 2) guardamos SIEMPRE por API (service-role)
+            await postUpsertActivity(payload, token, 15000);
 
-            const json = await resp.json();
-            if (!resp.ok) throw new Error(json?.error || "Error al guardar");
-
+            clearTimeout(watchdog);
             toast({ title: "Actividad guardada" });
             setOpen(false);
-
-            // refrescar listado (Pages Router)
+            resetForm();
             router.replace(router.asPath);
         } catch (err: any) {
+            clearTimeout(watchdog);
             console.error("save activity error:", err);
             toast({
                 title: "No se pudo guardar",
@@ -260,8 +364,6 @@ export default function AdminActivities() {
             setSaving(false);
         }
     }
-
-
 
     async function removeOne(id: string) {
         if (!confirm("¿Eliminar esta actividad?")) return;
@@ -365,12 +467,11 @@ export default function AdminActivities() {
                             </h3>
                             <button
                                 className="text-sm text-neutral-500 hover:text-black"
-                                onClick={() => setOpen(false)}
+                                onClick={() => { setOpen(false); resetForm(); }}
                             >
                                 Cerrar
                             </button>
                         </div>
-
                         {/* Contenido */}
                         <div className="px-5 py-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -490,7 +591,7 @@ export default function AdminActivities() {
                         {/* Footer sticky */}
                         <div className="sticky bottom-0 z-10 px-5 py-4 border-t bg-white/95 backdrop-blur">
                             <div className="flex justify-end gap-2">
-                                <Button variant="outline" onClick={() => setOpen(false)}>
+                                <Button variant="outline" onClick={() => { setOpen(false); resetForm(); }}>
                                     Cancelar
                                 </Button>
                                 <Button onClick={save} disabled={saving || !title || !startAt}>

@@ -699,7 +699,7 @@ export default function MenuPage() {
                         {/* título centrado y compacto */}
                         <h1
                             id="boa-hero"
-                            className="mt-4 text-4xl sm:text-6xl font-semibold leading-[1.1] tracking-tight text-neutral-900"
+                            className="mt-4 text-4xl sm:text-6xl font-bold leading-[1.1] tracking-tight text-neutral-900"
                         >
                             Gastronomía <span className="text-emerald-700">BOA</span>
                         </h1>

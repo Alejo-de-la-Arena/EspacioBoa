@@ -19,19 +19,24 @@ export default function VerticalFlyerSlider({
 }: Props) {
     const slides = useMemo(() => {
         const now = new Date();
+
+        // futuros primero; si no hay, usar todos
         const upcoming = [...events]
-            .filter(e => new Date(e.date).getTime() >= now.getTime())
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            .filter(e => new Date(e.date as any).getTime() >= now.getTime())
+            .sort((a, b) => new Date(a.date as any).getTime() - new Date(b.date as any).getTime());
 
         const pool = (upcoming.length ? upcoming : events) as FlyerEvent[];
-        const ordered = [...pool].sort((a, b) => {
-            const av = (a.flyerVertical || a.poster) ? 1 : 0;
-            const bv = (b.flyerVertical || b.poster) ? 1 : 0;
-            return bv - av;
-        });
 
+        // puntaje: 2 si es destacado + 1 si tiene flyerVertical/poster
+        const score = (x: any) =>
+            (x.featured ? 2 : 0) + ((x.flyerVertical || x.poster || x.image) ? 1 : 0);
+
+        const ordered = [...pool].sort((a, b) => score(b) - score(a));
+
+        // Mostrá 3 o `maxSlides`, lo que sea mayor (como ya tenías)
         return ordered.slice(0, Math.max(maxSlides, 3));
     }, [events, maxSlides]);
+
 
     const [index, setIndex] = useState(0);
     const len = slides.length || 1;
