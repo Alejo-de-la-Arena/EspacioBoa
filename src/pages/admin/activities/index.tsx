@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/router"; // ✅ Pages Router
+import { useRouter } from "next/router";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/stores/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -39,7 +39,7 @@ function slugify(s: string) {
         .replace(/(^-|-$)+/g, "");
 }
 
-// Límite de tiempo a una promesa (sirve para refreshSession)
+// ===== helpers (robustos) =====
 async function withCap<T>(p: Promise<T>, ms = 3000): Promise<T> {
     let t: any;
     const timeout = new Promise<never>((_, rej) => {
@@ -52,72 +52,136 @@ async function withCap<T>(p: Promise<T>, ms = 3000): Promise<T> {
     }
 }
 
-
-// ====== TOKEN ROBUSTO + CACHÉ ======
+// TOKEN ROBUSTO + caché centralizada
 let _cachedToken: string | null = null;
 let _cachedAt = 0;
 
-async function getTokenRobust(maxWaitMs = 8000): Promise<string | null> {
-    const now = Date.now();
-    // usa token cacheado si no es viejo (5 min)
-    if (_cachedToken && now - _cachedAt < 5 * 60_000) return _cachedToken;
-
-    // 1) intento rápido: sesión actual
-    try {
-        const { data } = await supabase.auth.getSession();
-        const t = data?.session?.access_token ?? null;
-        if (t) { _cachedToken = t; _cachedAt = Date.now(); return t; }
-    } catch { }
-
-    // 2) intento con refresh, pero CAPEADO (evita cuelgues)
-    try {
-        const { data } = await withCap(supabase.auth.refreshSession(), 3000);
-        const t = data?.session?.access_token ?? null;
-        if (t) { _cachedToken = t; _cachedAt = Date.now(); return t; }
-    } catch { }
-
-    // 3) último recurso: esperamos un evento de auth por un rato
-    const token = await new Promise<string | null>((resolve) => {
-        const to = setTimeout(() => { sub?.subscription?.unsubscribe?.(); resolve(null); }, maxWaitMs);
-        const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
-            const t = session?.access_token ?? null;
-            if (t) {
-                clearTimeout(to);
-                sub?.subscription?.unsubscribe?.();
-                _cachedToken = t; _cachedAt = Date.now();
-                resolve(t);
-            }
-        });
+// Listener para cachear token al vuelo
+function wireAuthCacheListener() {
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+        const t = session?.access_token ?? null;
+        if (t) {
+            _cachedToken = t;
+            _cachedAt = Date.now();
+        }
     });
-
-    return token;
+    return () => sub?.subscription?.unsubscribe?.();
 }
 
-// ====== POST A LA API, PASANDO TOKEN EXPLÍCITAMENTE ======
-async function postUpsertActivity(body: any, token: string, timeoutMs = 15000) {
-    const hasTimeout = typeof (AbortSignal as any).timeout === "function";
-    const signal = hasTimeout ? (AbortSignal as any).timeout(timeoutMs) : undefined;
+// Siempre devuelve token fresco si expira pronto
+async function ensureFreshAndCachedToken(): Promise<string | null> {
+    try {
+        const { data } = await supabase.auth.getSession();
+        const sess = data?.session ?? null;
+        const now = Math.floor(Date.now() / 1000);
+
+        if (sess?.access_token) {
+            const exp = sess.expires_at ?? 0;
+            const needsRefresh = !exp || exp - now < 120;
+            if (needsRefresh) {
+                try {
+                    const { data: r } = await withCap(supabase.auth.refreshSession(), 5000);
+                    const t = r?.session?.access_token ?? null;
+                    if (t) {
+                        _cachedToken = t;
+                        _cachedAt = Date.now();
+                        return t;
+                    }
+                } catch { }
+            }
+            _cachedToken = sess.access_token;
+            _cachedAt = Date.now();
+            return sess.access_token;
+        }
+
+        try {
+            const { data: r } = await withCap(supabase.auth.refreshSession(), 5000);
+            const t = r?.session?.access_token ?? null;
+            if (t) {
+                _cachedToken = t;
+                _cachedAt = Date.now();
+                return t;
+            }
+        } catch { }
+
+        return await new Promise<string | null>((resolve) => {
+            const to = setTimeout(() => {
+                sub?.subscription?.unsubscribe?.();
+                resolve(null);
+            }, 6000);
+            const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+                const t = session?.access_token ?? null;
+                if (t) {
+                    clearTimeout(to);
+                    sub?.subscription?.unsubscribe?.();
+                    _cachedToken = t;
+                    _cachedAt = Date.now();
+                    resolve(t);
+                }
+            });
+        });
+    } catch {
+        return null;
+    }
+}
+
+// POST a la API (sin keepalive, sin AbortSignal)
+async function postUpsertActivity(body: any) {
+    const token = await ensureFreshAndCachedToken();
+    if (!token) throw new Error("Necesitás iniciar sesión nuevamente (token no disponible).");
 
     const resp = await fetch("/api/admin/activities/upsert", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(body),
         cache: "no-store",
-        keepalive: true,
-        ...(signal ? { signal } : {}),
     });
 
-    let json: any = null;
-    try { json = await resp.json(); } catch { }
-    if (!resp.ok) throw new Error(json?.error || `HTTP ${resp.status}`);
-    return json?.data ?? null;
+    const json = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+        const e: any = new Error(json?.error || `HTTP ${resp.status}`);
+        e.status = resp.status;
+        e.request_id = json?.request_id;
+        throw e;
+    }
+    return json;
 }
 
+// ===== Cola persistente (igual que events) =====
+type QueueItem = {
+    request_id: string;
+    payload: any;
+    attempt: number;
+    nextAt: number; // epoch ms
+};
 
+const QUEUE_KEY = "boa_activity_upsert_queue_v1";
 
+function readQueue(): QueueItem[] {
+    try {
+        return JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]");
+    } catch {
+        return [];
+    }
+}
+function writeQueue(q: QueueItem[]) {
+    try {
+        localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+    } catch { }
+}
+function enqueue(item: QueueItem) {
+    const q = readQueue();
+    q.push(item);
+    writeQueue(q);
+}
+function dequeueById(request_id: string) {
+    const q = readQueue().filter((i) => i.request_id !== request_id);
+    writeQueue(q);
+}
+function updateQueueItem(next: QueueItem) {
+    const q = readQueue().map((i) => (i.request_id === next.request_id ? next : i));
+    writeQueue(q);
+}
 
 export default function AdminActivities() {
     const { user } = useAuth();
@@ -140,13 +204,19 @@ export default function AdminActivities() {
     const [endAt, setEndAt] = React.useState("");
     const [capacity, setCapacity] = React.useState<string>("");
     const [price, setPrice] = React.useState<string>("");
-    const [isPublished, setIsPublished] = React.useState(true); // ✅ por defecto publicada
+    const [isPublished, setIsPublished] = React.useState(true);
     const [location, setLocation] = React.useState("");
     const [category, setCategory] = React.useState("");
     const [heroImage, setHeroImage] = React.useState("");
     const [gallery, setGallery] = React.useState("");
+    const [featured, setFeatured] = React.useState(false);
 
-    // Bloquear scroll del fondo cuando el modal está abierto
+    // === guards / refs ===
+    const subscribedRef = React.useRef(false);
+    const unWireAuthRef = React.useRef<null | (() => void)>(null);
+    const drainingRef = React.useRef(false);
+
+    // bloquear scroll de fondo con modal abierto
     React.useEffect(() => {
         if (!open) return;
         const prev = document.body.style.overflow;
@@ -156,12 +226,41 @@ export default function AdminActivities() {
         };
     }, [open]);
 
-    // Gate admin + cargar lista
+    // cachear token on-change
+    React.useEffect(() => {
+        unWireAuthRef.current = wireAuthCacheListener();
+        return () => {
+            try {
+                unWireAuthRef.current?.();
+            } catch { }
+        };
+    }, []);
+
+    // cargar lista (memoizado)
+    const loadList = React.useCallback(async () => {
+        setLoading(true);
+        const { data, error } = await supabase
+            .from("activities")
+            .select("*")
+            .order("start_at", { ascending: false });
+        setLoading(false);
+        if (error) {
+            toast({
+                title: "No pude cargar actividades",
+                description: error.message,
+                variant: "destructive",
+            });
+            return;
+        }
+        setRows((data ?? []) as ActivityDb[]);
+    }, [toast]);
+
+    // gate admin + cargar lista
     React.useEffect(() => {
         let alive = true;
         (async () => {
             if (!user) {
-                setIsAdmin(false);
+                if (alive) setIsAdmin(false);
                 return;
             }
             const { data, error } = await supabase
@@ -182,29 +281,13 @@ export default function AdminActivities() {
         return () => {
             alive = false;
         };
-    }, [user]);
+    }, [user, loadList]);
 
-    async function loadList() {
-        setLoading(true);
-        const { data, error } = await supabase
-            .from("activities")
-            .select("*")
-            .order("start_at", { ascending: false });
-        setLoading(false);
-        if (error) {
-            toast({
-                title: "No pude cargar actividades",
-                description: error.message,
-                variant: "destructive",
-            });
-            return;
-        }
-        setRows((data ?? []) as ActivityDb[]);
-    }
-
-    // Realtime
+    // realtime (una sola vez)
     React.useEffect(() => {
-        if (!isAdmin) return;
+        if (!isAdmin || subscribedRef.current) return;
+        subscribedRef.current = true;
+
         const ch = supabase
             .channel("rt-activities-admin")
             .on(
@@ -213,38 +296,64 @@ export default function AdminActivities() {
                 (payload) => {
                     setRows((prev) => {
                         if (!prev) return prev;
+
                         if (payload.eventType === "INSERT") {
                             const r = payload.new as ActivityDb;
                             if (prev.find((p) => p.id === r.id)) return prev;
-                            return [r, ...prev].sort((a, b) =>
-                                (b.start_at || "").localeCompare(a.start_at || "")
-                            );
+                            const next = [r, ...prev];
+                            next.sort((a, b) => (b.start_at || "").localeCompare(a.start_at || ""));
+                            return next;
                         }
+
                         if (payload.eventType === "UPDATE") {
                             const r = payload.new as ActivityDb;
-                            return prev.map((p) => (p.id === r.id ? r : p));
+                            const idx = prev.findIndex((p) => p.id === r.id);
+                            if (idx === -1) return prev;
+
+                            // Evita renders si no cambió nada relevante
+                            const same =
+                                prev[idx].updated_at === r.updated_at &&
+                                prev[idx].title === r.title &&
+                                prev[idx].start_at === r.start_at &&
+                                prev[idx].end_at === r.end_at;
+                            if (same) return prev;
+
+                            const next = prev.slice();
+                            next[idx] = r;
+                            return next;
                         }
+
                         if (payload.eventType === "DELETE") {
                             const r = payload.old as ActivityDb;
-                            return prev.filter((p) => p.id !== r.id);
+                            const next = prev.filter((p) => p.id !== r.id);
+                            return next.length === prev.length ? prev : next;
                         }
+
                         return prev;
                     });
                 }
             )
             .subscribe();
+
         return () => {
-            supabase.removeChannel(ch);
+            try {
+                supabase.removeChannel(ch);
+            } finally {
+                subscribedRef.current = false;
+            }
         };
     }, [isAdmin]);
 
-    // Refresca token cuando la pestaña recupera foco/visibilidad
+    // refrescar token cuando la pestaña vuelve a foco/visibilidad
     React.useEffect(() => {
         const onFocus = async () => {
-            try { await supabase.auth.refreshSession(); } catch { }
+            try {
+                await supabase.auth.refreshSession();
+            } catch { }
         };
-        const onVisibility = () => { if (!document.hidden) onFocus(); };
-
+        const onVisibility = () => {
+            if (!document.hidden) onFocus();
+        };
         window.addEventListener("focus", onFocus);
         document.addEventListener("visibilitychange", onVisibility);
         return () => {
@@ -252,7 +361,6 @@ export default function AdminActivities() {
             document.removeEventListener("visibilitychange", onVisibility);
         };
     }, []);
-
 
     function resetForm() {
         setEditingId(null);
@@ -263,17 +371,19 @@ export default function AdminActivities() {
         setEndAt("");
         setCapacity("");
         setPrice("");
-        setIsPublished(true); // ✅ default
+        setIsPublished(true);
         setLocation("");
         setCategory("");
         setHeroImage("");
         setGallery("");
+        setFeatured(false);
     }
 
     function openCreate() {
         resetForm();
         setOpen(true);
     }
+
     function openEdit(r: ActivityDb) {
         setEditingId(r.id);
         setTitle(r.title ?? "");
@@ -287,113 +397,156 @@ export default function AdminActivities() {
         setLocation(r.location ?? "");
         setCategory(r.category ?? "");
         setHeroImage(r.hero_image ?? "");
-        setGallery(
-            Array.isArray(r.gallery) ? r.gallery.join(", ") : (r.gallery ?? "")
-        );
+        setGallery(Array.isArray(r.gallery) ? r.gallery.join(", ") : (r.gallery ?? ""));
+        setFeatured(Boolean(r.featured));
         setOpen(true);
     }
 
+    // ===== Cola: drain =====
+    const drainQueue = React.useCallback(async () => {
+        if (drainingRef.current) return;
+        drainingRef.current = true;
+        try {
+            while (true) {
+                const q = readQueue();
+                if (!q.length) break;
+
+                const now = Date.now();
+                const idx = q.findIndex((i) => i.nextAt <= now);
+                if (idx === -1) break;
+
+                const item = q[idx];
+
+                try {
+                    await postUpsertActivity(item.payload);
+                    // éxito
+                    dequeueById(item.request_id);
+                    toast({ title: "Actividad guardada" });
+                    await loadList();
+                } catch (e: any) {
+                    // reintento tras refresh si es auth
+                    if (e?.status === 401 || e?.status === 403) {
+                        try {
+                            await supabase.auth.refreshSession();
+                            await postUpsertActivity(item.payload);
+                            dequeueById(item.request_id);
+                            toast({ title: "Actividad guardada" });
+                            await loadList();
+                            continue;
+                        } catch { }
+                    }
+                    // backoff exponencial hasta 5 min
+                    const attempt = (item.attempt || 0) + 1;
+                    const backoffMs = Math.min(5 * 60_000, 2000 * Math.pow(2, attempt - 1)); // 2s,4s,8s,…
+                    const next: QueueItem = { ...item, attempt, nextAt: Date.now() + backoffMs };
+                    updateQueueItem(next);
+                    break; // salir del loop hasta que venza el backoff
+                }
+            }
+        } finally {
+            drainingRef.current = false;
+        }
+    }, [loadList, toast]);
+
+    // disparadores del drain
+    React.useEffect(() => {
+        drainQueue();
+    }, [drainQueue]);
+
+    React.useEffect(() => {
+        const onFocus = () => drainQueue();
+        const onVis = () => !document.hidden && drainQueue();
+        window.addEventListener("focus", onFocus);
+        document.addEventListener("visibilitychange", onVis);
+        return () => {
+            window.removeEventListener("focus", onFocus);
+            document.removeEventListener("visibilitychange", onVis);
+        };
+    }, [drainQueue]);
+
+    React.useEffect(() => {
+        const t = setInterval(() => drainQueue(), 15000);
+        return () => clearInterval(t);
+    }, [drainQueue]);
+
     async function save() {
-        if (!title || !startAt) {
-            toast({
-                title: "Campos requeridos",
-                description: "Título e inicio son obligatorios.",
-                variant: "destructive",
-            });
+        // validaciones
+        if (!title) {
+            toast({ title: "Campos requeridos", description: "El título es obligatorio.", variant: "destructive" });
+            return;
+        }
+        if (!startAt) {
+            toast({ title: "Campos requeridos", description: "El inicio es obligatorio.", variant: "destructive" });
+            return;
+        }
+        if (!endAt) {
+            toast({ title: "Campos requeridos", description: "El fin es obligatorio.", variant: "destructive" });
+            return;
+        }
+        if (new Date(endAt) < new Date(startAt)) {
+            toast({ title: "Fechas inválidas", description: "El fin no puede ser anterior al inicio.", variant: "destructive" });
             return;
         }
 
         setSaving(true);
 
+        const request_id = crypto.randomUUID();
         const payload = {
+            request_id,
             id: editingId ?? null,
             slug: (slug || slugify(title)) || null,
             title,
             description: description || null,
-            start_at: startAt ? new Date(startAt).toISOString() : null,
-            end_at: endAt ? new Date(endAt).toISOString() : null,
+            start_at: new Date(startAt).toISOString(),
+            end_at: new Date(endAt).toISOString(),
             capacity: capacity ? Number(capacity) : null,
             price: price ? Number(price) : null,
             is_published: !!isPublished,
             category: category || null,
             location: location || null,
             hero_image: heroImage || null,
-            gallery: gallery ? gallery.split(",").map(s => s.trim()).filter(Boolean) : [],
-            featured: false,
+            gallery: gallery ? gallery.split(",").map((s) => s.trim()).filter(Boolean) : [],
+            featured: !!featured,
         };
 
-        // Watchdog: SIEMPRE libera el UI
-        let watchdog: any = null;
-        const armWatchdog = () => {
-            clearTimeout(watchdog);
-            watchdog = setTimeout(() => {
-                setSaving(false);
-                toast({
-                    title: "La red tardó demasiado",
-                    description: "Revisá tu conexión o intentá nuevamente.",
-                    variant: "destructive",
-                });
-            }, 30000);
-        };
-        armWatchdog();
+        // encolo y proceso
+        enqueue({ request_id, payload, attempt: 0, nextAt: Date.now() });
+        setOpen(false);
+        resetForm();
+        toast({
+            title: "Guardando…",
+            description: "Se está enviando. Si hay cortes o cambiás de pestaña, lo reintento automáticamente.",
+        });
 
-        try {
-            // ⛑️ 1) aseguramos token robusto (con caché) antes de llamar a la API
-            const token = await getTokenRobust();
-            if (!token) {
-                throw new Error("Necesitás iniciar sesión nuevamente (token no disponible).");
-            }
-
-            // ⛑️ 2) guardamos SIEMPRE por API (service-role)
-            await postUpsertActivity(payload, token, 15000);
-
-            clearTimeout(watchdog);
-            toast({ title: "Actividad guardada" });
-            setOpen(false);
-            resetForm();
-            router.replace(router.asPath);
-        } catch (err: any) {
-            clearTimeout(watchdog);
-            console.error("save activity error:", err);
-            toast({
-                title: "No se pudo guardar",
-                description: err?.message ?? "Error desconocido",
-                variant: "destructive",
-            });
-        } finally {
-            setSaving(false);
-        }
+        await drainQueue(); // primer intento inmediato
+        setSaving(false);
     }
 
     async function removeOne(id: string) {
         if (!confirm("¿Eliminar esta actividad?")) return;
         const { error } = await supabase.from("activities").delete().eq("id", id);
         if (error) {
-            toast({
-                title: "No se pudo eliminar",
-                description: error.message,
-                variant: "destructive",
-            });
+            toast({ title: "No se pudo eliminar", description: error.message, variant: "destructive" });
             return;
         }
         toast({ title: "Actividad eliminada" });
-        router.replace(router.asPath); // ✅ Pages Router
+        await loadList();
     }
 
     if (isAdmin === null) return null;
+
     if (!isAdmin) {
         return (
             <main className="container mx-auto max-w-4xl px-4 py-16">
                 <div className="rounded-xl border p-8 text-center">
                     <h1 className="text-2xl font-semibold">Acceso restringido</h1>
-                    <p className="mt-2 text-neutral-600">
-                        Necesitás permisos de administrador.
-                    </p>
+                    <p className="mt-2 text-neutral-600">Necesitás permisos de administrador.</p>
                 </div>
             </main>
         );
     }
 
+    // === RETURN VACÍO (igual que me pediste para maquetarlo aparte) ===
     return (
         <main className="container mx-auto max-w-6xl px-4 py-10">
             <div className="flex items-center justify-between">
@@ -605,3 +758,4 @@ export default function AdminActivities() {
         </main>
     );
 }
+

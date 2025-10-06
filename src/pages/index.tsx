@@ -483,9 +483,6 @@ export default function HomePage() {
             </motion.section>
             {/* =================== /SLIDER EXPERIENCIAS — BOA =================== */}
 
-
-
-            {/* Gift Cards Section */}
             {/* Gift Cards Section */}
             <motion.section
                 id="gift-cards"
@@ -625,8 +622,6 @@ export default function HomePage() {
   `}</style>
             </motion.section>
 
-
-
             {/* About BOA Preview */}
             <motion.section
                 id="about-boa"
@@ -637,18 +632,6 @@ export default function HomePage() {
             >
                 {/* Fondo cálido */}
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,#FAF8F2_0%,#FFFFFF_85%)]" />
-
-                {/* Pinceladas artísticas (sin ReferenceError) */}
-                <div
-                    className="absolute top-0 left-1/2 -translate-x-1/2 w-[320px] h-[60px] opacity-[0.15]
-               bg-[url('/assets/pincelada-verde.png')] bg-no-repeat bg-cover"
-                    aria-hidden
-                />
-                <div
-                    className="absolute bottom-0 right-1/4 w-[280px] h-[50px] rotate-180 opacity-[0.15]
-               bg-[url('/assets/pincelada-verde.png')] bg-no-repeat bg-cover"
-                    aria-hidden
-                />
 
                 <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">

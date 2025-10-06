@@ -127,37 +127,42 @@ export default function GiftCardsPage() {
 }
 
 
-/** ============= Shell reutilizable (idéntico look & feel al Home) ============= */
 function GiftCardShell({ children }: { children: React.ReactNode }) {
     return (
         <div
-            className="relative p-[16px] rounded-[30px] shadow-xl"
+            className="relative rounded-[28px] p-[18px] shadow-xl"
             style={{
-                backgroundImage: `
-          linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18)),
-          radial-gradient(180px 180px at 0% 0%, rgba(0,0,0,.06), transparent),
-          radial-gradient(200px 200px at 100% 100%, rgba(0,0,0,.06), transparent)
-        `,
-                backgroundBlendMode: "overlay, normal, normal",
-                boxShadow: "inset 0 0 0 2px rgba(255,255,255,.28), 0 18px 32px rgba(0,0,0,.18)",
-                borderRadius: 30,
+                background:
+                    "linear-gradient(135deg, rgba(30,122,102,.16), rgba(213,149,121,.16))",
+                boxShadow:
+                    "inset 0 0 0 2px rgba(255,255,255,.28), 0 18px 40px rgba(0,0,0,.18)",
             }}
         >
-            {/* Lienzo crema con textura papel sutil */}
             <div className="relative rounded-[22px] overflow-hidden bg-[#FAF8F2] ring-1 ring-black/10">
+                {/* textura papel */}
                 <div
-                    className="absolute inset-0 opacity-[0.08] pointer-events-none"
+                    className="absolute inset-0 opacity-[0.07] pointer-events-none"
                     style={{
                         backgroundImage:
-                            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>\")",
+                            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>\")",
                         backgroundSize: "260px 260px",
                     }}
                 />
-                {children}
+                {/* watermark logo BOA (ajustá la ruta si hace falta) */}
+                <div
+                    aria-hidden
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                        opacity: 0.06,
+                        background: "url('https://res.cloudinary.com/dasch1s5i/image/upload/v1755904587/logo-boa_1_gf2bhl.svg') right -10% bottom -6% / 320px 320px no-repeat",
+                    }}
+                />
+                <div className="relative z-10">{children}</div>
             </div>
         </div>
     );
 }
+
 
 
 /** Fallback por si el contexto aún no cargó giftCards */

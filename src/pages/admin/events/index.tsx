@@ -39,9 +39,8 @@ function slugify(s: string) {
         .replace(/(^-|-$)+/g, "");
 }
 
-// ===== helpers (iguales a activities) =====
+// ===== helpers (robustos) =====
 
-// capea promesas (lo usamos para refresh controlado)
 async function withCap<T>(p: Promise<T>, ms = 3000): Promise<T> {
     let t: any;
     const timeout = new Promise<never>((_, rej) => {
@@ -54,66 +53,136 @@ async function withCap<T>(p: Promise<T>, ms = 3000): Promise<T> {
     }
 }
 
-// TOKEN ROBUSTO + caché
+// TOKEN ROBUSTO + caché centralizada
 let _cachedToken: string | null = null;
 let _cachedAt = 0;
 
-async function getTokenRobust(maxWaitMs = 8000): Promise<string | null> {
-    const now = Date.now();
-    if (_cachedToken && now - _cachedAt < 5 * 60_000) return _cachedToken;
-
-    try {
-        const { data } = await supabase.auth.getSession();
-        const t = data?.session?.access_token ?? null;
-        if (t) { _cachedToken = t; _cachedAt = Date.now(); return t; }
-    } catch { }
-
-    try {
-        const { data } = await withCap(supabase.auth.refreshSession(), 3000);
-        const t = data?.session?.access_token ?? null;
-        if (t) { _cachedToken = t; _cachedAt = Date.now(); return t; }
-    } catch { }
-
-    // último recurso: esperamos evento auth un ratito
-    const token = await new Promise<string | null>((resolve) => {
-        const to = setTimeout(() => { sub?.subscription?.unsubscribe?.(); resolve(null); }, maxWaitMs);
-        const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
-            const t = session?.access_token ?? null;
-            if (t) {
-                clearTimeout(to);
-                sub?.subscription?.unsubscribe?.();
-                _cachedToken = t; _cachedAt = Date.now();
-                resolve(t);
-            }
-        });
+// Listener para cachear token al vuelo
+function wireAuthCacheListener() {
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+        const t = session?.access_token ?? null;
+        if (t) {
+            _cachedToken = t;
+            _cachedAt = Date.now();
+        }
     });
-    return token;
+    return () => sub?.subscription?.unsubscribe?.();
 }
 
-// POST a la API service-role (token obligatorio)
-async function postUpsertEvent(body: any, token: string, timeoutMs = 15000) {
-    const hasTimeout = typeof (AbortSignal as any).timeout === "function";
-    const signal = hasTimeout ? (AbortSignal as any).timeout(timeoutMs) : undefined;
+// Siempre devuelve token fresco si expira pronto
+async function ensureFreshAndCachedToken(): Promise<string | null> {
+    try {
+        const { data } = await supabase.auth.getSession();
+        const sess = data?.session ?? null;
+        const now = Math.floor(Date.now() / 1000);
+
+        if (sess?.access_token) {
+            const exp = sess.expires_at ?? 0;
+            const needsRefresh = !exp || exp - now < 120;
+            if (needsRefresh) {
+                try {
+                    const { data: r } = await withCap(supabase.auth.refreshSession(), 5000);
+                    const t = r?.session?.access_token ?? null;
+                    if (t) {
+                        _cachedToken = t;
+                        _cachedAt = Date.now();
+                        return t;
+                    }
+                } catch { }
+            }
+            _cachedToken = sess.access_token;
+            _cachedAt = Date.now();
+            return sess.access_token;
+        }
+
+        try {
+            const { data: r } = await withCap(supabase.auth.refreshSession(), 5000);
+            const t = r?.session?.access_token ?? null;
+            if (t) {
+                _cachedToken = t;
+                _cachedAt = Date.now();
+                return t;
+            }
+        } catch { }
+
+        return await new Promise<string | null>((resolve) => {
+            const to = setTimeout(() => {
+                sub?.subscription?.unsubscribe?.();
+                resolve(null);
+            }, 6000);
+            const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+                const t = session?.access_token ?? null;
+                if (t) {
+                    clearTimeout(to);
+                    sub?.subscription?.unsubscribe?.();
+                    _cachedToken = t;
+                    _cachedAt = Date.now();
+                    resolve(t);
+                }
+            });
+        });
+    } catch {
+        return null;
+    }
+}
+
+const hardReload = () => {
+    if (typeof window !== "undefined") window.location.reload();
+};
+
+
+// POST a la API con reintento ante 401/403
+async function postUpsertEvent(body: any) {
+    const token = await ensureFreshAndCachedToken();
+    if (!token) throw new Error("Necesitás iniciar sesión nuevamente (token no disponible).");
 
     const resp = await fetch("/api/admin/events/upsert", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(body),
         cache: "no-store",
-        keepalive: true,
-        ...(signal ? { signal } : {}),
     });
 
-    let json: any = null;
-    try { json = await resp.json(); } catch { }
-    if (!resp.ok) throw new Error(json?.error || `HTTP ${resp.status}`);
-    return json?.data ?? null;
+    const json = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+        const e: any = new Error(json?.error || `HTTP ${resp.status}`);
+        e.status = resp.status;
+        e.request_id = json?.request_id;
+        throw e;
+    }
+    return json;
 }
 
-// ========================================================
+
+type QueueItem = {
+    request_id: string;
+    payload: any;
+    attempt: number;
+    nextAt: number; // epoch ms
+};
+
+const QUEUE_KEY = "boa_event_upsert_queue_v1";
+
+function readQueue(): QueueItem[] {
+    try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]"); } catch { return []; }
+}
+function writeQueue(q: QueueItem[]) {
+    try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); } catch { }
+}
+function enqueue(item: QueueItem) {
+    const q = readQueue();
+    q.push(item);
+    writeQueue(q);
+}
+function dequeueById(request_id: string) {
+    const q = readQueue().filter(i => i.request_id !== request_id);
+    writeQueue(q);
+}
+function updateQueueItem(next: QueueItem) {
+    const q = readQueue().map(i => i.request_id === next.request_id ? next : i);
+    writeQueue(q);
+}
+
 
 export default function AdminEvents() {
     const { user } = useAuth();
@@ -143,123 +212,277 @@ export default function AdminEvents() {
     const [gallery, setGallery] = React.useState("");
     const [featured, setFeatured] = React.useState(false);
 
+    // === guards / refs ===
+    const subscribedRef = React.useRef(false); // evita suscripciones duplicadas en StrictMode
+    const unWireAuthRef = React.useRef<null | (() => void)>(null);
+
     // bloquear scroll de fondo con modal abierto
     React.useEffect(() => {
         if (!open) return;
         const prev = document.body.style.overflow;
         document.body.style.overflow = "hidden";
-        return () => { document.body.style.overflow = prev; };
+        return () => {
+            document.body.style.overflow = prev;
+        };
     }, [open]);
+
+    // cachear token on-change
+    React.useEffect(() => {
+        unWireAuthRef.current = wireAuthCacheListener();
+        return () => {
+            try {
+                unWireAuthRef.current?.();
+            } catch { }
+        };
+    }, []);
+
+    // cargar lista (memoizado para usar en efectos)
+    const loadList = React.useCallback(async () => {
+        setLoading(true);
+        const { data, error } = await supabase
+            .from("events")
+            .select("*")
+            .order("start_at", { ascending: false });
+        setLoading(false);
+        if (error) {
+            toast({
+                title: "No pude cargar eventos",
+                description: error.message,
+                variant: "destructive",
+            });
+            return;
+        }
+        setRows((data ?? []) as EventDb[]);
+    }, [toast]);
 
     // gate admin + cargar lista
     React.useEffect(() => {
         let alive = true;
         (async () => {
-            if (!user) { setIsAdmin(false); return; }
+            if (!user) {
+                if (alive) setIsAdmin(false);
+                return;
+            }
             const { data, error } = await supabase
-                .from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
+                .from("profiles")
+                .select("is_admin")
+                .eq("id", user.id)
+                .maybeSingle();
             if (!alive) return;
-            if (error) { console.error(error); setIsAdmin(false); return; }
+            if (error) {
+                console.error(error);
+                setIsAdmin(false);
+                return;
+            }
             const ok = Boolean(data?.is_admin);
             setIsAdmin(ok);
             if (ok) await loadList();
         })();
-        return () => { alive = false; };
-    }, [user]);
+        return () => {
+            alive = false;
+        };
+    }, [user, loadList]);
 
-    async function loadList() {
-        setLoading(true);
-        const { data, error } = await supabase
-            .from("events").select("*").order("start_at", { ascending: false });
-        setLoading(false);
-        if (error) {
-            toast({ title: "No pude cargar eventos", description: error.message, variant: "destructive" });
-            return;
-        }
-        setRows((data ?? []) as EventDb[]);
-    }
-
-    // realtime (igual a activities)
+    // realtime (una sola vez)
     React.useEffect(() => {
-        if (!isAdmin) return;
-        const ch = supabase.channel("rt-events-admin")
-            .on("postgres_changes", { event: "*", schema: "public", table: "events" }, (payload) => {
-                setRows(prev => {
-                    if (!prev) return prev;
-                    if (payload.eventType === "INSERT") {
-                        const r = payload.new as EventDb;
-                        if (prev.find(p => p.id === r.id)) return prev;
-                        return [r, ...prev].sort((a, b) => (b.start_at || "").localeCompare(a.start_at || ""));
-                    }
-                    if (payload.eventType === "UPDATE") {
-                        const r = payload.new as EventDb;
-                        return prev.map(p => (p.id === r.id ? r : p));
-                    }
-                    if (payload.eventType === "DELETE") {
-                        const r = payload.old as EventDb;
-                        return prev.filter(p => p.id !== r.id);
-                    }
-                    return prev;
-                });
-            })
+        if (!isAdmin || subscribedRef.current) return;
+        subscribedRef.current = true;
+
+        const ch = supabase
+            .channel("rt-events-admin")
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "events" },
+                (payload) => {
+                    setRows((prev) => {
+                        if (!prev) return prev;
+
+                        if (payload.eventType === "INSERT") {
+                            const r = payload.new as EventDb;
+                            if (prev.find((p) => p.id === r.id)) return prev;
+                            const next = [r, ...prev];
+                            next.sort((a, b) => (b.start_at || "").localeCompare(a.start_at || ""));
+                            return next;
+                        }
+
+                        if (payload.eventType === "UPDATE") {
+                            const r = payload.new as EventDb;
+                            const idx = prev.findIndex((p) => p.id === r.id);
+                            if (idx === -1) return prev;
+
+                            // Evita renders inútiles si no cambió algo relevante
+                            const same =
+                                prev[idx].updated_at === r.updated_at &&
+                                prev[idx].title === r.title &&
+                                prev[idx].start_at === r.start_at &&
+                                prev[idx].end_at === r.end_at;
+                            if (same) return prev;
+
+                            const next = prev.slice();
+                            next[idx] = r;
+                            return next;
+                        }
+
+                        if (payload.eventType === "DELETE") {
+                            const r = payload.old as EventDb;
+                            const next = prev.filter((p) => p.id !== r.id);
+                            return next.length === prev.length ? prev : next;
+                        }
+
+                        return prev;
+                    });
+                }
+            )
             .subscribe();
-        return () => { supabase.removeChannel(ch); };
+
+        return () => {
+            try {
+                supabase.removeChannel(ch);
+            } finally {
+                subscribedRef.current = false;
+            }
+        };
     }, [isAdmin]);
 
-    // refrescar token cuando la pestaña vuelve a foco/visibilidad
-    React.useEffect(() => {
-        const onFocus = async () => { try { await supabase.auth.refreshSession(); } catch { } };
-        const onVisibility = () => { if (!document.hidden) onFocus(); };
-        window.addEventListener("focus", onFocus);
-        document.addEventListener("visibilitychange", onVisibility);
-        return () => {
-            window.removeEventListener("focus", onFocus);
-            document.removeEventListener("visibilitychange", onVisibility);
-        };
-    }, []);
+
+
 
     function resetForm() {
         setEditingId(null);
-        setTitle(""); setSlug(""); setDescription("");
-        setStartAt(""); setEndAt("");
-        setCapacity(""); setPrice("");
+        setTitle("");
+        setSlug("");
+        setDescription("");
+        setStartAt("");
+        setEndAt("");
+        setCapacity("");
+        setPrice("");
         setIsPublished(true);
-        setLocation(""); setCategory("");
-        setHeroImage(""); setGallery("");
+        setLocation("");
+        setCategory("");
+        setHeroImage("");
+        setGallery("");
         setFeatured(false);
     }
 
-    function openCreate() { resetForm(); setOpen(true); }
+    function openCreate() {
+        resetForm();
+        setOpen(true);
+    }
 
     function openEdit(r: EventDb) {
         setEditingId(r.id);
-        setTitle(r.title ?? ""); setSlug(r.slug ?? ""); setDescription(r.description ?? "");
-        setStartAt(r.start_at ? r.start_at.slice(0, 16) : ""); setEndAt(r.end_at ? r.end_at.slice(0, 16) : "");
+        setTitle(r.title ?? "");
+        setSlug(r.slug ?? "");
+        setDescription(r.description ?? "");
+        setStartAt(r.start_at ? r.start_at.slice(0, 16) : "");
+        setEndAt(r.end_at ? r.end_at.slice(0, 16) : "");
         setCapacity(r.capacity != null ? String(r.capacity) : "");
         setPrice(r.price != null ? String(r.price) : "");
         setIsPublished(Boolean(r.is_published));
-        setLocation(r.location ?? ""); setCategory(r.category ?? "");
+        setLocation(r.location ?? "");
+        setCategory(r.category ?? "");
         setHeroImage(r.hero_image ?? "");
         setGallery(Array.isArray(r.gallery) ? r.gallery.join(", ") : (r.gallery ?? ""));
         setFeatured(Boolean(r.featured));
         setOpen(true);
     }
 
+    const drainingRef = React.useRef(false);
+
+    const drainQueue = React.useCallback(async () => {
+        if (drainingRef.current) return;
+        drainingRef.current = true;
+        try {
+            // procesar de a 1 para mantener orden
+            while (true) {
+                const q = readQueue();
+                if (!q.length) break;
+
+                // buscar el próximo disponible por tiempo
+                const now = Date.now();
+                const idx = q.findIndex(i => i.nextAt <= now);
+                if (idx === -1) {
+                    // nada listo: salir
+                    break;
+                }
+                const item = q[idx];
+
+                try {
+                    const res = await postUpsertEvent(item.payload);
+                    // éxito
+                    dequeueById(item.request_id);
+                    // feedback visual y refresco
+                    toast({ title: "Evento guardado" });
+                    await loadList();
+                } catch (e: any) {
+                    // si es 401/403 intento refrescar sesión y repito una vez
+                    if (e?.status === 401 || e?.status === 403) {
+                        try {
+                            await supabase.auth.refreshSession();
+                            const res2 = await postUpsertEvent(item.payload);
+                            dequeueById(item.request_id);
+                            toast({ title: "Evento guardado" });
+                            await loadList();
+                            continue;
+                        } catch { }
+                    }
+
+                    // calcular próximo backoff (máximo 5 min entre intentos)
+                    const attempt = (item.attempt || 0) + 1;
+                    const backoffMs = Math.min(5 * 60_000, 2000 * Math.pow(2, attempt - 1)); // 2s,4s,8s,…
+                    const next: QueueItem = { ...item, attempt, nextAt: Date.now() + backoffMs };
+                    updateQueueItem(next);
+
+                    // no seguimos en este loop si falló: dejamos que el backoff corra
+                    break;
+                }
+            }
+        } finally {
+            drainingRef.current = false;
+        }
+    }, [loadList, toast]);
+
+    // al montar y al volver a foco/visibilidad
+    React.useEffect(() => { drainQueue(); }, [drainQueue]);
+    React.useEffect(() => {
+        const onFocus = () => drainQueue();
+        const onVis = () => !document.hidden && drainQueue();
+        window.addEventListener("focus", onFocus);
+        document.addEventListener("visibilitychange", onVis);
+        return () => {
+            window.removeEventListener("focus", onFocus);
+            document.removeEventListener("visibilitychange", onVis);
+        };
+    }, [drainQueue]);
+
+    // además, un pulso cada 15s por si quedó algo pendiente
+    React.useEffect(() => {
+        const t = setInterval(() => drainQueue(), 15000);
+        return () => clearInterval(t);
+    }, [drainQueue]);
+
+
     async function save() {
-        if (!title || !startAt) {
-            toast({ title: "Campos requeridos", description: "Título e inicio son obligatorios.", variant: "destructive" });
+        // validaciones
+        if (!title) { toast({ title: "Campos requeridos", description: "El título es obligatorio.", variant: "destructive" }); return; }
+        if (!startAt) { toast({ title: "Campos requeridos", description: "El inicio es obligatorio.", variant: "destructive" }); return; }
+        if (!endAt) { toast({ title: "Campos requeridos", description: "El fin es obligatorio.", variant: "destructive" }); return; }
+        if (new Date(endAt) < new Date(startAt)) {
+            toast({ title: "Fechas inválidas", description: "El fin no puede ser anterior al inicio.", variant: "destructive" });
             return;
         }
 
         setSaving(true);
 
+        const request_id = crypto.randomUUID();
         const payload = {
+            request_id,
             id: editingId ?? null,
             slug: (slug || slugify(title)) || null,
             title,
             description: description || null,
-            start_at: startAt ? new Date(startAt).toISOString() : null,
-            end_at: endAt ? new Date(endAt).toISOString() : null,
+            start_at: new Date(startAt).toISOString(),
+            end_at: new Date(endAt).toISOString(),
             capacity: capacity ? Number(capacity) : null,
             price: price ? Number(price) : null,
             is_published: !!isPublished,
@@ -270,51 +493,16 @@ export default function AdminEvents() {
             featured: !!featured,
         };
 
-        // watchdog para no quedar colgados
-        let watchdog: any = null;
-        const armWatchdog = () => {
-            clearTimeout(watchdog);
-            watchdog = setTimeout(() => {
-                setSaving(false);
-                toast({
-                    title: "La red tardó demasiado",
-                    description: "Revisá tu conexión o intentá nuevamente.",
-                    variant: "destructive",
-                });
-            }, 30000);
-        };
-        armWatchdog();
+        // encolo y proceso
+        enqueue({ request_id, payload, attempt: 0, nextAt: Date.now() });
+        setOpen(false);
+        resetForm();
+        toast({ title: "Guardando…", description: "Se está enviando. Si hay cortes o cambiás de pestaña, lo reintento automáticamente." });
 
-        try {
-            // 1) token robusto (usa caché)
-            const token = await getTokenRobust();
-            if (!token) throw new Error("Necesitás iniciar sesión nuevamente (token no disponible).");
-
-            // 2) guardar SIEMPRE por API (service-role)
-            await postUpsertEvent(payload, token, 15000);
-
-            clearTimeout(watchdog);
-            toast({ title: "Evento guardado" });
-            setOpen(false);
-            resetForm();
-
-            // realtime debería empujar la fila; por las dudas:
-            router.replace(router.asPath);
-        } catch (err: any) {
-            clearTimeout(watchdog);
-            console.error("save event error:", err);
-            toast({
-                title: "No se pudo guardar",
-                description:
-                    err?.name === "AbortError" || /timeout/i.test(String(err?.message))
-                        ? "La red tardó demasiado. Probá nuevamente."
-                        : err?.message ?? "Error desconocido",
-                variant: "destructive",
-            });
-        } finally {
-            setSaving(false);
-        }
+        await drainQueue(); // primer intento inmediato
+        setSaving(false);
     }
+
 
     async function removeOne(id: string) {
         if (!confirm("¿Eliminar este evento?")) return;
@@ -324,20 +512,12 @@ export default function AdminEvents() {
             return;
         }
         toast({ title: "Evento eliminado" });
-        router.replace(router.asPath);
+        await loadList();
     }
 
     if (isAdmin === null) return null;
-    if (!isAdmin) {
-        return (
-            <main className="container mx-auto max-w-4xl px-4 py-16">
-                <div className="rounded-xl border p-8 text-center">
-                    <h1 className="text-2xl font-semibold">Acceso restringido</h1>
-                    <p className="mt-2 text-neutral-600">Necesitás permisos de administrador.</p>
-                </div>
-            </main>
-        );
-    }
+
+    if (!isAdmin) { return (<main className="container mx-auto max-w-4xl px-4 py-16"> <div className="rounded-xl border p-8 text-center"> <h1 className="text-2xl font-semibold">Acceso restringido</h1> <p className="mt-2 text-neutral-600">Necesitás permisos de administrador.</p> </div> </main>); }
 
     return (
         <main className="container mx-auto max-w-6xl px-4 py-10">
@@ -474,3 +654,6 @@ export default function AdminEvents() {
         </main>
     );
 }
+
+
+

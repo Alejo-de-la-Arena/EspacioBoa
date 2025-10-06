@@ -1,10 +1,10 @@
-// pages/api/admin/activities/upsert.ts
+// pages/api/admin/giftcards/upsert.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const service = process.env.SUPABASE_SERVICE_ROLE_KEY!; // server-side
+const service = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const sbAnon = createClient(url, anon);
 const sbService = createClient(url, service);
@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const started = Date.now();
     const request_id = (req.body?.request_id as string) || crypto.randomUUID();
-    const log = (...a: any[]) => console.log(`[activities.upsert ${request_id}]`, ...a);
+    const log = (...a: any[]) => console.log(`[giftcards.upsert ${request_id}]`, ...a);
 
     try {
         log("START", { method: req.method });
@@ -36,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
         const userId = authData.user.id;
 
-        // Admin
+        // Admin check
         log("check admin", userId);
         const { data: prof, error: profErr } = await sbService
             .from("profiles")
@@ -53,40 +53,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(403).json({ error: "Forbidden", request_id });
         }
 
-        // Normalizar payload
         const p = req.body || {};
-        if (!p?.title) {
-            log("400 missing title");
-            return res.status(400).json({ error: "title is required", request_id });
+        if (!p?.name) {
+            log("400 missing name");
+            return res.status(400).json({ error: "name is required", request_id });
         }
 
         const row = {
-            slug: p.slug ?? null,
-            title: String(p.title).trim(),
+            name: String(p.name).trim(),
             description: p.description ?? null,
-            start_at: p.start_at ?? null,
-            end_at: p.end_at ?? null,
-            capacity: p.capacity ?? null,
-            price: p.price ?? null,
-            is_published: !!p.is_published,
-            category: p.category ?? null,
-            location: p.location ?? null,
-            hero_image: p.hero_image ?? null,
-            gallery: Array.isArray(p.gallery) ? p.gallery : [],
-            featured: !!p.featured,
+            value: p.value ?? 0,
+            benefits: Array.isArray(p.benefits) ? p.benefits : [],
+            image_url: p.image_url ?? null,
+            is_active: p.is_active ?? true,
             created_by: userId,
         };
 
-        // Upsert
         let result: any;
         if (p.id) {
             log("UPDATE", p.id);
             const { data, error } = await sbService
-                .from("activities")
+                .from("giftcards")
                 .update({ ...row, updated_at: new Date().toISOString() })
                 .eq("id", p.id)
                 .select("*")
                 .maybeSingle();
+
             if (error) {
                 log("400 update error", error);
                 return res.status(400).json({ error: error.message, request_id });
@@ -95,10 +87,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         } else {
             log("INSERT");
             const { data, error } = await sbService
-                .from("activities")
+                .from("giftcards")
                 .insert(row)
                 .select("*")
                 .maybeSingle();
+
             if (error) {
                 log("400 insert error", error);
                 return res.status(400).json({ error: error.message, request_id });
@@ -109,7 +102,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         log("OK", { ms: Date.now() - started });
         return res.status(200).json({ data: result, request_id });
     } catch (e: any) {
-        console.error(`[activities.upsert ${request_id}] FATAL`, e);
-        return res.status(500).json({ error: e?.message ?? "server error", request_id });
+        console.error(`[giftcards.upsert ${request_id}] FATAL`, e);
+        return res.status(500).json({ error: e?.message || "Unexpected error", request_id });
     }
 }
