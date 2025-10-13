@@ -18,6 +18,7 @@ import {
     MapPin,
     Sparkles,
     ChevronRight,
+    Users
 } from "lucide-react";
 import type { Activity } from "@/types";
 
@@ -209,6 +210,7 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                                         )}
                                     </div>
 
+
                                     {/* subrayado pincel */}
                                     <svg className="mt-1 w-24 h-3" viewBox="0 0 120 12" fill="none" aria-hidden="true">
                                         <path d="M2 8C28 11 58 11 118 6" stroke="hsl(var(--boa-green))" strokeWidth="5" strokeLinecap="round" opacity=".8" />
@@ -221,18 +223,59 @@ export default function Activities({ activities }: { activities: Activity[] }) {
 
                                     {/* REVEAL: sube en hover/focus */}
                                     <div className="mt-3 translate-y-0 transition-all duration-300 group-hover:opacity-100">
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[13px] text-white/90">
+                                        <div className="grid grid-cols-1 gap-2 text-[13px] text-white/90 sm:hidden">
                                             <div className="flex items-center"><Calendar className="h-4 w-4 mr-2" />{a.schedule.day}</div>
                                             <div className="flex items-center"><Clock className="h-4 w-4 mr-2" />{a.schedule.time}</div>
                                             <div className="flex items-center"><MapPin className="h-4 w-4 mr-2" />{a.location}</div>
                                         </div>
 
-                                        <div className="mt-3 flex items-center justify-between">
-                                            {/* cupo — mínimo, mantiene tensión */}
-                                            <span className={`text-[12px] ${a.enrolled >= a.capacity ? "text-red-200" : "text-white/70"}`}>
-                                                Cupo: {a.enrolled}/{a.capacity}
+                                        {/* Desktop: Día / Hora / Cupo (alineados) */}
+                                        <div className="hidden sm:grid grid-cols-[1fr_auto_1fr] items-center text-[13px] text-white/90">
+                                            {/* Día: izquierda */}
+                                            <div className="flex items-center justify-start">
+                                                <Calendar className="h-4 w-4 mr-2" />
+                                                {a.schedule.day}
+                                            </div>
+
+                                            {/* Hora: CENTRADA */}
+                                            <div className="flex items-center justify-center text-center">
+                                                <Clock className="h-4 w-4 mr-2" />
+                                                {a.schedule.time}
+                                            </div>
+
+                                            {/* Cupo: totalmente a la DERECHA (alineado con el precio) */}
+                                            <div className="flex items-center justify-end text-right">
+                                                <Users className="h-4 w-4 mr-2" />
+                                                <span className="tabular-nums">{a.enrolled}/{a.capacity}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Desktop: Ubicación (izq) + CTA (der) en la MISMA fila */}
+                                        <div className="mt-4 hidden sm:flex items-center justify-between">
+                                            <span className="inline-flex items-center text-[12px] text-white/90">
+                                                <MapPin className="h-4 w-4 mr-1.5" />
+                                                {a.location}
                                             </span>
 
+                                            <Link href={`/activities/${a.id}`} className="focus:outline-none">
+                                                <Button
+                                                    size="sm"
+                                                    className={`group/btn rounded-full px-4 ${a.enrolled >= a.capacity
+                                                            ? "bg-white/30 hover:bg-white/30 cursor-not-allowed"
+                                                            : "bg-white text-boa-ink hover:bg-white/90"
+                                                        }`}
+                                                    disabled={a.enrolled >= a.capacity}
+                                                >
+                                                    Ver detalles
+                                                    <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
+                                                </Button>
+                                            </Link>
+                                        </div>
+
+
+
+                                        {/* CTA: Ver detalles */}
+                                        {/* <div className="mt-3 flex justify-end">
                                             <Link href={`/activities/${a.id}`} className="focus:outline-none">
                                                 <Button
                                                     size="sm"
@@ -246,7 +289,8 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                                                     <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
                                                 </Button>
                                             </Link>
-                                        </div>
+                                        </div> */}
+
                                     </div>
                                 </div>
 

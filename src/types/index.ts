@@ -4,39 +4,45 @@ export interface Schedule {
     time: string;
 }
 
+// types.ts
 export interface Person {
+    id: string;
     name: string;
-    specialty: string;
-    bio: string;
-    image: string;
-    experience?: number;
-    phone?: string;
-    email?: string;
+    specialty?: string;
+    bio?: string;
+    image?: string;
 }
 
-export type Activity = {
-    id: string | number;
+export interface Activity {
+    id: string ;              // ← vuelve a permitir number
+    slug?: string;
     title: string;
     description: string;
-    images: string[];
+    images?: string[];                // ← ahora opcional
     image?: string;
     category: string;
     price?: number;
     featured?: boolean;
-    schedule: { day: string; time: string };
+    schedule: { day: string; time: string }; // seguimos exigiendo schedule
     location: string;
     enrolled: number;
     capacity: number;
-    instructor: Person;
-};
+    instructor?: Person;
+    start_at?: string; // ISO
+    end_at?: string;   // ISO
+    is_published?: boolean;
+    hero_image?: string;
+    gallery?: string[] | any;
+}
+
 
 export interface Event {
     id: string;
     title: string;
     description: string;
     image: string;
-    flyerVertical?: string;   // <- ahora opcional
-    poster?: string;          // <- alias opcional (si lo querés usar)
+    flyerVertical?: string;  
+    poster?: string;    
     date: string;
     time: string;
     capacity: number;

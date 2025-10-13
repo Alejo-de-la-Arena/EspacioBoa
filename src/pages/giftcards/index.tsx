@@ -154,7 +154,7 @@ function GiftCardShell({ children }: { children: React.ReactNode }) {
                     className="absolute inset-0 pointer-events-none"
                     style={{
                         opacity: 0.06,
-                        background: "url('https://res.cloudinary.com/dasch1s5i/image/upload/v1755904587/logo-boa_1_gf2bhl.svg') right -10% bottom -6% / 320px 320px no-repeat",
+                        background: "url('/boa-logo-mark.svg') right -10% bottom -6% / 320px 320px no-repeat",
                     }}
                 />
                 <div className="relative z-10">{children}</div>
@@ -162,6 +162,7 @@ function GiftCardShell({ children }: { children: React.ReactNode }) {
         </div>
     );
 }
+
 
 
 

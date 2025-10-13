@@ -168,17 +168,16 @@ function dataURLtoBlob(dataUrl: string): Blob {
     return new Blob([u8arr], { type: mime });
 }
 
-
 function CardPreview({ gc }: { gc: GiftcardDb }) {
     const benefits = Array.isArray(gc.benefits) ? gc.benefits : [];
     return (
         <div
             style={{
-                width: 680, // un poquito más ancho para mejor nitidez al 2x
-                borderRadius: 28,
+                width: 680,
+                borderRadius: 30,
                 padding: 18,
                 background:
-                    "linear-gradient(135deg, rgba(30,122,102,.16), rgba(213,149,121,.16))",
+                    "linear-gradient(135deg, rgba(30,122,102,.28), rgba(213,149,121,.28))",
                 boxShadow:
                     "inset 0 0 0 2px rgba(255,255,255,.28), 0 18px 40px rgba(0,0,0,.18)",
             }}
@@ -186,32 +185,53 @@ function CardPreview({ gc }: { gc: GiftcardDb }) {
             <div
                 style={{
                     position: "relative",
-                    borderRadius: 22,
-                    background: "#FAF8F2",
+                    borderRadius: 24,
+                    background: "#FFFFFF",
                     padding: 30,
                     boxShadow: "inset 0 0 0 1px rgba(0,0,0,.06)",
+                    overflow: "hidden",
                 }}
             >
-                {/* watermark suave con el logo (ajustá la ruta si hace falta) */}
+                {/* Watermark: logo centrado y dimensionado “forzado” */}
                 <div
                     aria-hidden
                     style={{
                         position: "absolute",
                         inset: 0,
-                        opacity: 0.06,
-                        background:
-                            "url('/boa-logo-mark.svg') right -20px bottom -10px / 340px 340px no-repeat",
                         pointerEvents: "none",
                     }}
-                />
+                >
+                    <div
+                        style={{
+                            position: "absolute",
+                            inset: 0,
+                            backgroundImage:
+                                "url('https://res.cloudinary.com/dasch1s5i/image/upload/v1755904587/logo-boa_1_gf2bhl.svg')",
+                            backgroundRepeat: "no-repeat",
+                            backgroundPosition: "center",
+                            // tamaño grande pero siempre visible completo
+                            backgroundSize: "min(76%, 520px)",
+                            opacity: 0.2, // intensidad del logo
+                        }}
+                    />
+                    {/* Overlay blanco sutil para legibilidad (más débil que antes) */}
+                    <div
+                        style={{
+                            position: "absolute",
+                            inset: 0,
+                            background:
+                                "radial-gradient(circle at 50% 50%, rgba(255,255,255,.78), rgba(255,255,255,.70) 55%, rgba(255,255,255,.66))",
+                        }}
+                    />
+                </div>
 
-                {/* grano de papel sutil */}
+                {/* Grano muy leve */}
                 <div
                     aria-hidden
                     style={{
                         position: "absolute",
                         inset: 0,
-                        opacity: 0.07,
+                        opacity: 0.035,
                         backgroundImage:
                             "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>\")",
                         backgroundSize: "260px 260px",
@@ -219,28 +239,95 @@ function CardPreview({ gc }: { gc: GiftcardDb }) {
                     }}
                 />
 
+                {/* Contenido */}
                 <div style={{ position: "relative", zIndex: 1 }}>
-                    <h3 style={{ fontSize: 32, lineHeight: "36px", fontWeight: 800, color: "#0c1813", marginBottom: 8 }}>
+                    <h3
+                        style={{
+                            fontSize: 32,
+                            lineHeight: "36px",
+                            fontWeight: 800,
+                            color: "#0c1813",
+                            marginBottom: 8,
+                        }}
+                    >
                         {gc.name}
                     </h3>
-                    <p style={{ color: "#3b4a42", fontSize: 18, lineHeight: "24px", margin: "2px 0 18px" }}>
+
+                    <p
+                        style={{
+                            color: "#3b4a42",
+                            fontSize: 18,
+                            lineHeight: "24px",
+                            margin: "2px 0 18px",
+                        }}
+                    >
                         {gc.description || ""}
                     </p>
 
-                    <div style={{ fontSize: 44, fontWeight: 900, color: "#0c1813", marginBottom: 18 }}>
+                    <div
+                        style={{
+                            fontSize: 44,
+                            fontWeight: 900,
+                            color: "#0c1813",
+                            marginBottom: 18,
+                        }}
+                    >
                         ${Number(gc.value || 0).toLocaleString("es-AR")}
                     </div>
 
                     {benefits.length > 0 && (
-                        <ul style={{ margin: "0 0 22px", padding: 0, listStyle: "none", color: "#0f2a23", fontSize: 18 }}>
+                        <ul
+                            style={{
+                                margin: "0 0 22px",
+                                padding: 0,
+                                listStyle: "none",
+                                color: "#0f2a23",
+                                fontSize: 18,
+                            }}
+                        >
                             {benefits.slice(0, 5).map((b: string, i: number) => (
-                                <li key={i} style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 8 }}>
-                                    <span style={{ width: 7, height: 7, borderRadius: 999, background: "#1e7a66", display: "inline-block" }} />
+                                <li
+                                    key={i}
+                                    style={{
+                                        display: "flex",
+                                        gap: 10,
+                                        alignItems: "center",
+                                        marginBottom: 8,
+                                    }}
+                                >
+                                    <span
+                                        style={{
+                                            width: 7,
+                                            height: 7,
+                                            borderRadius: 999,
+                                            background: "#1e7a66",
+                                            display: "inline-block",
+                                        }}
+                                    />
                                     {b}
                                 </li>
                             ))}
                         </ul>
                     )}
+
+                    {/* separador + instrucción corta */}
+                    <div
+                        style={{
+                            height: 1,
+                            background: "rgba(0,0,0,.08)",
+                            margin: "6px 0 12px",
+                        }}
+                    />
+                    <p
+                        style={{
+                            color: "#32433b",
+                            fontSize: 14,
+                            lineHeight: "20px",
+                            margin: 0,
+                        }}
+                    >
+                        <strong>¿Cómo usarla?</strong> Mostrá esta gift card en <strong>BOA</strong> al momento de pagar.
+                    </p>
                 </div>
             </div>
         </div>
@@ -546,6 +633,7 @@ export default function AdminGiftcards() {
     }
 
 
+
     // Copia la imagen renderizada de la giftcard al portapapeles (desktop)
     async function copyGiftcardImage(gc: GiftcardDb) {
         try {
@@ -553,8 +641,6 @@ export default function AdminGiftcards() {
             const res = await fetch(dataUrl);
             const blob = await res.blob();
 
-            // Clipboard API (HTTPS o localhost)
-            // Nota: requiere user-gesture (click) y navegador compatible (Chrome/Edge/Opera, Safari 17+).
             if (navigator.clipboard && (window as any).ClipboardItem) {
                 const item = new (window as any).ClipboardItem({ [blob.type]: blob });
                 await navigator.clipboard.write([item]);
@@ -738,7 +824,7 @@ export default function AdminGiftcards() {
                                     <td className="py-2 px-3">{r.updated_at ? new Date(r.updated_at).toLocaleString("es-AR") : "-"}</td>
                                     <td className="py-2 px-3 flex flex-wrap gap-2">
                                         <Button variant="outline" onClick={() => openEdit(r)}>Editar</Button>
-                                        <Button variant="secondary" onClick={() => shareWhatsApp(r)}>WhatsApp (link)</Button>
+                                        <Button variant="secondary" onClick={() => shareWhatsApp(r)}>Enviar por WhatsApp</Button>
                                         <Button variant="outline" onClick={() => copyGiftcardImage(r)}>Copiar imagen</Button>
                                         <Button variant="outline" onClick={() => downloadGiftcardImage(r)}>Descargar PNG</Button>
                                         <Button variant="destructive" onClick={() => removeOne(r.id)}>Eliminar</Button>

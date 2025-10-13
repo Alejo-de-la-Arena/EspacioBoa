@@ -10,6 +10,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
+// Inscripción a Actividad
+import { useAuth } from "@/stores/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { useEnrollment } from "@/hooks/useEnrollment";
+
+
 import {
     ArrowLeft,
     Calendar,
@@ -99,17 +105,16 @@ function useActivityDetail(activityId?: string) {
     const [loading, setLoading] = React.useState(true);
 
     const fetchCount = React.useCallback(async (aid: string) => {
-        try {
-            const { count } = await supabase
-                .from("registrations")
-                .select("*", { count: "exact", head: true })
-                .eq("activity_id", aid)
-                .neq("status", "cancelled");
-            return count ?? 0;
-        } catch {
+        const { data, error } = await supabase.rpc("activity_enrollment_count", {
+            p_activity_id: aid,
+        });
+        if (error) {
+            console.error("count error", error);
             return 0;
         }
+        return Number(data ?? 0);
     }, []);
+
 
     const load = React.useCallback(async () => {
         if (!activityId) return;
@@ -168,8 +173,9 @@ function useActivityDetail(activityId?: string) {
         };
     }, [activityId, load, fetchCount]);
 
-    return { activity, loading };
+    return { activity, loading, setActivity };
 }
+
 
 /* ======================= PAGE ======================= */
 export default function ActivityDetailPage() {
@@ -177,21 +183,85 @@ export default function ActivityDetailPage() {
     const rid = router.query.id;
     const activityId = Array.isArray(rid) ? rid[0] : rid;
 
-    const { activity, loading } = useActivityDetail(
+    const { activity, loading, setActivity } = useActivityDetail(
         typeof activityId === "string" ? activityId : undefined
     );
+
     const { activities: related } = useActivitiesLive();
+
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const { enrolled, loading: loadingEnrollment, setEnrolled } = useEnrollment(
+        typeof activityId === "string" ? activityId : undefined
+    );
+
 
     const [isEnrolling, setIsEnrolling] = React.useState(false);
     const [activeIdx, setActiveIdx] = React.useState(0);
 
     const handleEnroll = async () => {
-        if (!activity) return;
-        setIsEnrolling(true);
-        await new Promise((r) => setTimeout(r, 1200)); // stub
-        setIsEnrolling(false);
-        alert("¡Inscripción exitosa! Te enviamos un email con la confirmación.");
+        if (!activity || typeof activityId !== "string") return;
+
+        if (!user) {
+            toast({ title: "Inicia sesión", description: "Debes iniciar sesión para inscribirte.", variant: "destructive" });
+            return;
+        }
+
+        try {
+            setIsEnrolling(true);
+            const { error } = await supabase.rpc("enroll_activity", { p_activity_id: activityId });
+            if (error) {
+                console.error("enroll_activity error", { message: error.message, details: error.details, hint: error.hint, code: error.code });
+                throw error;
+            }
+
+            setEnrolled(true);
+            setActivity((prev) => prev ? { ...prev, enrolled: Math.min((prev.enrolled ?? 0) + 1, prev.capacity ?? Infinity) } : prev);
+
+
+            toast({ title: "¡Inscripción confirmada!", description: "Te inscribiste correctamente a la actividad." });
+        } catch (e: any) {
+            const msg = String(e?.message || e);
+            let friendly = "No pudimos completar la inscripción.";
+            if (msg.includes("no_seats_available")) friendly = "No hay cupos disponibles.";
+            if (msg.includes("not_authenticated")) friendly = "Debes iniciar sesión.";
+            toast({ title: "Ups", description: friendly, variant: "destructive" });
+        } finally {
+            setIsEnrolling(false);
+        }
     };
+
+    const handleCancel = async () => {
+        if (!activity || typeof activityId !== "string") return;
+
+        if (!user) {
+            toast({ title: "Inicia sesión", description: "Debes iniciar sesión para cancelar.", variant: "destructive" });
+            return;
+        }
+        const ok = confirm("¿Deseas cancelar tu inscripción?");
+        if (!ok) return;
+
+        try {
+            setIsEnrolling(true);
+            const { error } = await supabase.rpc("cancel_activity", { p_activity_id: activityId });
+            if (error) {
+                console.error("cancel_activity error", { message: error.message, details: error.details, hint: error.hint, code: error.code });
+                throw error;
+            }
+            setEnrolled(false);
+            setActivity((prev) => prev ? { ...prev, enrolled: Math.max((prev.enrolled ?? 0) - 1, 0) } : prev);
+
+            toast({ title: "Inscripción cancelada", description: "Se canceló tu inscripción correctamente." });
+        } catch (e: any) {
+            // Como la función ahora es idempotente, casi no deberías ver errores acá
+            const msg = String(e?.message || e);
+            toast({ title: "Ups", description: "No pudimos cancelar la inscripción.", variant: "destructive" });
+        } finally {
+            setIsEnrolling(false);
+        }
+    };
+
+
 
     if (loading) {
         return (
@@ -401,28 +471,44 @@ export default function ActivityDetailPage() {
                                             </div>
                                         </div>
 
-                                        <Button
-                                            onClick={handleEnroll}
-                                            disabled={isEnrolling || isFullyBooked}
-                                            className={`mt-5 w-full rounded-full py-6 text-base font-semibold transition ${isFullyBooked
-                                                ? "bg-boa-ink/30 hover:bg-boa-ink/30 cursor-not-allowed"
-                                                : "bg-boa-green hover:bg-boa-green/90 shadow-[0_12px_28px_rgba(30,122,102,.35)]"
-                                                }`}
-                                        >
-                                            {isEnrolling ? (
-                                                <span className="inline-flex items-center">
-                                                    <span className="mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                    Procesando…
-                                                </span>
-                                            ) : isFullyBooked ? (
-                                                "Unirme a la lista de espera"
-                                            ) : (
-                                                <>
-                                                    Inscribirme ahora
-                                                    <ChevronRight className="ml-1 h-4 w-4" />
-                                                </>
-                                            )}
-                                        </Button>
+                                        {loadingEnrollment ? (
+                                            <Button disabled className="mt-5 w-full rounded-full py-6">Cargando…</Button>
+                                        ) : enrolled ? (
+                                            <div className="mt-5 grid gap-2">
+                                                <Button disabled className="w-full rounded-full py-6 bg-boa-ink/20 hover:bg-boa-ink/20">
+                                                    Ya estás inscripto
+                                                </Button>
+                                                <Button
+                                                    onClick={handleCancel}
+                                                    variant="destructive"
+                                                    className="w-full rounded-full py-6"
+                                                    disabled={isEnrolling}
+                                                >
+                                                    {isEnrolling ? "Cancelando…" : "Cancelar inscripción"}
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <Button
+                                                onClick={handleEnroll}
+                                                disabled={isEnrolling || isFullyBooked}
+                                                className={`mt-5 w-full rounded-full py-6 text-base font-semibold transition ${isFullyBooked
+                                                    ? "bg-boa-ink/30 hover:bg-boa-ink/30 cursor-not-allowed"
+                                                    : "bg-boa-green hover:bg-boa-green/90 shadow-[0_12px_28px_rgba(30,122,102,.35)]"
+                                                    }`}
+                                            >
+                                                {isEnrolling ? (
+                                                    <span className="inline-flex items-center">
+                                                        <span className="mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                        Procesando…
+                                                    </span>
+                                                ) : isFullyBooked ? (
+                                                    "Sin cupos"
+                                                ) : (
+                                                    <>Inscribirme ahora <ChevronRight className="ml-1 h-4 w-4" /></>
+                                                )}
+                                            </Button>
+                                        )}
+
                                     </CardContent>
                                 </Card>
                             </div>
