@@ -21,6 +21,22 @@ import {
     ChevronRight,
 } from "lucide-react";
 
+/* === NUEVO: supabase + auth + toasts + confirm === */
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/stores/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 /* ---------- Anim helper ---------- */
 const fadeUp = {
     hidden: { opacity: 0, y: 14 },
@@ -64,20 +80,47 @@ function CapacityMeter({ enrolled, capacity }: { enrolled: number; capacity: num
     );
 }
 
+function shuffle<T>(arr: T[]): T[] {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+
 export default function EventDetailPage() {
     const router = useRouter();
     const { id } = router.query as { id?: string | number };
     const { events, loading } = useApp();
-    const [isEnrolling, setIsEnrolling] = useState(false);
+
+    /* === NUEVO: auth + toasts === */
+    const { user } = useAuth();
+    const { toast } = useToast();
+
+    /* === NUEVO: estado inscripción/contador === */
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [enrolledByUser, setEnrolledByUser] = useState<boolean>(false);
+    const [loadingEnrollment, setLoadingEnrollment] = useState<boolean>(true);
+    const [enrolledCount, setEnrolledCount] = useState<number>(0);
 
     const event = useMemo(() => events.find((e: any) => String(e.id) === String(id)), [events, id]);
 
+    /* Inicializa contador con lo que venga del contexto para evitar parpadeo */
+    useEffect(() => {
+        if (event?.enrolled != null) setEnrolledCount(Number(event.enrolled));
+    }, [event?.enrolled]);
+
     const now = new Date();
-    const eventDate = event ? new Date(event.date) : null as unknown as Date;
+    const eventDate = event ? new Date(event.date) : (null as unknown as Date);
     const isPast = eventDate ? eventDate.getTime() < now.getTime() : false;
     const isToday = eventDate ? eventDate.toDateString() === now.toDateString() : false;
-    const isFullyBooked = event ? (event.enrolled ?? 0) >= (event.capacity ?? 0) : false;
-    const spotsRemaining = event ? Math.max(0, (event.capacity ?? 0) - (event.enrolled ?? 0)) : 0;
+
+    /* Usa el contador en vivo + capacidad de la base (la del contexto como fallback) */
+    const capacity = event?.capacity ?? 0;
+    const isFullyBooked = capacity > 0 ? enrolledCount >= capacity : false;
+    const spotsRemaining = capacity > 0 ? Math.max(0, capacity - enrolledCount) : 0;
 
     /* ---------- Alturas sincronizadas (imagen = columna derecha) ---------- */
     const contentRef = useRef<HTMLDivElement>(null);
@@ -129,12 +172,155 @@ export default function EventDetailPage() {
         return [...sameCat, ...filler]; // no limit; el carrusel maneja overflow
     }, [event, events]);
 
+    /* ===================== NUEVO: carga estado de inscripción + contador ===================== */
+    useEffect(() => {
+        let ignore = false;
+        const eid = typeof id === "string" || typeof id === "number" ? String(id) : undefined;
+        if (!eid) return;
+
+        async function load() {
+            try {
+                // 1) Contador total (HEAD + count)
+                const { count, error: countErr } = await supabase
+                    .from("event_registrations")
+                    .select("id", { count: "exact", head: true })
+                    .eq("event_id", eid);
+
+                if (!ignore && !countErr) setEnrolledCount(Number(count ?? 0));
+
+                // 2) ¿Usuario inscripto?
+                if (user?.id) {
+                    const { data, error } = await supabase
+                        .from("event_registrations")
+                        .select("id")
+                        .eq("event_id", eid)
+                        .eq("user_id", user.id)
+                        .maybeSingle();
+
+                    if (!ignore && !error) setEnrolledByUser(Boolean(data));
+                    if (!ignore && error) setEnrolledByUser(false);
+                } else {
+                    if (!ignore) setEnrolledByUser(false);
+                }
+            } finally {
+                if (!ignore) setLoadingEnrollment(false);
+            }
+        }
+
+        load();
+
+        // Realtime sobre inscripciones de este evento
+        const ch = supabase
+            .channel(`rt-event-registrations:${eid}`)
+            .on(
+                "postgres_changes",
+                { schema: "public", table: "event_registrations", event: "*", filter: `event_id=eq.${eid}` },
+                async () => {
+                    // Recontar rápido (HEAD)
+                    const { count } = await supabase
+                        .from("event_registrations")
+                        .select("id", { count: "exact", head: true })
+                        .eq("event_id", eid);
+                    if (!ignore) setEnrolledCount(Number(count ?? 0));
+
+                    // Y refrescar estado del usuario si estuviera logueado
+                    if (user?.id) {
+                        const { data } = await supabase
+                            .from("event_registrations")
+                            .select("id")
+                            .eq("event_id", eid)
+                            .eq("user_id", user.id)
+                            .maybeSingle();
+                        if (!ignore) setEnrolledByUser(Boolean(data));
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            ignore = true;
+            supabase.removeChannel(ch);
+        };
+    }, [id, user?.id]);
+
+    /* ===================== NUEVO: handlers inscribir/cancelar ===================== */
+    const [isEnrolling, setIsEnrolling] = useState(false); // conservamos tu estado pero ahora real
+
     const handleEnroll = async () => {
-        setIsEnrolling(true);
-        await new Promise((r) => setTimeout(r, 1200));
-        setIsEnrolling(false);
-        alert("¡Inscripción exitosa! Recibirás un email de confirmación con todos los detalles.");
+        const eid = typeof id === "string" || typeof id === "number" ? String(id) : undefined;
+        if (!event || !eid) return;
+
+        if (!user) {
+            toast({ title: "Inicia sesión", description: "Debes iniciar sesión para inscribirte.", variant: "destructive" });
+            return;
+        }
+
+        try {
+            setIsEnrolling(true);
+            setIsProcessing(true);
+
+            const { error } = await supabase.rpc("register_for_event", { eid });
+            if (error) {
+                const msg = String(error.message || "");
+                if (msg.includes("event_full")) {
+                    toast({ title: "Sin cupos", description: "El evento está completo.", variant: "destructive" });
+                    return;
+                }
+                if (msg.includes("not_authenticated")) {
+                    toast({ title: "Inicia sesión", description: "Debes iniciar sesión.", variant: "destructive" });
+                    return;
+                }
+                throw error;
+            }
+
+            // Optimista: subimos contador y marcamos inscripto
+            setEnrolledByUser(true);
+            setEnrolledCount((n) => n + 1);
+            toast({ title: "¡Inscripción confirmada!" });
+        } catch (e: any) {
+            console.error("register_for_event error", e);
+            toast({ title: "No pudimos completar la inscripción.", variant: "destructive" });
+        } finally {
+            setIsProcessing(false);
+            setIsEnrolling(false);
+        }
     };
+
+    const handleCancel = async () => {
+        const eid = typeof id === "string" || typeof id === "number" ? String(id) : undefined;
+        if (!event || !eid) return;
+
+        if (!user) {
+            toast({ title: "Inicia sesión", description: "Debes iniciar sesión para cancelar.", variant: "destructive" });
+            return;
+        }
+
+        try {
+            setIsProcessing(true);
+            const { error } = await supabase.rpc("cancel_event_registration", { eid });
+            if (error) throw error;
+
+            setEnrolledByUser(false);
+            setEnrolledCount((n) => Math.max(0, n - 1));
+            toast({ title: "Inscripción cancelada" });
+        } catch (e) {
+            console.error("cancel_event_registration error", e);
+            toast({ title: "No pudimos cancelar la inscripción.", variant: "destructive" });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const suggestions = useMemo(() => {
+        if (!event) return [];
+        const pool = (events || []).filter((e: any) => String(e.id) !== String(event.id));
+        const base = event.category ? [
+            ...pool.filter(e => e.category === event.category),
+            ...pool.filter(e => e.category !== event.category),
+        ] : pool;
+        return shuffle(base).slice(0, 4);
+    }, [events, event]);
+
 
     if (loading) {
         return (
@@ -206,7 +392,7 @@ export default function EventDetailPage() {
                                 <img
                                     src={event.flyerVertical || event.poster || event.image}
                                     alt={event.title}
-                                    className="w-full h-full object-cover rounded-[28px] shadow-[0_18px_45px_rgba(0,0,0,0.12)] ring-1 ring-neutral-200"
+                                    className="w-full h-full object-cover rounded-[28px] shadow-[0_18px_45px_rgba(0,0,0,0.12)] ring-1 ring-neutral-200 max-h-[494px]"
                                     loading="eager"
                                 />
 
@@ -268,7 +454,7 @@ export default function EventDetailPage() {
                                 </div>
                                 <div className="flex items-center rounded-xl bg-white ring-1 ring-neutral-200 px-3 py-2 text-neutral-700">
                                     <Users className="h-5 w-5 mr-2 text-emerald-600" />
-                                    <span>{event.enrolled}/{event.capacity} participantes</span>
+                                    <span>{enrolledCount}/{capacity} participantes</span>
                                 </div>
                             </div>
 
@@ -283,7 +469,7 @@ export default function EventDetailPage() {
                                                         <div className="text-3xl font-bold text-neutral-900 leading-none">${event.price}</div>
                                                         <div className="text-sm text-neutral-600 mt-1">Por persona</div>
                                                     </div>
-                                                    <CapacityMeter enrolled={event.enrolled ?? 0} capacity={event.capacity ?? 0} />
+                                                    <CapacityMeter enrolled={enrolledCount ?? 0} capacity={capacity ?? 0} />
                                                 </div>
 
                                                 <div className="text-right">
@@ -296,26 +482,66 @@ export default function EventDetailPage() {
                                                 </div>
                                             </div>
 
-                                            <Button
-                                                onClick={handleEnroll}
-                                                disabled={isEnrolling || isFullyBooked}
-                                                className={`mt-5 w-full py-3 rounded-2xl transition-all duration-300 ${isFullyBooked
+                                            {/* === NUEVO: CTA dinámico de inscripción === */}
+                                            {loadingEnrollment ? (
+                                                <Button disabled className="mt-5 w-full py-3 rounded-2xl">Cargando…</Button>
+                                            ) : enrolledByUser ? (
+                                                <div className="mt-5 grid gap-2">
+                                                    <Button disabled className="w-full rounded-2xl py-3 bg-boa-ink/80 hover:bg-boa-ink/20 text-white">
+                                                        Ya estás inscripto
+                                                    </Button>
+
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button
+                                                                variant="outline"
+                                                                disabled={isProcessing}
+                                                                className="w-full rounded-2xl py-3 border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                                                            >
+                                                                {isProcessing ? "Cancelando…" : "Cancelar inscripción"}
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+
+                                                        <AlertDialogContent className="rounded-2xl border-0">
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle className="text-xl text-neutral-900">¿Cancelar tu inscripción?</AlertDialogTitle>
+                                                                <AlertDialogDescription className="text-neutral-700">
+                                                                    Perderás tu lugar en este evento. Podés volver a inscribirte si quedan cupos.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter className="gap-3 sm:gap-2">
+                                                                <AlertDialogCancel className="rounded-full px-6 py-3 border-2" style={{ borderColor: "#E84D4D", color: "#E84D4D", background: "transparent" }}>
+                                                                    No, mantener
+                                                                </AlertDialogCancel>
+                                                                <AlertDialogAction onClick={handleCancel} className="rounded-full px-6 py-3 border-2 bg-transparent" style={{ borderColor: "#1E7A66", color: "#1E7A66" }}>
+                                                                    Sí, cancelar
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </div>
+                                            ) : (
+                                                <Button
+                                                    onClick={handleEnroll}
+                                                    disabled={isEnrolling || (isFullyBooked && !enrolledByUser)}
+                                                    className={`mt-5 w-full py-3 rounded-2xl transition-all duration-300 ${isFullyBooked
                                                         ? "bg-neutral-400 hover:bg-neutral-400 cursor-not-allowed"
                                                         : "bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/25"
-                                                    }`}
-                                                size="lg"
-                                            >
-                                                {isEnrolling ? (
-                                                    <div className="flex items-center">
-                                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                                                        Procesando...
-                                                    </div>
-                                                ) : isFullyBooked ? (
-                                                    "Unirse a lista de espera"
-                                                ) : (
-                                                    "Inscribirme al evento"
-                                                )}
-                                            </Button>
+                                                        }`}
+                                                    size="lg"
+                                                >
+                                                    {isEnrolling ? (
+                                                        <div className="flex items-center">
+                                                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                                                            Procesando...
+                                                        </div>
+                                                    ) : isFullyBooked ? (
+                                                        "Sin cupos"
+                                                    ) : (
+                                                        "Inscribirme al evento"
+                                                    )}
+                                                </Button>
+                                            )}
                                         </CardContent>
                                     </Card>
                                 </motion.div>
@@ -377,9 +603,9 @@ export default function EventDetailPage() {
                 </section>
             )}
 
-            {/* Otros eventos (carrusel horizontal con scroll-snap + botones) */}
+            {/* Otros eventos  */}
             <section className="py-16 bg-neutral-50 font-sans">
-                <div className="container relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="mb-6 flex items-center justify-between">
                         <h2 className="text-3xl font-semibold text-neutral-900">Otros eventos</h2>
                         <Button
@@ -390,124 +616,56 @@ export default function EventDetailPage() {
                         </Button>
                     </div>
 
-                    {/* Controles */}
-                    <Carousel relatedEvents={relatedEvents} now={now} onOpen={(id) => router.push(`/events/${id}`)} />
-                </div>
-            </section>
-        </section>
-    );
-}
-
-/* ---------- Carousel component (smooth & exótico) ---------- */
-function Carousel({
-    relatedEvents,
-    now,
-    onOpen,
-}: {
-    relatedEvents: any[];
-    now: Date;
-    onOpen: (id: string | number) => void;
-}) {
-    const scrollerRef = useRef<HTMLDivElement>(null);
-
-    const scrollBy = (dir: "prev" | "next") => {
-        const el = scrollerRef.current;
-        if (!el) return;
-        const delta = Math.round(el.clientWidth * 0.9);
-        el.scrollBy({ left: dir === "next" ? delta : -delta, behavior: "smooth" });
-    };
-
-    return (
-        <div className="relative">
-            {/* fade edges */}
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-neutral-50 to-transparent" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-neutral-50 to-transparent" />
-
-            {/* buttons */}
-            <div className="absolute right-0 flex items-center gap-2">
-                <button
-                    onClick={() => scrollBy("prev")}
-                    className="h-9 w-9 grid place-items-center rounded-full bg-white ring-1 ring-neutral-200 hover:ring-emerald-200 shadow-sm"
-                    aria-label="Anterior"
-                >
-                    <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                    onClick={() => scrollBy("next")}
-                    className="h-9 w-9 grid place-items-center rounded-full bg-white ring-1 ring-neutral-200 hover:ring-emerald-200 shadow-sm"
-                    aria-label="Siguiente"
-                >
-                    <ChevronRight className="h-5 w-5" />
-                </button>
-            </div>
-
-            <div
-                ref={scrollerRef}
-                className="overflow-x-auto scroll-smooth snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none]"
-                // hide scrollbar (Firefox + WebKit)
-                style={{ WebkitOverflowScrolling: "touch" }}
-            >
-                <div className="flex gap-6 pr-2 [ &::-webkit-scrollbar ]:hidden">
-                    {relatedEvents.map((ev: any, idx: number) => {
-                        const d = new Date(ev.date);
-                        const isRelPast = d.getTime() < now.getTime();
-                        const evDateLabel = (() => {
-                            const s = d.toLocaleDateString("es-ES", {
-                                weekday: "long",
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {suggestions.map((ev: any) => {
+                            const d = new Date(ev.date);
+                            const dateLabel = d.toLocaleDateString("es-AR", {
+                                weekday: "long", year: "numeric", month: "long", day: "numeric"
                             });
-                            return s.charAt(0).toUpperCase() + s.slice(1);
-                        })();
+                            const pretty = dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1);
 
-                        return (
-                            <motion.div
-                                key={ev.id}
-                                className="snap-start shrink-0 w-[280px]"
-                                initial={{ opacity: 0, y: 14 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, amount: 0.3 }}
-                                transition={{ type: "spring", stiffness: 90, damping: 16, delay: idx * 0.02 }}
-                            >
-                                <Card
-                                    className="group cursor-pointer border-emerald-100 bg-white/90 hover:bg-white ring-1 ring-emerald-100 hover:ring-emerald-200 transition-all duration-300 hover:-translate-y-1 shadow-sm hover:shadow-[0_14px_34px_rgba(16,185,129,0.15)]"
-                                    onClick={() => onOpen(ev.id)}
+                            return (
+                                <article
+                                    key={ev.id}
+                                    onClick={() => router.push(`/events/${ev.id}`)}
+                                    className="
+              cursor-pointer rounded-2xl overflow-hidden bg-white
+              ring-1 ring-emerald-100 hover:ring-emerald-200
+              transition shadow-sm hover:shadow-[0_14px_34px_rgba(16,185,129,0.15)]
+            "
                                 >
-                                    <div className="relative overflow-hidden rounded-t-xl">
+                                    <div className="relative h-44 w-full overflow-hidden">
                                         <img
                                             src={ev.flyerVertical || ev.poster || ev.image}
                                             alt={ev.title}
-                                            className="w-full h-40 object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 hover:scale-[1.03]"
                                             loading="lazy"
                                         />
-                                        {isRelPast && (
-                                            <div className="absolute inset-0 bg-neutral-900/35 grid place-items-center">
-                                                <Badge className="bg-neutral-800 text-white text-xs">Finalizado</Badge>
-                                            </div>
-                                        )}
                                     </div>
-                                    <CardContent className="p-5">
-                                        <h3 className="font-semibold text-neutral-900 mb-1 group-hover:text-emerald-700 transition-colors">
-                                            {ev.title}
-                                        </h3>
-                                        <p className="text-[13px] text-neutral-600 line-clamp-2 mb-2">{ev.description}</p>
-                                        <div className="text-[12px] text-neutral-500 mb-4">
-                                            {evDateLabel}{ev.time ? ` – ${ev.time}` : ""}
-                                        </div>
+
+                                    <div className="p-5">
+                                        <h3 className="font-semibold text-neutral-900 mb-1">{ev.title}</h3>
+                                        {ev.description && (
+                                            <p className="text-[13px] text-neutral-600 line-clamp-2 mb-2">
+                                                {ev.description}
+                                            </p>
+                                        )}
+                                        <div className="text-[12px] text-neutral-500 mb-4">{pretty}{ev.time ? ` – ${ev.time}` : ""}</div>
                                         <div className="flex items-center justify-between">
                                             <span className="font-bold text-emerald-700">${ev.price}</span>
                                             <Button size="sm" className="rounded-full bg-white ring-1 ring-neutral-200 text-neutral-800 hover:bg-neutral-50 hover:ring-emerald-200">
                                                 Ver detalles
                                             </Button>
                                         </div>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        );
-                    })}
+                                    </div>
+                                </article>
+                            );
+                        })}
+                    </div>
                 </div>
-            </div>
-        </div>
+            </section>
+
+        </section>
     );
 }
+

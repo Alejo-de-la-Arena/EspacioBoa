@@ -1,12 +1,14 @@
 {
     "categories": {
-        "cafe": "https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?w=1600&q=80&auto=format&fit=crop",
-        "panaderia": "https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=1600&q=80&auto=format&fit=crop",
-        "brunch": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1600&q=80&auto=format&fit=crop",
-        "pizzas": "https://images.unsplash.com/photo-1542838132-92c53300491e?w=1600&q=80&auto=format&fit=crop",
-        "wraps": "https://images.unsplash.com/photo-1511690078903-71dc5a49f5e3?w=1600&q=80&auto=format&fit=crop",
-        "para-tomar": "https://images.unsplash.com/photo-1507874457470-272b3c8d8ee2?w=1600&q=80&auto=format&fit=crop",
-        "panes": "https://images.unsplash.com/photo-1608198093002-ad4e005484ec?w=1600&q=80&auto=format&fit=crop"
+        "cafe": "https://res.cloudinary.com/dasch1s5i/image/upload/v1760554922/boa-coffee_u8srcy.png",
+        "panaderia": "https://res.cloudinary.com/dasch1s5i/image/upload/v1760555469/baguette-boa_dtmwfe.png",
+        "brunch": "https://res.cloudinary.com/dasch1s5i/image/upload/v1760555790/boa-plate_tfkvwc.png",
+        "pizzas": "https://res.cloudinary.com/dasch1s5i/image/upload/v1760555791/pizza-boa_wruzme.png",
+        "wraps": "https://res.cloudinary.com/dasch1s5i/image/upload/v1760555468/boa-wrap_udu0tb.png",
+        "para-tomar": "https://res.cloudinary.com/dasch1s5i/image/upload/v1760567065/beer-boa_gpepk7.png",
+        "sin-tacc": "https://res.cloudinary.com/dasch1s5i/image/upload/v1760566775/boa-gluten-free_mfnjii.png",
+        "al-plato": "https://res.cloudinary.com/dasch1s5i/image/upload/v1760555790/boa-plate_tfkvwc.png",
+        "panes": "https://res.cloudinary.com/dasch1s5i/image/upload/v1760567007/boa-panes_ufrguw.png"
     },
     "items": {
         "espresso": "https://images.unsplash.com/photo-1512568400610-62da28bc8a13?w=1200&q=80&auto=format&fit=crop",

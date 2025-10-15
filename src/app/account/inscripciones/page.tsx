@@ -1,8 +1,8 @@
-// app/account/inscripciones/page.tsx
 "use client";
 
 import * as React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useAuth } from "@/stores/useAuth";
 import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
@@ -19,20 +19,44 @@ import {
   AlertDialogDescription,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Loader2, CalendarDays, MapPin, TicketX } from "lucide-react";
+import { Loader2, CalendarDays, MapPin, TicketX, ArrowLeft } from "lucide-react";
 
+/* ========= Tipos ========= */
+type ActivityLite = {
+  id: string;
+  title: string;
+  start_at: string | null;
+  location: string | null;
+  hero_image: string | null;
+  slug?: string | null;
+};
+type RegistrationRow = {
+  id: string;
+  activity_id: string;
+  status: "confirmed" | "waitlist" | "canceled" | null;
+  created_at: string;
+  activity: ActivityLite | null;
+};
+
+/* ----- Eventos ----- */
 type EventLite = {
   id: string;
   title: string;
-  starts_at: string; // ISO
-  location?: string | null;
-  cover_url?: string | null;
-  slug?: string | null;
+  start_at?: string | null;
+  date?: string | null;
+  time?: string | null;
+  location: string | null;
+  hero_image?: string | null;
+  image?: string | null;
+  poster?: string | null;
+  flyerVertical?: string | null;
 };
 
-type Row = {
+
+type EventRegistrationRow = {
   id: string;
-  status: "confirmed" | "reserved" | "cancelled";
+  event_id: string;
+  status: "confirmed" | "waitlist" | "canceled" | null;
   created_at: string;
   event: EventLite | null;
 };
@@ -40,236 +64,523 @@ type Row = {
 export default function InscripcionesPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [rows, setRows] = React.useState<Row[] | null>(null);
+
+  // ====== Actividades (ya existía) ======
+  const [rows, setRows] = React.useState<RegistrationRow[] | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [busyId, setBusyId] = React.useState<string | null>(null);
 
+  // ====== Eventos (nuevo) ======
+  const [eventRows, setEventRows] = React.useState<EventRegistrationRow[] | null>(null);
+  const [loadingEvents, setLoadingEvents] = React.useState(true);
+  const [busyEventId, setBusyEventId] = React.useState<string | null>(null);
+
+  // Evitar updates en componente desmontado
+  const mountedRef = React.useRef(true);
   React.useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  // Evitar condiciones de carrera (ignorar respuestas viejas)
+  const reqSeqRef = React.useRef(0);
+  const reqSeqEventsRef = React.useRef(0);
+
+  const fmtDatetime = (iso: string | null) =>
+    iso
+      ? new Date(iso).toLocaleString("es-AR", {
+        weekday: "short",
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+      : "—";
+
+  const fmtDate = (iso: string | null) =>
+    iso
+      ? new Date(iso).toLocaleDateString("es-AR", {
+        weekday: "short",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+      : "—";
+
+
+  const eventImage = (ev?: EventLite | null) =>
+    ev?.hero_image || ev?.flyerVertical || ev?.poster || ev?.image || null;
+
+  const fmtEventWhen = (ev?: EventLite | null) => {
+    if (!ev) return "—";
+    if (ev.start_at) return fmtDatetime(ev.start_at);
+
+    if (ev.date) {
+      const d = new Date(ev.date);
+      const valid = !Number.isNaN(d.getTime());
+      if (valid) {
+        const base = fmtDate(ev.date);
+        return ev.time ? `${base} · ${ev.time}` : base;
+      }
+
+      return ev.time ? `${ev.date} · ${ev.time}` : String(ev.date);
+    }
+    return "—";
+  };
+
+
+  /* =================== LOAD ACTIVITIES =================== */
+  const loadActivities = React.useCallback(async (opts?: { silent?: boolean }) => {
+    const silent = Boolean(opts?.silent);
     if (!user) {
-      setLoading(false);
+      if (mountedRef.current) {
+        setRows(null);
+        setLoading(false);
+      }
       return;
     }
-    const load = async () => {
-      setLoading(true);
-      // Traemos inscripciones con su evento asociado
+    if (!silent && mountedRef.current) setLoading(true);
+
+    const mySeq = ++reqSeqRef.current;
+    try {
       const { data, error } = await supabase
-        .from("inscripciones")
-        .select(
-          `
+        .from("registrations")
+        .select(`
           id,
+          activity_id,
           status,
           created_at,
-          event:events (
-            id, title, starts_at, location, cover_url, slug
-          )
-        `
-        ) // 👆 ajustá "events" si tu FK se llama diferente
+          activity:activities ( id, title, start_at, location, hero_image, slug )
+        `)
         .eq("user_id", user.id)
-        .neq("status", "cancelled")
+        .or("status.is.null,status.eq.confirmed,status.eq.waitlist")
         .order("created_at", { ascending: false });
 
+      if (!mountedRef.current || mySeq !== reqSeqRef.current) return;
+
       if (error) {
+        console.error("registrations list error", error);
         setRows([]);
-        setLoading(false);
         toast({
           title: "No pudimos cargar tus inscripciones",
+          description: "Reintentá en unos segundos.",
+          variant: "destructive",
+        });
+      } else {
+        type SupaRow = {
+          id: string;
+          activity_id: string;
+          status: "confirmed" | "waitlist" | "canceled" | null;
+          created_at: string;
+          activity: ActivityLite | ActivityLite[] | null;
+        };
+        const raw: SupaRow[] = (data ?? []) as SupaRow[];
+        const regs: RegistrationRow[] = raw.map((r) => {
+          const act = Array.isArray(r.activity) ? (r.activity[0] ?? null) : r.activity ?? null;
+          return { id: r.id, activity_id: r.activity_id, status: r.status, created_at: r.created_at, activity: act };
+        });
+        regs.sort((a, b) => {
+          const sa = a.activity?.start_at ? new Date(a.activity.start_at).getTime() : 0;
+          const sb = b.activity?.start_at ? new Date(b.activity.start_at).getTime() : 0;
+          return sa - sb;
+        });
+        setRows(regs);
+      }
+    } finally {
+      if (!mountedRef.current) return;
+      if (!silent || mySeq === reqSeqRef.current) setLoading(false);
+    }
+  }, [toast, user]);
+
+  /* =================== LOAD EVENTS =================== */
+  const loadEvents = React.useCallback(async (opts?: { silent?: boolean }) => {
+    const silent = Boolean(opts?.silent);
+
+    if (!user) {
+      if (mountedRef.current) {
+        setEventRows(null);
+        setLoadingEvents(false);
+      }
+      return;
+    }
+    if (!silent && mountedRef.current) setLoadingEvents(true);
+
+    const mySeq = ++reqSeqEventsRef.current;
+
+    try {
+      const { data, error } = await supabase.rpc("my_event_registrations");
+
+      if (!mountedRef.current || mySeq !== reqSeqEventsRef.current) return;
+
+      if (error) {
+        console.error("my_event_registrations error", error);
+        setEventRows([]);
+        toast({
+          title: "No pudimos cargar tus eventos inscritos",
           description: "Reintentá en unos segundos.",
           variant: "destructive",
         });
         return;
       }
 
-      const now = Date.now();
-      const upcoming = (data as Row[]).filter(
-        (r) => r.event && new Date(r.event.starts_at).getTime() > now
-      );
-      // Orden por fecha de evento
-      upcoming.sort(
-        (a, b) =>
-          new Date(a.event!.starts_at).getTime() -
-          new Date(b.event!.starts_at).getTime()
-      );
+      type Row = {
+        id: string;
+        event_id: string;
+        created_at: string;
+        event: any | null;
+      };
 
-      setRows(upcoming);
-      setLoading(false);
+      const regs: EventRegistrationRow[] = (data ?? []).map((r: Row) => ({
+        id: r.id,
+        event_id: r.event_id,
+        status: "confirmed",
+        created_at: r.created_at,
+        event: r.event
+          ? {
+            id: r.event.id,
+            title: r.event.title,
+            start_at: r.event.start_at ?? null,
+            hero_image: r.event.hero_image ?? null,
+            date: r.event.date ?? null,
+            time: r.event.time ?? null,
+            location: r.event.location ?? null,
+            image: r.event.image ?? null,
+            poster: r.event.poster ?? null,
+            flyerVertical: r.event.flyerVertical ?? null,
+          }
+          : null,
+      }));
+
+
+      regs.sort((a, b) => {
+        const sa = a.event?.date ? new Date(a.event.date).getTime() : 0;
+        const sb = b.event?.date ? new Date(b.event.date).getTime() : 0;
+        return sa - sb;
+      });
+
+      setEventRows(regs);
+    } finally {
+      if (!mountedRef.current) return;
+      if (!silent || mySeq === reqSeqEventsRef.current) setLoadingEvents(false);
+    }
+  }, [toast, user]);
+
+
+
+  // Carga inicial visible
+  React.useEffect(() => {
+    loadActivities({ silent: false });
+    loadEvents({ silent: false });
+  }, [loadActivities, loadEvents]);
+
+  // Re-carga silenciosa al reenfocar/visibilizar y cambio de auth
+  React.useEffect(() => {
+    const onFocus = () => { loadActivities({ silent: true }); loadEvents({ silent: true }); };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") { loadActivities({ silent: true }); loadEvents({ silent: true }); }
     };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
 
-    load();
-  }, [user, toast]);
+    const { data: authSub } = supabase.auth.onAuthStateChange(() => {
+      if (!loading) { loadActivities({ silent: true }); loadEvents({ silent: true }); }
+    });
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+      authSub.subscription.unsubscribe();
+    };
+  }, [loadActivities, loadEvents, loading]);
+
+  /* =================== CANCEL HANDLERS =================== */
+  const cancelOne = async (activityId: string, regId: string) => {
+    if (!user) return;
+    setBusyId(regId);
+    try {
+      const { error } = await supabase.rpc("cancel_activity", { p_activity_id: activityId });
+      if (error) throw error;
+
+      setRows((prev) => (prev ? prev.filter((r) => r.id !== regId) : prev));
+      toast({ title: "Inscripción cancelada", description: "Se liberó tu lugar. ¡Te esperamos en otra actividad! ✨" });
+      loadActivities({ silent: true });
+    } catch {
+      toast({ title: "No pudimos cancelar", description: "Probá de nuevo en unos instantes.", variant: "destructive" });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const cancelEventOne = async (eventId: string, regId: string) => {
+    if (!user) return;
+    setBusyEventId(regId);
+    try {
+      const { error } = await supabase.rpc("cancel_event_registration", { eid: eventId });
+      if (error) throw error;
+
+      setEventRows((prev) => (prev ? prev.filter((r) => r.id !== regId) : prev));
+      toast({ title: "Inscripción cancelada", description: "Se liberó tu lugar en el evento." });
+      loadEvents({ silent: true });
+    } catch {
+      toast({ title: "No pudimos cancelar", description: "Probá de nuevo en unos instantes.", variant: "destructive" });
+    } finally {
+      setBusyEventId(null);
+    }
+  };
 
   if (!user) {
     return (
-      <main className="container mx-auto max-w-3xl px-4 py-10">
+      <main className="container mx-auto max-w-3xl px-4 py-10 font-sans">
         <div className="rounded-xl border p-6 text-center">
           <h1 className="text-2xl font-semibold">Necesitás iniciar sesión</h1>
-          <p className="mt-2 text-neutral-600">
-            Ingresá para ver tus inscripciones.
-          </p>
-          <Button asChild className="mt-4">
-            <a href="/login">Ir a iniciar sesión</a>
-          </Button>
+          <p className="mt-2 text-neutral-600">Ingresá para ver tus inscripciones.</p>
+          <Button asChild className="mt-4"><Link href="/login">Ir a iniciar sesión</Link></Button>
         </div>
       </main>
     );
   }
 
-  const cancelOne = async (id: string) => {
-    setBusyId(id);
-    const { error } = await supabase
-      .from("inscripciones")
-      .update({
-        status: "cancelled",
-        cancelled_at: new Date().toISOString(),
-      })
-      .eq("id", id)
-      .eq("user_id", user.id);
-
-    setBusyId(null);
-
-    if (error) {
-      toast({
-        title: "No pudimos cancelar",
-        description: "Probá de nuevo en unos instantes.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setRows((prev) => (prev ? prev.filter((r) => r.id !== id) : prev));
-    toast({
-      title: "Inscripción cancelada",
-      description: "Te esperamos en una próxima actividad ✨",
-    });
-  };
-
-  const fmt = (iso: string) =>
-    new Date(iso).toLocaleString("es-AR", {
-      weekday: "short",
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const hasActivities = !!rows && rows.length > 0;
+  const hasEvents = !!eventRows && eventRows.length > 0;
 
   return (
-    <main className="container mx-auto max-w-4xl px-4 py-10">
-      <h1 className="text-2xl font-bold tracking-tight">Mis inscripciones</h1>
+    <main className="container justify-center mx-auto max-w-4xl px-4 mt-10 py-10 font-sans
+                     bg-white/70 backdrop-blur-sm rounded-2xl shadow-soft
+                     border relative
+                     before:absolute before:inset-0 before:-z-10
+                     before:bg-paper-wash
+                     after:absolute after:inset-0 after:-z-10
+                     after:[background-image:var(--boa-noise)]">
+      <div className="mb-4 flex items-center justify-between">
+        <Button variant="ghost" asChild className="hover:bg-boa-green/10">
+          <Link href="/" aria-label="Volver">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver
+          </Link>
+        </Button>
+      </div>
 
+      <div className="mb-4 flex items-center justify-center">
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900">Mis inscripciones</h1>
+        <div className="w-[88px]" aria-hidden />
+      </div>
+
+      {/* ======= ACTIVIDADES ======= */}
       {loading ? (
         <div className="mt-6 rounded-xl border p-8 text-center text-neutral-600">
           <Loader2 className="mx-auto mb-3 h-6 w-6 animate-spin" />
-          Cargando tus próximas actividades…
+          Cargando tus actividades…
         </div>
-      ) : rows && rows.length > 0 ? (
-        <ul className="mt-6 grid gap-4">
-          {rows.map((row) => {
-            const ev = row.event!;
-            return (
-              <li
-                key={row.id}
-                className="flex flex-col rounded-xl border md:flex-row overflow-hidden"
-              >
-                {/* Imagen */}
-                <div className="relative h-40 w-full md:h-auto md:w-52 bg-neutral-100">
-                  {ev.cover_url ? (
-                    <Image
-                      src={ev.cover_url}
-                      alt={ev.title}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : null}
-                </div>
+      ) : hasActivities ? (
+        <>
+          <h2 className="mt-2 mb-3 text-xl font-semibold">Actividades</h2>
+          <ul className="mt-2 grid gap-4">
+            {rows!.map((row) => {
+              const a = row.activity;
+              if (!a) return null;
+              return (
+                <li key={row.id} className="flex flex-col rounded-xl border md:flex-row overflow-hidden bg-white">
+                  {/* Imagen */}
+                  <div className="relative h-40 w-full md:h-auto md:w-56 bg-neutral-100">
+                    {a.hero_image ? (
+                      <Image
+                        src={a.hero_image}
+                        alt={a.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 224px"
+                      />
+                    ) : null}
+                  </div>
 
-                {/* Contenido */}
-                <div className="flex flex-1 flex-col justify-between gap-3 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="line-clamp-1 text-lg font-semibold">
-                        {ev.title}
-                      </h3>
-                      <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-neutral-600">
-                        <span className="inline-flex items-center gap-1">
-                          <CalendarDays className="h-4 w-4" />
-                          {fmt(ev.starts_at)}
-                        </span>
-                        {ev.location ? (
-                          <span className="inline-flex items-center gap-1">
-                            <MapPin className="h-4 w-4" />
-                            {ev.location}
-                          </span>
-                        ) : null}
+                  {/* Contenido */}
+                  <div className="flex flex-1 flex-col justify-between gap-3 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="line-clamp-1 text-lg font-semibold">{a.title}</h3>
+                        <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-neutral-600">
+                          <span className="inline-flex items-center gap-1"><CalendarDays className="h-4 w-4" />{fmtDatetime(a.start_at)}</span>
+                          {a.location ? (<span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4" />{a.location}</span>) : null}
+                        </div>
                       </div>
+
+                      <Badge
+                        variant={row.status === "confirmed" ? "default" : row.status === "waitlist" ? "secondary" : "outline"}
+                        className="shrink-0"
+                      >
+                        {row.status === "confirmed" ? "Confirmada" : row.status === "waitlist" ? "En lista" : "—"}
+                      </Badge>
                     </div>
 
-                    <Badge
-                      variant={row.status === "confirmed" ? "default" : "secondary"}
-                      className="shrink-0"
-                    >
-                      {row.status === "confirmed" ? "Confirmada" : "Reservada"}
-                    </Badge>
-                  </div>
+                    <div className="flex items-center justify-end gap-3">
+                      <Button variant="outline" asChild><Link href={`/activities/${a.id}`}>Ver detalles</Link></Button>
 
-                  <div className="flex items-center justify-end gap-3">
-                    {ev.slug ? (
-                      <Button variant="outline" asChild>
-                        <a href={`/actividades/${ev.slug}`}>Ver detalle</a>
-                      </Button>
-                    ) : null}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            disabled={busyId === row.id}
+                            className="border-2 group hover:bg-red-500 hover:text-white"
+                            style={{ borderColor: "#E84D4D", color: "#E84D4D" }}
+                          >
+                            {busyId === row.id ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Cancelando…
+                              </>
+                            ) : (
+                              <>
+                                <TicketX className="mr-2 h-4 w-4 transition-colors group-hover:text-white" />
+                                <span className="transition-colors group-hover:text-white">Cancelar</span>
+                              </>
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
 
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="destructive"
-                          disabled={busyId === row.id}
-                        >
-                          {busyId === row.id ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Cancelando…
-                            </>
-                          ) : (
-                            <>
-                              <TicketX className="mr-2 h-4 w-4" />
-                              Cancelar
-                            </>
-                          )}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            ¿Cancelar esta inscripción?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Se liberará tu lugar y es posible que no se pueda
-                            recuperar. Esta acción no se puede deshacer.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Volver</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => cancelOne(row.id)}>
-                            Sí, cancelar
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                        <AlertDialogContent className="rounded-2xl">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>¿Cancelar esta inscripción?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Se liberará tu lugar y puede que no se recupere. Esta acción no se puede deshacer.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter className="gap-3 sm:gap-2">
+                            <AlertDialogCancel className="rounded-full px-6 py-3 border-2" style={{ borderColor: "#E84D4D", color: "#E84D4D", background: "transparent" }}>
+                              Volver
+                            </AlertDialogCancel>
+                            <AlertDialogAction onClick={() => cancelOne(a.id, row.id)} className="rounded-full px-6 py-3 border-2 bg-transparent" style={{ borderColor: "#1E7A66", color: "#1E7A66" }}>
+                              Sí, cancelar
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <div className="mt-6 rounded-xl border p-8 text-center">
-          <p className="text-neutral-700">
-            No tenés próximas inscripciones.
-          </p>
-          <Button asChild className="mt-4">
-            <a href="/actividades">Explorar actividades</a>
-          </Button>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      ) : null}
+
+      {/* ======= EVENTOS (nuevo) ======= */}
+      {loadingEvents ? (
+        <div className="mt-10 rounded-xl border p-8 text-center text-neutral-600">
+          <Loader2 className="mx-auto mb-3 h-6 w-6 animate-spin" />
+          Cargando tus eventos…
         </div>
-      )}
+      ) : hasEvents ? (
+        <>
+          <h2 className="mt-10 mb-3 text-xl font-semibold">Eventos</h2>
+          <ul className="mt-2 grid gap-4">
+            {eventRows!.map((row) => {
+              const ev = row.event;
+              if (!ev) return null;
+              const img = eventImage(ev);
+
+
+              return (
+                <li key={row.id} className="flex flex-col rounded-xl border md:flex-row overflow-hidden bg-white">
+                  {/* Imagen */}
+                  <div className="relative h-40 w-full md:h-auto md:w-56 bg-neutral-100">
+                    {img ? (
+                      <Image
+                        src={img}
+                        alt={ev.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 224px"
+                      />
+                    ) : null}
+                  </div>
+
+                  {/* Contenido */}
+                  <div className="flex flex-1 flex-col justify-between gap-3 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="line-clamp-1 text-lg font-semibold">{ev.title}</h3>
+                        <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-neutral-600">
+                          <span className="inline-flex items-center gap-1"><CalendarDays className="h-4 w-4" />{fmtEventWhen(ev)}</span>
+                          {ev.location ? (<span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4" />{ev.location}</span>) : null}
+                        </div>
+                      </div>
+
+                      <Badge
+                        variant={row.status === "confirmed" ? "default" : row.status === "waitlist" ? "secondary" : "outline"}
+                        className="shrink-0"
+                      >
+                        {row.status === "confirmed" ? "Confirmado" : row.status === "waitlist" ? "En lista" : "—"}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3">
+                      <Button variant="outline" asChild><Link href={`/events/${ev.id}`}>Ver detalles</Link></Button>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            disabled={busyEventId === row.id}
+                            className="border-2 group hover:bg-red-500 hover:text-white"
+                            style={{ borderColor: "#E84D4D", color: "#E84D4D" }}
+                          >
+                            {busyEventId === row.id ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Cancelando…
+                              </>
+                            ) : (
+                              <>
+                                <TicketX className="mr-2 h-4 w-4 transition-colors group-hover:text-white" />
+                                <span className="transition-colors group-hover:text-white">Cancelar</span>
+                              </>
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+
+                        <AlertDialogContent className="rounded-2xl">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>¿Cancelar esta inscripción?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Se liberará tu lugar y puede que no se recupere. Esta acción no se puede deshacer.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter className="gap-3 sm:gap-2">
+                            <AlertDialogCancel className="rounded-full px-6 py-3 border-2" style={{ borderColor: "#E84D4D", color: "#E84D4D", background: "transparent" }}>
+                              Volver
+                            </AlertDialogCancel>
+                            <AlertDialogAction onClick={() => cancelEventOne(ev.id, row.id)} className="rounded-full px-6 py-3 border-2 bg-transparent" style={{ borderColor: "#1E7A66", color: "#1E7A66" }}>
+                              Sí, cancelar
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      ) : null}
+
+      {/* Vacío total */}
+      {!loading && !loadingEvents && !hasActivities && !hasEvents ? <EmptyState /> : null}
     </main>
+  );
+}
+
+/* ========= Empty ========= */
+function EmptyState() {
+  return (
+    <div className="mt-6 rounded-xl border p-8 text-center font-sans">
+      <p className="text-neutral-700">No tenés inscripciones activas.</p>
+      <div className="mt-4 flex gap-3 justify-center">
+        <Button asChild><Link href="/activities">Explorar actividades</Link></Button>
+        <Button asChild variant="outline"><Link href="/events">Explorar eventos</Link></Button>
+      </div>
+    </div>
   );
 }

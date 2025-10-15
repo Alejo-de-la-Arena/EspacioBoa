@@ -3,6 +3,8 @@
 
 
 import * as React from "react";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/stores/useAuth";
 import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
@@ -188,8 +190,19 @@ export default function AccountPage() {
 
             {/* LAYOUT CENTRADO */}
             <div className="container mx-auto max-w-5xl px-4">
+
                 <div className="grid min-h-[100svh] place-content-center">
                     <div className="w-full">
+
+                        <div className="mb-4 flex items-center justify-leftX">
+                            {/* Barra superior con Volver */}
+                            <Button variant="ghost" asChild className="hover:bg-boa-green/10">
+                                <Link href="/" aria-label="Volver">
+                                    <ArrowLeft className="h-4 w-4 mr-2" />
+                                    Volver
+                                </Link>
+                            </Button>
+                        </div>
                         {/* Encabezado */}
                         <div className="mb-6">
                             <h1 className="text-4xl font-extrabold tracking-tight">Mi perfil</h1>

@@ -15,6 +15,19 @@ import { useAuth } from "@/stores/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useEnrollment } from "@/hooks/useEnrollment";
 
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+
 
 import {
     ArrowLeft,
@@ -176,6 +189,17 @@ function useActivityDetail(activityId?: string) {
     return { activity, loading, setActivity };
 }
 
+function shuffle<T>(arr: T[]): T[] {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+
+
 
 /* ======================= PAGE ======================= */
 export default function ActivityDetailPage() {
@@ -238,8 +262,6 @@ export default function ActivityDetailPage() {
             toast({ title: "Inicia sesión", description: "Debes iniciar sesión para cancelar.", variant: "destructive" });
             return;
         }
-        const ok = confirm("¿Deseas cancelar tu inscripción?");
-        if (!ok) return;
 
         try {
             setIsEnrolling(true);
@@ -248,18 +270,37 @@ export default function ActivityDetailPage() {
                 console.error("cancel_activity error", { message: error.message, details: error.details, hint: error.hint, code: error.code });
                 throw error;
             }
+
             setEnrolled(false);
             setActivity((prev) => prev ? { ...prev, enrolled: Math.max((prev.enrolled ?? 0) - 1, 0) } : prev);
 
             toast({ title: "Inscripción cancelada", description: "Se canceló tu inscripción correctamente." });
-        } catch (e: any) {
-            // Como la función ahora es idempotente, casi no deberías ver errores acá
-            const msg = String(e?.message || e);
+        } catch (e) {
             toast({ title: "Ups", description: "No pudimos cancelar la inscripción.", variant: "destructive" });
         } finally {
             setIsEnrolling(false);
         }
     };
+
+    const suggestions = React.useMemo(() => {
+        if (!activity) return [];                        // ⬅️ si no hay actividad, nada
+        const safeRelated = (related ?? []).filter(Boolean) as UiActivity[];
+
+        // excluimos la actual
+        const pool = safeRelated.filter(a => a && a.id !== activity.id);
+
+        // priorizamos misma categoría si existe
+        const sameCat = activity.category
+            ? pool.filter(a => a.category === activity.category)
+            : pool;
+
+        // si faltan, completamos con otras sin duplicar
+        const base = sameCat.length >= 10
+            ? sameCat
+            : [...sameCat, ...pool.filter(a => !sameCat.includes(a))];
+
+        return shuffle(base).slice(0, 4);
+    }, [related, activity]);
 
 
 
@@ -300,23 +341,23 @@ export default function ActivityDetailPage() {
             : [];
 
     return (
-        <section>
+        <section className="relative min-h-dvh">
             {/* BG crema */}
-            <div className="absolute inset-0 -z-10">
+            <div className="absolute inset-0 -z-10 pointer-events-none">
                 <div
                     className="absolute inset-0"
                     style={{
                         backgroundColor: "#FFFCF7",
                         backgroundImage: `
-              radial-gradient(70% 50% at 8% 12%, rgba(206,234,218,.20), transparent 55%),
-              radial-gradient(55% 45% at 92% 10%, rgba(255,214,182,.18), transparent 60%),
-              radial-gradient(65% 55% at 50% 100%, rgba(186,220,205,.14), transparent 60%)
-            `,
+        radial-gradient(70% 50% at 8% 12%, rgba(206,234,218,.20), transparent 55%),
+        radial-gradient(55% 45% at 92% 10%, rgba(255,214,182,.18), transparent 60%),
+        radial-gradient(65% 55% at 50% 100%, rgba(186,220,205,.14), transparent 60%)
+      `,
                     }}
                 />
                 <div
                     aria-hidden
-                    className="absolute inset-0 opacity-[0.05] pointer-events-none"
+                    className="absolute h-full inset-0 opacity-[0.05]"
                     style={{ backgroundImage: "var(--boa-noise)", backgroundSize: "420px 420px" }}
                 />
             </div>
@@ -475,17 +516,54 @@ export default function ActivityDetailPage() {
                                             <Button disabled className="mt-5 w-full rounded-full py-6">Cargando…</Button>
                                         ) : enrolled ? (
                                             <div className="mt-5 grid gap-2">
-                                                <Button disabled className="w-full rounded-full py-6 bg-boa-ink/20 hover:bg-boa-ink/20">
+                                                <Button disabled className="w-full rounded-full py-6 bg-boa-ink/80 hover:bg-boa-ink/20">
                                                     Ya estás inscripto
                                                 </Button>
-                                                <Button
-                                                    onClick={handleCancel}
-                                                    variant="destructive"
-                                                    className="w-full rounded-full py-6"
-                                                    disabled={isEnrolling}
-                                                >
-                                                    {isEnrolling ? "Cancelando…" : "Cancelar inscripción"}
-                                                </Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button
+                                                            variant="outline"
+                                                            disabled={isEnrolling}
+                                                            className="
+      w-full rounded-full py-6 border-2
+      border-red-500 text-red-500
+      hover:bg-red-500 hover:text-white
+      disabled:opacity-50 disabled:pointer-events-none
+    "
+                                                        >
+                                                            {isEnrolling ? "Cancelando…" : "Cancelar inscripción"}
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+
+
+                                                    <AlertDialogContent className="rounded-2xl border-0">
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle className="text-xl text-boa-ink">¿Cancelar tu inscripción?</AlertDialogTitle>
+                                                            <AlertDialogDescription className="text-boa-ink/70">
+                                                                Perderás tu lugar en esta actividad. Podés volver a inscribirte si quedan cupos.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+
+                                                        <AlertDialogFooter className="gap-3 sm:gap-2">
+                                                            {/* Botón Cancelar (cierra el diálogo) */}
+                                                            <AlertDialogCancel
+                                                                className="rounded-full px-6 py-3 border-2"
+                                                                style={{ borderColor: "#E84D4D", color: "#E84D4D", background: "transparent" }}
+                                                            >
+                                                                No, mantener
+                                                            </AlertDialogCancel>
+
+                                                            {/* Botón Aceptar (ejecuta el handler) */}
+                                                            <AlertDialogAction
+                                                                onClick={handleCancel}
+                                                                className="rounded-full px-6 py-3 border-2 bg-transparent"
+                                                                style={{ borderColor: "#1E7A66", color: "#1E7A66" }}
+                                                            >
+                                                                Sí, cancelar
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
                                             </div>
                                         ) : (
                                             <Button
@@ -545,50 +623,48 @@ export default function ActivityDetailPage() {
                 <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <h2 className="text-2xl font-extrabold text-boa-ink">Te pueden gustar</h2>
                     <div className="mt-5 flex gap-6 overflow-x-auto pb-2">
-                        {(related || [])
-                            .filter((a) => a.id !== activity.id && a.category === activity.category)
-                            .slice(0, 10)
-                            .map((a) => (
-                                <article
-                                    key={a.id}
-                                    className="min-w-[280px] max-w-[280px] rounded-2xl overflow-hidden ring-1 ring-[#EEDCC9] bg-white shadow-[0_10px_28px_rgba(82,47,0,.10)] cursor-pointer"
-                                    onClick={() => router.push(`/activities/${a.id}`)}
-                                >
-                                    <div className="relative h-40">
-                                        <img
-                                            src={a.images?.[0] ?? (a as any).image}
-                                            alt={a.title}
-                                            className="absolute inset-0 w-full h-full object-cover"
-                                        />
-                                        {a.category && (
-                                            <div className="absolute bottom-3 left-3 rounded-full px-2.5 py-1 text-[11px] font-semibold bg-white/85 text-boa-ink/85 ring-1 ring-white/70">
-                                                {a.category}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="p-4">
-                                        <h3 className="font-semibold text-boa-ink">{a.title}</h3>
-                                        <p className="text-sm text-boa-ink/70 line-clamp-2 mt-1">{a.description}</p>
-
-                                        <div className="mt-3 flex items-center justify-between">
-                                            <span className="font-bold text-boa-green">
-                                                {typeof a.price === "number" ? `$${a.price}` : "-"}
-                                            </span>
-                                            <Button size="sm" className="rounded-full">
-                                                Ver detalles
-                                            </Button>
+                        {(suggestions || []).map((a) => (
+                            <article
+                                key={a.id}
+                                className="min-w-[280px] max-w-[280px] rounded-2xl ring-inset overflow-hidden ring-1 ring-[#EEDCC9] bg-white shadow-[0_10px_28px_rgba(82,47,0,.10)] cursor-pointer"
+                                onClick={() => router.push(`/activities/${a.id}`)}
+                            >
+                                <div className="relative h-40">
+                                    <img
+                                        src={a.images?.[0] ?? (a as any).image ?? ""}
+                                        alt={a.title}
+                                        className="absolute inset-0 w-full h-full object-cover"
+                                    />
+                                    {a.category && (
+                                        <div className="absolute bottom-3 left-3 rounded-full px-2.5 py-1 text-[11px] font-semibold bg-white/85 text-boa-ink/85 ring-1 ring-white/70">
+                                            {a.category}
                                         </div>
+                                    )}
+                                </div>
+
+                                <div className="p-4">
+                                    <h3 className="font-semibold text-boa-ink">{a.title}</h3>
+                                    <p className="text-sm text-boa-ink/70 line-clamp-2 mt-1">{a.description}</p>
+
+                                    <div className="mt-3 flex items-center justify-between">
+                                        <span className="font-bold text-boa-green">
+                                            {typeof a.price === "number" ? `$${a.price}` : "-"}
+                                        </span>
+                                        <Button size="sm" className="rounded-full bg-boa-green hover:bg-green-900">Ver detalles</Button>
                                     </div>
-                                </article>
-                            ))}
+                                </div>
+                            </article>
+                        ))}
                     </div>
                 </div>
             </section>
 
+
         </section>
     );
 }
+
+
 
 /* ---------- UI bits ---------- */
 function Feature({

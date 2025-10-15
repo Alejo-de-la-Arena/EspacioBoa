@@ -4,10 +4,26 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import HeaderAuth from '@/components/auth/HeaderAuth'
-import { Menu, Coffee, Heart, Calendar, Gift, BookOpen, Users, MapPin } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import HeaderAuth from "@/components/auth/HeaderAuth";
+import { useAuth } from "@/stores/useAuth";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    Menu,
+    Coffee,
+    Heart,
+    Calendar,
+    Gift,
+    BookOpen,
+    Users,
+    MapPin,
+    ChevronRight,
+    LayoutDashboard,
+    X,
+} from "lucide-react";
 
+const LOGO_SRC =
+    "https://res.cloudinary.com/dasch1s5i/image/upload/v1755904587/logo-boa_1_gf2bhl.svg";
 
 const navigation = [
     { name: "Inicio", href: "/", icon: Coffee },
@@ -25,6 +41,10 @@ export default function Header() {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const [progress, setProgress] = useState(0);
+    const { user } = useAuth();
+    const isAdmin = Boolean(
+        user?.user_metadata?.is_admin || user?.is_admin || user?.role === "admin"
+    );
 
     useEffect(() => {
         const onScroll = () => {
@@ -39,16 +59,18 @@ export default function Header() {
     }, []);
 
     return (
-        <header
+        <motion.header
+            initial={{ y: -10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 26, mass: 0.6 }}
             className={[
                 "sticky top-0 z-50 w-full font-sans transition-all duration-300",
                 scrolled
-                    ? "bg-white/80 backdrop-blur-md ring-1 ring-boa-ink/10 shadow-[0_8px_30px_rgba(2,6,23,.06)]"
+                    ? "bg-white/85 backdrop-blur-md ring-1 ring-boa-ink/10 shadow-[0_8px_30px_rgba(2,6,23,.06)]"
                     : "bg-white/95 border-b border-neutral-200/60",
             ].join(" ")}
             style={
                 {
-                    // barra de progreso (ancho controlado por var interna)
                     ["--boa-progress" as any]: `${progress * 100}%`,
                 } as React.CSSProperties
             }
@@ -63,114 +85,173 @@ export default function Header() {
             <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 items-center justify-between">
                     {/* Logo */}
-                    <Link href="/" aria-label="Ir a inicio" className="flex items-center gap-2">
-                        <img
-                            src="https://res.cloudinary.com/dasch1s5i/image/upload/v1755904587/logo-boa_1_gf2bhl.svg"
-                            alt="Logo-BOA"
-                            className={[
-                                "w-14 rounded-full transition-transform duration-300",
-                                scrolled ? "scale-[0.95]" : "scale-100",
-                            ].join(" ")}
-                        />
-                    </Link>
+                    <motion.div
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        <Link href="/" aria-label="Ir a inicio" className="flex items-center gap-2">
+                            <img
+                                src={LOGO_SRC}
+                                alt="BOA"
+                                className={[
+                                    "w-12 h-12 rounded-full transition-transform duration-300",
+                                    scrolled ? "scale-[0.95]" : "scale-100",
+                                ].join(" ")}
+                            />
+                        </Link>
+                    </motion.div>
 
                     {/* Desktop Navigation */}
                     <nav className="hidden lg:flex items-center gap-1">
-                        {navigation.map((item) => {
+                        {navigation.map((item, i) => {
                             const isActive = pathname === item.href;
                             return (
-                                <Link
+                                <motion.div
                                     key={item.name}
-                                    href={item.href}
-                                    aria-current={isActive ? "page" : undefined}
-                                    className={[
-                                        "group relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300",
-                                        "text-neutral-700 hover:text-boa-green hover:bg-neutral-50",
-                                        isActive ? "bg-emerald-50 text-boa-green shadow-sm" : "",
-                                    ].join(" ")}
+                                    initial={{ opacity: 0, y: 4 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.02 * i, duration: 0.18 }}
                                 >
-                                    <span className="relative">
-                                        {item.name}
-                                        {/* micro-subrayado animado */}
-                                        <span
-                                            className={[
-                                                "pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-[-6px] h-[2px] rounded-full bg-boa-green transition-all duration-300",
-                                                isActive ? "w-6 opacity-100" : "w-0 opacity-0 group-hover:w-6 group-hover:opacity-100",
-                                            ].join(" ")}
-                                        />
-                                    </span>
-                                </Link>
+                                    <Link
+                                        href={item.href}
+                                        aria-current={isActive ? "page" : undefined}
+                                        className={[
+                                            "group relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300",
+                                            "text-neutral-700 hover:text-boa-green hover:bg-neutral-50",
+                                            isActive ? "bg-emerald-50 text-boa-green shadow-sm" : "",
+                                        ].join(" ")}
+                                    >
+                                        <span className="relative">
+                                            {item.name}
+                                            <span
+                                                className={[
+                                                    "pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-[-6px] h-[2px] rounded-full bg-boa-green transition-all duration-300",
+                                                    isActive
+                                                        ? "w-6 opacity-100"
+                                                        : "w-0 opacity-0 group-hover:w-6 group-hover:opacity-100",
+                                                ].join(" ")}
+                                            />
+                                        </span>
+                                    </Link>
+                                </motion.div>
                             );
                         })}
                     </nav>
 
-                    {/* Contact Button */}
-                    <div className="hidden md:flex items-center space-x-4">
+                    {/* Desktop Right (auth) */}
+                    <div className="hidden md:flex items-center gap-2">
+                        <HeaderAuth />
+                    </div>
 
-
-                        <div className="flex gap-2">
+                    {/* Mobile Right: auth + menu trigger */}
+                    <div className="flex items-center gap-2 lg:hidden">
+                        {/* Auth inline en mobile */}
+                        <div className="flex items-center">
                             <HeaderAuth />
                         </div>
 
-                    </div>
+                        {/* Trigger del menú */}
+                        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                            <SheetTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="font-sans hover:bg-neutral-100 active:scale-95 transition"
+                                    aria-label="Abrir menú"
+                                    aria-expanded={isOpen}
+                                >
+                                    <Menu className="h-7 w-7 transition-transform duration-150 group-data-[state=open]:rotate-90" />
+                                </Button>
+                            </SheetTrigger>
 
-                    {/* Mobile menu trigger */}
-                    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-                        <SheetTrigger asChild className="lg:hidden">
-                            <Button variant="ghost" size="sm" className="font-sans">
-                                <Menu className="h-6 w-6" />
-                                <span className="sr-only">Abrir menú</span>
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent
-                            side="right"
-                            className="w-80 bg-white border-l border-neutral-200/60 p-0 overflow-hidden"
-                        >
-                            {/* Encabezado del sheet */}
-                            <div className="relative px-5 pt-5 pb-4 border-b border-neutral-200/60 bg-gradient-to-br from-emerald-50/70 to-white">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-boa-green to-emerald-600" />
-                                    <span className="boa-logo text-2xl font-medium text-neutral-900 font-sans">boa</span>
-                                </div>
-                            </div>
+                            <SheetContent
+                                side="right"
+                                className="w-80 bg-white border-l border-neutral-200/60 p-0 overflow-hidden
++             [&>button.absolute.right-4.top-4]:hidden"
+                            >
+                                {/* Encabezado del sheet: perfil alineado a la derecha y X visible */}
+                                <div className="relative px-5 pt-5 pb-4 border-b border-neutral-200/60 bg-gradient-to-br from-emerald-50/70 to-white">
+                                    <div className="flex items-center justify-end gap-3">
+                                        {/* User profile a la derecha */}
+                                        <div className="shrink-0">
+                                            <HeaderAuth />
+                                        </div>
 
-                            {/* Navegación móvil */}
-                            <div className="p-5">
-                                <nav className="flex flex-col space-y-2">
-                                    {navigation.map((item) => {
-                                        const Icon = item.icon;
-                                        const isActive = pathname === item.href;
-                                        return (
-                                            <Link
-                                                key={item.name}
-                                                href={item.href}
-                                                onClick={() => setIsOpen(false)}
-                                                className={[
-                                                    "flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all duration-300",
-                                                    isActive
-                                                        ? "bg-emerald-50 text-boa-green shadow-sm"
-                                                        : "text-neutral-700 hover:bg-neutral-50 hover:text-boa-green",
-                                                ].join(" ")}
+                                        {/* Separación clara de la X */}
+                                        <SheetClose asChild>
+                                            <button
+                                                aria-label="Cerrar menú"
+                                                className="ml-1 inline-flex items-center justify-center rounded-full h-10 w-10 text-neutral-700/80 hover:text-neutral-900 hover:bg-neutral-100/80 transition-opacity"
                                             >
-                                                <Icon className="h-5 w-5" />
-                                                <span>{item.name}</span>
-                                            </Link>
-                                        );
-                                    })}
-                                </nav>
-
-                                <div className="mt-6 pt-6 border-t border-neutral-200">
-                                    <Link href="/contact" onClick={() => setIsOpen(false)}>
-                                        <Button className="w-full bg-boa-green hover:bg-boa-green/90 text-white font-sans">
-                                            Reservar actividad
-                                        </Button>
-                                    </Link>
+                                                <X className="h-6 w-6" />
+                                            </button>
+                                        </SheetClose>
+                                    </div>
                                 </div>
-                            </div>
-                        </SheetContent>
-                    </Sheet>
+
+                                {/* Navegación móvil con animación suave */}
+                                <div className="p-5">
+                                    <AnimatePresence mode="popLayout">
+                                        <nav className="flex flex-col space-y-2">
+                                            {navigation.map((item, i) => {
+                                                const Icon = item.icon;
+                                                const isActive = pathname === item.href;
+                                                return (
+                                                    <motion.div
+                                                        key={item.name}
+                                                        initial={{ opacity: 0, y: 6 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        exit={{ opacity: 0, y: 6 }}
+                                                        transition={{ delay: 0.02 * i, duration: 0.18 }}
+                                                    >
+                                                        <Link
+                                                            href={item.href}
+                                                            onClick={() => setIsOpen(false)}
+                                                            className={[
+                                                                "flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all duration-300",
+                                                                isActive
+                                                                    ? "bg-emerald-50 text-boa-green shadow-sm"
+                                                                    : "text-neutral-800 hover:bg-neutral-50 hover:text-boa-green",
+                                                            ].join(" ")}
+                                                        >
+                                                            <Icon className="h-5 w-5" />
+                                                            <span className="flex-1">{item.name}</span>
+                                                            <ChevronRight className="h-4 w-4 opacity-60" />
+                                                        </Link>
+                                                    </motion.div>
+                                                );
+                                            })}
+
+                                            {isAdmin && (
+                                                <>                    <div className="h-px my-2 bg-neutral-200/80" />
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: 6 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        exit={{ opacity: 0, y: 6 }}
+                                                        transition={{ delay: 0.02 * (navigation.length + 1), duration: 0.18 }}
+                                                    >
+                                                        <Link
+                                                            href="/admin"
+                                                            onClick={() => setIsOpen(false)}
+                                                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold transition-all duration-300 text-neutral-900 hover:bg-neutral-50 hover:text-boa-green"
+                                                        >
+                                                            <LayoutDashboard className="h-5 w-5" />
+                                                            <span className="flex-1">Administrar BOA</span>
+                                                            <ChevronRight className="h-4 w-4 opacity-60" />
+                                                        </Link>
+                                                    </motion.div>
+                                                </>
+                                            )}
+
+                                        </nav>
+                                    </AnimatePresence>
+                                </div>
+                            </SheetContent>
+                        </Sheet>
+                    </div>
                 </div>
             </div>
-        </header>
+        </motion.header>
     );
 }

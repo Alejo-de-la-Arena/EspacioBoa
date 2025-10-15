@@ -25,7 +25,7 @@ function fieldBase(hasError: boolean) {
         "w-full h-12 rounded-xl border bg-white/90 pl-12 pr-12 text-[15px] leading-6",
         "placeholder:text-neutral-500 focus:placeholder-transparent",
         "shadow-[inset_0_1px_0_rgba(0,0,0,0.04)]",
-        "transition-all focus:outline-none focus:ring-2 focus:ring-boa-green/20 focus:border-boa-green",
+        "transition-all focus:outline-none focus:ring-2 focus:ring-black ",
         hasError ? "border-red-400" : "border-neutral-300 hover:border-neutral-400",
     ].join(" ");
 }
@@ -126,12 +126,12 @@ export default function LoginView() {
             <section className="relative z-10 grid place-items-center min-h-dvh p-4 [&_*]:font-sans">
                 <div className="w-full max-w-lg">
                     <div className="text-center mb-6">
-                        <h1 className="text-3xl tracking-tight text-neutral-900">Iniciar sesión</h1>
+                        <h1 className="text-3xl tracking-tight font-bold">Iniciar sesión</h1>
                         <p className="text-sm text-neutral-900 mt-1.5">
                             ¿No tenés cuenta?{" "}
                             <Link
                                 href="/register"
-                                className="font-medium underline underline-offset-4 text-boa-green hover:text-boa-green/90"
+                                className="font-medium underline underline-offset-4 text-boa-green hover:text-boa-green/90 font-semibold"
                             >
                                 Crear cuenta
                             </Link>

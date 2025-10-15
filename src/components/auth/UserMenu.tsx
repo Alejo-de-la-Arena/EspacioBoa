@@ -140,7 +140,6 @@ export default function UserMenu() {
                 <DropdownMenuTrigger
                     ref={triggerRef}
                     className="inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 shadow-sm bg-white hover:bg-neutral-50 font-sans"
-                    style={{ fontFamily: "var(--font-sans), Inter, system-ui, sans-serif" }}
                     aria-label="Abrir menú de usuario"
                 >
                     <Avatar className="h-8 w-8">
@@ -167,7 +166,7 @@ export default function UserMenu() {
                     <DropdownMenuSeparator />
 
                     {/* Mi perfil */}
-                    <DropdownMenuItem asChild className="font-sans">
+                    <DropdownMenuItem asChild >
                         <Link href="/account" className="flex items-center gap-2 font-sans">
                             <UserRound className="h-4 w-4" /> Mi perfil
                         </Link>

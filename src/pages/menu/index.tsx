@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { X, Leaf, ChevronLeft, ChevronRight } from "lucide-react";
 
 
-// === Imágenes centralizadas ===
 import rawImages from "@/data/images.json";
 type ImagesJSON = {
     categories: Record<string, string>;
@@ -17,15 +16,23 @@ type ImagesJSON = {
 const IMAGES = rawImages as ImagesJSON;
 
 
-/* ========= Tipos ========= */
+type MenuItemOption = { name: string; price: number | string };
+
 type MenuItem = {
     name: string;
     price?: number | string;
     note?: string;
     description?: string;
+    options?: MenuItemOption[];
 };
-type MenuCategory = { id: string; title: string; items: MenuItem[] };
 
+type MenuCategory = {
+    id: string;
+    title: string;
+    items: MenuItem[];
+    extras?: MenuItemOption[];
+    extrasLabel?: string;
+};
 
 /* ========= Utils ========= */
 const formatARS = (n?: number | string) =>
@@ -57,187 +64,153 @@ const withFallback = (e: React.SyntheticEvent<HTMLImageElement>) => {
 };
 
 
-/* ========= Diccionario de ingredientes por producto ========= */
-const INGREDIENTS: Record<string, string[]> = {
-    // Café
-    "espresso": ["café de especialidad", "agua filtrada"],
-    "americano": ["espresso", "agua caliente"],
-    "americano doble": ["espresso doble", "agua caliente"],
-    "doppio": ["espresso doble"],
-    "latte": ["espresso", "leche texturizada", "microespuma"],
-    "flat white": ["doppio", "leche sedosa", "microespuma fina"],
-    "iced coffee": ["café filtrado frío", "hielo", "almíbar (opcional)"],
-    "capuccino": ["espresso", "leche texturizada", "espuma", "cacao"],
-    "• extra shot": ["dosis extra de espresso"],
-    "• leche de almendras": ["bebida de almendras", "sin lácteos"],
-
-
-    // Panadería
-    "palmerita": ["masa hojaldre", "manteca", "azúcar orgánica"],
-    "roll de canela": ["masa esponjosa", "canela", "glaseado suave"],
-    "pain au chocolat": ["hojaldre de manteca", "chocolate amargo"],
-    "budines": ["harina", "huevos", "manteca", "cítricos de estación"],
-    "croissant": ["manteca", "hojaldre", "fermentación lenta"],
-    "medialuna": ["harina", "manteca", "almíbar ligero"],
-    "scon": ["harina", "manteca", "leche"],
-    "chipá": ["fécula de mandioca", "queso", "huevo"],
-    "tostas": ["pan masa madre", "aceite de oliva", "tomate y ajo"],
-    "budín cítrico": ["ralladura de limón", "naranja", "glaseado"],
-    "alfajor": ["tapitas suaves", "dulce de leche", "coco (opcional)"],
-    "brownie / coco c/ centro de frutos rojos": ["cacao amargo", "manteca", "coco", "frutos rojos"],
-    "barrita": ["avena", "frutos secos", "miel"],
-
-
-    // Brunch
-    "tostón de palta": ["pan de masa madre", "palta", "limón", "sésamo", "huevo (opcional)"],
-    "tostado": ["pan", "queso", "jamón"],
-
-
-    // Pizzas / Empanadas
-    "pizza napolitana": ["masa madre", "salsa de tomate", "mozzarella", "albahaca"],
-    "jamón y morrón": ["salsa de tomate", "mozzarella", "jamón", "pimiento asado"],
-    "fugazzeta": ["mozzarella", "cebolla", "orégano"],
-    "margherita": ["masa ligera", "pomodoro", "fior di latte", "albahaca"],
-    "empanadas (verdura / bondiola)": ["masa casera", "relleno de estación"],
-
-
-    // Wraps
-    "wrap veggie": ["tortilla integral", "hummus", "vegetales asados", "hojas verdes"],
-    "wrap de pollo": ["pollo grillado", "mix de verdes", "alioli suave"],
-
-
-    // Bebidas
-    "agua (con o sin gas)": ["agua mineral"],
-    "limonada / pomelada — vaso": ["cítricos exprimidos", "agua", "hielo"],
-    "limonada / pomelada — jarra": ["cítricos exprimidos", "agua", "hielo"],
-    "jugo de naranja": ["naranja fresca", "sin azúcar añadida"],
-    "kombucha": ["té fermentado", "levaduras naturales"],
-    "perrón heineken": ["cerveza tirada"],
-    "té (consultar variedad)": ["hebras seleccionadas", "agua a temperatura justa"],
-
-
-    // Panes
-    "brioche": ["manteca", "leche", "huevos", "fermentación lenta"],
-    "multisemillas": ["harinas integrales", "semillas mixtas", "masa madre"],
-    "molde masa madre": ["harina", "agua", "masa madre", "sal marina"],
-};
-
-
 function describeItem(sectionId: string, name: string, existing?: string) {
-    if (existing && existing.trim().length > 0) return existing;
-    const key = name.trim().toLowerCase();
-    const base = INGREDIENTS[key];
-    if (base && base.length) {
-        return `Ingredientes: ${base.join(" · ")}. Elaborado de forma artesanal.`;
-    }
-    switch (sectionId) {
-        case "cafe":
-            return "Blend de especialidad, extracción precisa y leche texturizada a punto. Consultá por alternativas vegetales.";
-        case "panaderia":
-            return "Hecho con manteca y fermentaciones lentas para un sabor honesto. Ideal para acompañar con café.";
-        case "brunch":
-            return "Recetas frescas de estación, pensadas para compartir y disfrutar lento.";
-        case "pizzas":
-            return "Masa de larga fermentación, tomate maduro y mozzarella; horneado a alta temperatura.";
-        case "wraps":
-            return "Tortillas suaves con rellenos frescos y salsas caseras. Opción veggie disponible.";
-        case "para-tomar":
-            return "Bebidas refrescantes preparadas al momento, con frutas reales y botánicos.";
-        case "panes":
-            return "Panes de masa madre, corteza crujiente y miga húmeda. Fermentación natural.";
-        default:
-            return "Elaborado con ingredientes de temporada y técnicas que respetan el origen.";
-    }
+    if (existing && existing.trim().length > 0) return existing.trim();
+    return "";
 }
 
 
-/* ========= Data del menú ========= */
 const MENU: MenuCategory[] = [
     {
         id: "cafe",
         title: "café",
         items: [
-            { name: "Espresso", price: 2700 },
-            { name: "Americano", price: 3000 },
-            { name: "Americano doble", price: 4000 },
-            { name: "Doppio", price: 3600 },
-            { name: "Latte", price: 4300 },
-            { name: "Flat white", price: 4600 },
-            { name: "Iced coffee", price: 5600 },
-            { name: "Capuccino", price: 5000 },
-            { name: "• extra shot", price: "+1000" },
-            { name: "• leche de almendras", price: "+1000" },
+            { name: "Espresso", price: 3300 },
+            { name: "Americano", price: 3700 },
+            { name: "Americano doble", price: 4800 },
+            { name: "Doppio", price: 4200 },
+            { name: "Latte", price: 5000 },
+            { name: "Flat white", price: 5500 },
+            { name: "Iced coffee", price: 6000 },
+            { name: "Capuccino", price: 6000 },
+            { name: "Espresso Tonic", price: 7000 },
+            { name: "Nitro Americano", price: 5200 },
+        ],
+        extrasLabel: "Extras",
+        extras: [
+            { name: "Extra shot", price: "+1200" },
+            { name: "Leches vegetales", price: "+1200" },
         ],
     },
+
     {
         id: "panaderia",
         title: "panadería",
         items: [
-            { name: "Palmerita", price: 2800 },
-            { name: "Roll de canela", price: 3500 },
-            { name: "Pain au chocolat", price: 3500 },
-            { name: "Budines", price: 4500 },
-            { name: "Croissant", price: 3500 },
-            { name: "Medialuna", price: 3200 },
-            { name: "Scon", price: 3500 },
-            { name: "Chipá", price: 3800 },
-            { name: "Tostas", price: 2800 },
-            { name: "Budín cítrico", price: 4500 },
-            { name: "Alfajor", price: 3500 },
-            { name: "Brownie / coco c/ centro de frutos rojos", price: 4500 },
-            { name: "Barrita", price: 5500 },
+            { name: "Palmerita", price: 3500 },
+            { name: "Roll de canela", price: 4200 },
+            { name: "Pain au chocolat", price: 4200 },
+            { name: "Budines", price: 4600 },
+            {
+                name: "Croissant",
+                price: 4000,
+                options: [{ name: "Jamón y queso", price: "+3000" }],
+            },
+            {
+                name: "Medialuna",
+                price: 3100,
+                options: [{ name: "Jamón y queso", price: "+3000" }],
+            },
+            { name: "Tostadas", price: 6000 },
+            { name: "Chipa", price: 4400 },
+            { name: "Cookies", price: 3300 },
         ],
     },
-    {
-        id: "brunch",
-        title: "brunch",
-        items: [
-            { name: "Tostón de palta", price: 6500 },
-            { name: "Tostado", price: 8000 },
-        ],
-    },
-    {
-        id: "pizzas",
-        title: "pizzas y empanadas",
-        items: [
-            { name: "Pizza napolitana", price: 13000 },
-            { name: "Jamón y morrón", price: 15000 },
-            { name: "Fugazzeta", price: 14000 },
-            { name: "Margherita", price: 13000 },
-            { name: "Empanadas (verdura / bondiola)", price: 4000 },
-        ],
-    },
-    {
-        id: "wraps",
-        title: "wraps",
-        items: [
-            { name: "Wrap veggie", price: 12000 },
-            { name: "Wrap de pollo", price: 13000 },
-        ],
-    },
+
     {
         id: "para-tomar",
         title: "para tomar",
         items: [
-            { name: "Agua (con o sin gas)", price: 2200 },
-            { name: "Limonada / Pomelada — vaso", price: 3200 },
-            { name: "Limonada / Pomelada — jarra", price: 5600 },
-            { name: "Jugo de naranja", price: 3500 },
-            { name: "Kombucha", price: 4800 },
-            { name: "Perrón Heineken", price: 5500 },
-            { name: "Té (consultar variedad)", price: 2500 },
+            { name: "Agua (con o sin gas)", price: 3000 },
+            {
+                name: "Limonada",
+                options: [
+                    { name: "Vaso", price: 3800 },
+                    { name: "Jarra", price: 7700 },
+                ],
+            },
+            {
+                name: "Pomelada",
+                options: [
+                    { name: "Vaso", price: 3800 },
+                    { name: "Jarra", price: 7700 },
+                ],
+            },
+            { name: "Jugo de naranja", price: 4200 },
+            { name: "Kombucha", price: 5500 },
+            { name: "Porrón Heineken", price: 6000 },
+            { name: "Porrón Blue Moon", price: 7500 },
+            { name: "Té", price: 3000, note: "Consultar variedad" },
+            { name: "Chocolate", price: 4000 },
+            { name: "Gaseosas", price: 4200 },
         ],
     },
+
+    {
+        id: "sin-tacc",
+        title: "SIN T.A.C.C.",
+        items: [
+            { name: "Cookie de banana", price: 5500 },
+            { name: "Brownie patagónico", price: 7500 },
+            { name: "Carrot cake", price: 11000, options: [{ name: "Mitad de porción", price: 6000 }] },
+            { name: "Lingote de chocolate & maní", price: 12000, options: [{ name: "Mitad de porción", price: 6500 }] },
+        ],
+    },
+
+    {
+        id: "brunch",
+        title: "brunch",
+        items: [
+            { name: "Tostón de palta", price: 9200, options: [{ name: "Huevo", price: "+4500" }] },
+            { name: "Tostado", price: 10200 },
+            { name: "Bowl de yogur", price: 10200, note: "con granola y frutas" },
+            { name: "Huevos revueltos", price: 9200 },
+        ],
+    },
+
+    {
+        id: "pizzas",
+        title: "pizzas y empanadas",
+        items: [
+            { name: "Jamón y morrón", price: 17500 },
+            { name: "Fugazzeta", price: 16500 },
+            { name: "Margherita", price: 15500 },
+            { name: "Empanadas (verdura/bondiola)", price: 4500 },
+        ],
+    },
+
+    {
+        id: "wraps",
+        title: "wraps",
+        items: [
+            { name: "Wrap veggie", price: 14500 },
+            { name: "Wrap de bondiola", price: 15500 },
+        ],
+    },
+
+    {
+        id: "al-plato",
+        title: "al plato",
+        items: [
+            { name: "Risotto de hongos", price: 18000 },
+            { name: "Arroz yamaní con pollo", price: 18000 },
+            { name: "Sopa de arvejas", price: 12500, note: "con panceta crocante" },
+            { name: "Bondiola", price: 21000, note: "con puré de batata" },
+            { name: "Pollo al curry", price: 19000 },
+        ],
+    },
+
     {
         id: "panes",
         title: "panes",
         items: [
-            { name: "Brioche", price: 15500 },
-            { name: "Multisemillas", price: 15500 },
-            { name: "Molde masa madre", price: 19500 },
+            { name: "Brioche", price: 16000 },
+            { name: "Multisemillas", price: 16000 },
+            { name: "Molde masa madre", price: 13000 },
         ],
     },
 ];
+
 
 
 /* ==================== Modal de producto (ajustado) ==================== */
@@ -325,31 +298,45 @@ function ProductModal({
                             </div>
                         </div>
 
-
-                        {/* Contenido: descripción + precio sutil abajo de ingredientes */}
+                        {/* Contenido: descripción + precio */}
+                        {/* Contenido: (sin ingredientes auto) + opciones + precio */}
                         <div className="min-h-0">
-                            <p className="text-neutral-700 leading-relaxed text-[15.5px]">
-                                {description}
-                            </p>
-                            {item.note && (
-                                <p className="mt-1.5 text-xs text-neutral-500">{item.note}</p>
+                            {description && (
+                                <p className="text-neutral-700 leading-relaxed text-[15.5px]">{description}</p>
                             )}
 
+                            {item.note && (
+                                <p className="mt-1.5 text-[13px] text-neutral-600">{item.note}</p>
+                            )}
 
-                            {/* Precio debajo, cálido/sutil */}
-                            <div className="mt-3">
-                                <span className="inline-flex items-center gap-2">
-                                    <span className="text-[12px] text-neutral-500">Valor</span>
-                                    <span className="px-3 py-1.5 rounded-full font-semibold text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200">
-                                        {formatARS(item.price)}
+                            {Array.isArray(item.options) && item.options.length > 0 && (
+                                <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/40 p-3">
+                                    <div className="text-[12px] font-semibold text-emerald-800 mb-1.5">Opciones</div>
+                                    <ul className="space-y-1">
+                                        {item.options.map((op, i) => (
+                                            <li key={i} className="flex items-center justify-between text-[14px]">
+                                                <span>{op.name}</span>
+                                                <span className="font-semibold text-emerald-700">{formatARS(op.price)}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {(item.price ?? null) !== null && (
+                                <div className="mt-3">
+                                    <span className="inline-flex items-center gap-2">
+                                        <span className="text-[12px] text-neutral-500">{item.options?.length ? "Desde" : "Valor"}</span>
+                                        <span className="px-3 py-1.5 rounded-full font-semibold text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200">
+                                            {formatARS(item.price)}
+                                        </span>
                                     </span>
-                                </span>
-                            </div>
+                                </div>
+                            )}
 
-
-                            {/* línea decorativa suave */}
                             <div className="mt-4 h-px w-full bg-gradient-to-r from-emerald-100 via-amber-100 to-transparent" />
                         </div>
+
 
 
                         {/* Footer: navegación abajo */}
@@ -507,80 +494,92 @@ function CategoryModal({
                                             <li key={i}>
                                                 <button
                                                     onClick={() => onSelectItem(i)}
-                                                    className="
-                            group relative w-full text-left rounded-3xl
-                            ring-1 ring-emerald-100/70 bg-white
-                            shadow-[0_6px_26px_rgba(16,185,129,.08)]
-                            hover:shadow-[0_16px_44px_rgba(16,185,129,.16)]
-                            hover:ring-emerald-200 transition-all
-                            px-4 py-3 sm:px-5 sm:py-4
-                          "
+                                                    className="group relative w-full text-left rounded-3xl ring-1 ring-emerald-100/70 bg-white shadow-[0_6px_26px_rgba(16,185,129,.08)] hover:shadow-[0_16px_44px_rgba(16,185,129,.16)] hover:ring-emerald-200 transition-all px-4 py-3 sm:px-5 sm:py-4"
                                                     aria-label={`Ver ${it.name}`}
                                                 >
                                                     <div className="grid grid-cols-[112px_1fr_auto] items-center gap-4">
-                                                        {/* Imagen protagonista */}
+                                                        {/* Imagen */}
                                                         <div className="relative">
                                                             <div className="w-[112px] h-[112px] rounded-2xl overflow-hidden">
-                                                                <div
-                                                                    className="absolute inset-0 rounded-2xl p-[1px]
-                                              bg-[linear-gradient(180deg,rgba(16,185,129,.35),rgba(16,185,129,0))]"
-                                                                />
-                                                                <img
-                                                                    src={thumb}
-                                                                    onError={withFallback}
-                                                                    alt={it.name}
-                                                                    className="relative z-[1] w-full h-full object-cover
-                                             transition-transform duration-500 group-hover:scale-[1.06]
-                                             saturate-[1.08] contrast-[1.05] rounded-2xl"
-                                                                    loading="lazy"
-                                                                />
+                                                                <div className="absolute inset-0 rounded-2xl p-[1px] bg-[linear-gradient(180deg,rgba(16,185,129,.35),rgba(16,185,129,0))]" />
+                                                                <img src={thumb} onError={withFallback} alt={it.name}
+                                                                    className="relative z-[1] w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06] saturate-[1.08] contrast-[1.05] rounded-2xl" loading="lazy" />
                                                                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-emerald-50/60 to-transparent" />
                                                             </div>
                                                         </div>
 
-
-                                                        {/* Texto: título + subtítulo */}
+                                                        {/* Texto */}
                                                         <div className="min-w-0">
                                                             <div className="flex items-center gap-2">
-                                                                <span className="font-medium text-neutral-900 truncate">
-                                                                    {it.name}
-                                                                </span>
-                                                                {isVegan && (
-                                                                    <span className="inline-flex items-center text-emerald-600 text-[11px]">
-                                                                        <Leaf className="h-3 w-3 mr-1" /> Vegano
-                                                                    </span>
-                                                                )}
+                                                                <span className="font-medium text-neutral-900 truncate">{it.name}</span>
                                                             </div>
 
-
-                                                            {short && (
-                                                                <p className="text-[12px] text-neutral-500 mt-1 line-clamp-1">
-                                                                    {short}
-                                                                </p>
+                                                            {/* Nota bajo el título (si hay) */}
+                                                            {it.note && (
+                                                                <p className="text-[12px] text-neutral-500 mt-1 line-clamp-1">{it.note}</p>
                                                             )}
 
+                                                            {/* Variantes / extras del ítem */}
+                                                            {it.options?.length ? (
+                                                                <div className="mt-2 space-y-1.5">
+                                                                    {it.options.map((op, k) => (
+                                                                        <div key={k} className="flex items-center justify-between text-[13px] text-neutral-700">
+                                                                            <span className="inline-flex items-center gap-2 w-full">
+                                                                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                                                                                {op.name}
+                                                                            </span>
+                                                                            <span className="font-semibold flex items-start pl-0 w-full text-gray-600">{formatARS(op.price)}</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            ) : null}
 
+                                                            {/* Línea decorativa */}
                                                             <div className="mt-2 h-px w-24 bg-gradient-to-r from-emerald-100 via-emerald-50 to-transparent" />
                                                         </div>
 
-
-                                                        {/* Precio pill */}
-                                                        <span
-                                                            className="
-                                px-3 py-1.5 rounded-full font-semibold text-emerald-700
-                                bg-emerald-50 ring-1 ring-emerald-200 whitespace-nowrap
-                                group-hover:bg-emerald-100/60 transition-colors
-                              "
-                                                        >
-                                                            {formatARS(it.price)}
-                                                        </span>
+                                                        {/* Precio “pill”: solo si NO hay options */}
+                                                        {!it.options?.length ? (
+                                                            <span className="px-3 py-1.5 rounded-full font-semibold text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200 whitespace-nowrap group-hover:bg-emerald-100/60 transition-colors">
+                                                                {formatARS(it.price)}
+                                                            </span>
+                                                        ) : (
+                                                            // Si tiene options pero también precio base, lo mostramos como “desde”
+                                                            it.price ? (
+                                                                <span className="px-3 py-1.5 rounded-full font-semibold text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200 whitespace-nowrap group-hover:bg-emerald-100/60 transition-colors">
+                                                                    {formatARS(it.price)}
+                                                                </span>
+                                                            ) : <span />
+                                                        )}
                                                     </div>
                                                 </button>
                                             </li>
+
                                         );
                                     })}
                                 </ul>
+
                             )}
+                            {category.extras?.length ? (
+                                <div className="mt-5">
+                                    <div className="mb-2 text-[12px] uppercase tracking-wide text-emerald-700/90 font-semibold">
+                                        {category.extrasLabel || "Extras"}
+                                    </div>
+                                    <div className="rounded-2xl border border-emerald-100 bg-emerald-50/40 p-3 sm:p-4">
+                                        <ul className="divide-y divide-emerald-100/70">
+                                            {category.extras.map((ex, k) => (
+                                                <li key={k} className="py-2 flex items-center justify-between text-[13.5px]">
+                                                    <span className="inline-flex items-center gap-2 text-neutral-800">
+                                                        <Sparkles className="h-4 w-4 text-emerald-600" />
+                                                        {ex.name}
+                                                    </span>
+                                                    <span className="font-semibold text-emerald-700">{formatARS(ex.price)}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+                            ) : null}
                         </div>
                     </div>
                 </div>
@@ -601,37 +600,44 @@ function CategoryCard({
     onOpen: (c: MenuCategory) => void;
 }) {
     const src = CATEGORY_IMAGES[category.id] || FALLBACK_IMAGE;
+
     return (
         <button
             onClick={() => onOpen(category)}
             className="
         group relative text-left h-[16rem] sm:h-[20rem] lg:h-[22rem] w-full
-        rounded-[1.75rem] overflow-hidden ring-1 ring-emerald-200/70 bg-white
-        shadow-[0_14px_44px_rgba(16,185,129,.12)] transition-transform
-        hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400
+        rounded-[1.75rem] overflow-hidden bg-[#FFFBF4]
+        ring-[2.5px] ring-[#1E7A66]/70 shadow-[0_14px_44px_rgba(16,185,129,.08)]
+        transition-transform hover:-translate-y-0.5
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E7A66]
       "
             aria-label={`Abrir ${category.title}`}
         >
+            {/* Imagen a full, sin padding, cubre todo */}
             <img
                 src={src}
                 onError={withFallback}
                 alt={category.title}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                className="
+          absolute inset-0 w-full h-full object-cover object-center
+          transition-transform duration-700 group-hover:scale-[1.02]
+        "
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
+
+            {/* Overlay crema sutil para consistencia visual */}
+            <div className="absolute inset-0 bg-[#FFFBF4]/30 mix-blend-soft-light" />
+
+            {/* Detalles y texto */}
             <div className="relative z-10 h-full flex flex-col justify-end px-5 pb-5">
-                <span className="inline-flex items-center gap-2 text-white/90 text-sm mb-1">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                <span className="inline-flex items-center gap-2 text-emerald-900/90 text-sm mb-1">
+                    <span className="h-2 w-2 rounded-full bg-[#1E7A66]" />
                     Menú BOA
                 </span>
-                <h3 className="capitalize text-white text-3xl sm:text-4xl font-semibold drop-shadow">
+                <h3 className="capitalize text-neutral-900 text-3xl sm:text-4xl font-semibold drop-shadow-sm">
                     {category.title}
                 </h3>
                 <div className="mt-3">
-                    <span
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-            bg-white/90 text-emerald-800 ring-1 ring-emerald-100"
-                    >
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white/90 text-[#1E7A66] ring-1 ring-[#1E7A66]/20">
                         Ver productos
                     </span>
                 </div>
@@ -639,6 +645,8 @@ function CategoryCard({
         </button>
     );
 }
+
+
 
 
 /* ==================== Página ==================== */
@@ -673,30 +681,37 @@ export default function MenuPage() {
 
     return (
         <section>
-            {/* HERO — sobrio, sin chips ni CTAs, con fondo detallado en verde/blanco/negro */}
-            {/* HERO — alineado, limpio y artístico (verde / blanco / negro) */}
-            <section aria-labelledby="boa-hero" className="relative overflow-hidden">
-                {/* Fondo sobrio con detalles geométricos muy sutiles */}
-                <div className="absolute inset-0 -z-10">
-                    {/* base radial verde → blanco */}
-                    <div className="absolute inset-0 bg-[radial-gradient(120%_120%_at_30%_-10%,#ECFDF5_0%,#FFFFFF_65%)]" />
-                    {/* grid fino con máscara para no invadir el centro */}
-                    <div className="absolute inset-0 opacity-[0.06] [mask-image:radial-gradient(85%_70%_at_50%_45%,black,transparent)] bg-[length:24px_24px] bg-[linear-gradient(to_right,#10b981_1px,transparent_1px),linear-gradient(to_bottom,#10b981_1px,transparent_1px)]" />
-                    {/* halo suave superior e inferior para dar profundidad */}
-                    <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-emerald-50/70 to-transparent" />
-                    <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-emerald-50/60 to-transparent" />
-                </div>
+            <section
+                aria-labelledby="boa-hero"
+                className="relative overflow-hidden"
+                style={{
+                    // base crema + radiales salvia/crema suaves
+                    background:
+                        "radial-gradient(140% 120% at 20% -10%, rgba(214,232,221,0.35) 0%, rgba(214,232,221,0) 55%), radial-gradient(120% 100% at 85% 0%, rgba(250,241,224,0.28) 0%, rgba(250,241,224,0) 60%), radial-gradient(120% 120% at 50% 110%, rgba(200,222,209,0.22) 0%, rgba(200,222,209,0) 60%), #FFFBF4",
+                }}
+            >
+                {/* textura papel y viñeta leve */}
+                <div
+                    aria-hidden
+                    className="absolute inset-0 -z-10 pointer-events-none"
+                    style={{
+                        backgroundImage:
+                            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='280' height='280'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='7'/></filter><rect width='100%' height='100%' filter='url(%23n)' fill='%23a3b7a8' opacity='.22'/></svg>\")",
+                        backgroundSize: "360px 360px",
+                        mixBlendMode: "multiply",
+                        opacity: 0.035,
+                    }}
+                />
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-emerald-50/70 to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#F6EFE0]/80 to-transparent" />
 
-
-                <div className="container mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-24">
-                    <div className="mx-auto max-w-4xl text-center">
-                        {/* micro-pill discreta */}
+                {/* HERO */}
+                <section aria-labelledby="boa-hero" className="relative z-10">
+                    <div className="container mx-auto max-w-6xl px-4 sm:px-6 py-24 sm:py-20 text-center">
                         <div className="inline-flex items-center rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-medium text-emerald-700">
                             Sabores, arte y comunidad
                         </div>
 
-
-                        {/* título centrado y compacto */}
                         <h1
                             id="boa-hero"
                             className="mt-4 text-4xl sm:text-6xl font-bold leading-[1.1] tracking-tight text-neutral-900"
@@ -704,8 +719,6 @@ export default function MenuPage() {
                             Gastronomía <span className="text-emerald-700">BOA</span>
                         </h1>
 
-
-                        {/* subrayado artístico (SVG) perfectamente centrado bajo el título */}
                         <div className="mx-auto mt-2 w-[min(520px,90%)]">
                             <svg
                                 viewBox="0 0 520 28"
@@ -723,47 +736,32 @@ export default function MenuPage() {
                             </svg>
                         </div>
 
-
-                        {/* bajada */}
                         <p className="mx-auto mt-4 max-w-3xl text-lg text-neutral-700">
-                            Cocina de especialidad, honesta y consciente. Un ritual para disfrutar
-                            lento, compartir y volver.
+                            Cocina de especialidad, honesta y consciente. Un ritual para
+                            disfrutar lento, compartir y volver.
                         </p>
 
-
-                        {/* CTAs alineados y consistentes */}
                         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                             <a
-                                href="#menu-categorias"
+                                href="#categories"
                                 className="inline-flex items-center rounded-full bg-emerald-700 px-6 py-3 text-sm font-medium text-white shadow-[0_10px_30px_rgba(16,185,129,.20)] transition-colors hover:bg-emerald-800"
                             >
                                 Ver el menú
                             </a>
-                            <a
-                                href="/origenes"
-                                className="inline-flex items-center rounded-full border border-emerald-200 bg-white/90 px-6 py-3 text-sm font-medium text-emerald-800 hover:bg-white"
-                            >
-                                Orígenes & Café
-                            </a>
                         </div>
                     </div>
-                </div>
-            </section>
-
-
-
-
-
-
-            {/* GRID de categorías */}
-            <section className="py-8 sm:py-12">
-                <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-                        {categories.map((cat) => (
-                            <CategoryCard key={cat.id} category={cat} onOpen={openCategory} />
-                        ))}
+                </section>
+                {/* GRID de categorías */}
+                <section className="py-8 sm:py-12">
+                    <div className="mx-auto w-full max-w-7xl px-4 sm:px-6" id="categories">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                            {categories.map((cat) => (
+                                <CategoryCard key={cat.id} category={cat} onOpen={openCategory} />
+                            ))}
+                        </div>
                     </div>
-                </div>
+                </section>
+
             </section>
 
 
@@ -789,7 +787,8 @@ export default function MenuPage() {
                 }
                 onNext={() => setIdx((i) => (i + 1) % Math.max(items.length, 1))}
             />
-        </section>
+        </section >
+
     );
 }
 

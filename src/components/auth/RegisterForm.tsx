@@ -23,7 +23,7 @@ function fieldBase(hasError: boolean) {
         "w-full h-12 rounded-xl border bg-white/90 pl-12 pr-12 text-[15px] leading-6",
         "placeholder:text-neutral-500 focus:placeholder-transparent",
         "shadow-[inset_0_1px_0_rgba(0,0,0,0.04)]",
-        "transition-all focus:outline-none focus:ring-2 focus:ring-emerald-200/70 focus:border-boa-green",
+        "transition-all focus:outline-none focus:ring-2 focus:ring-black ",
         hasError ? "border-red-300" : "border-neutral-300 hover:border-neutral-400",
     ].join(" ");
 }

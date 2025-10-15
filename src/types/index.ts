@@ -11,6 +11,9 @@ export interface Person {
     specialty?: string;
     bio?: string;
     image?: string;
+    email?: string;
+    experience?: string;
+    phone?: number;
 }
 
 export interface Activity {

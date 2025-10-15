@@ -1,5 +1,4 @@
-
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { Button } from "@/components/ui/button";
 import { motion, useMotionValue, useTransform } from "framer-motion";
@@ -19,6 +18,8 @@ import {
     Sparkles,
     Star
 } from "lucide-react";
+/* NUEVO: supabase para conteos en vivo */
+import { supabase } from "@/lib/supabaseClient";
 
 export default function EventsPage() {
     // estados base
@@ -26,6 +27,59 @@ export default function EventsPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("all");
     const [selectedMonth, setSelectedMonth] = useState("all");
+
+    // NUEVO: mapa de inscriptos reales por evento
+    const [counts, setCounts] = useState<Record<string, number>>({});
+
+    // NUEVO: cargar conteos reales y suscribirse en tiempo real
+    useEffect(() => {
+        let ignore = false;
+
+        async function loadCounts(ids: string[]) {
+            const pairs = await Promise.all(
+                ids.map(async (eid) => {
+                    const { count } = await supabase
+                        .from("event_registrations")
+                        .select("id", { count: "exact", head: true })
+                        .eq("event_id", eid);
+                    return [eid, Number(count ?? 0)] as const;
+                })
+            );
+            if (!ignore) {
+                const next: Record<string, number> = {};
+                for (const [k, v] of pairs) next[k] = v;
+                setCounts(next);
+            }
+        }
+
+        const ids = (events || []).map((e: any) => String(e.id));
+        if (ids.length) loadCounts(ids);
+
+        // realtime: cuando cambia cualquier registro, refrescamos el evento afectado
+        const ch = supabase
+            .channel("events-index-registrations")
+            .on(
+                "postgres_changes",
+                { schema: "public", table: "event_registrations", event: "*" },
+                async (payload: any) => {
+                    const eid = String(payload.new?.event_id ?? payload.old?.event_id ?? "");
+                    if (!eid) return;
+                    const { count } = await supabase
+                        .from("event_registrations")
+                        .select("id", { count: "exact", head: true })
+                        .eq("event_id", eid);
+                    if (!ignore) {
+                        setCounts((prev) => ({ ...prev, [eid]: Number(count ?? 0) }));
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            ignore = true;
+            supabase.removeChannel(ch);
+        };
+    }, [events]);
 
     // NUEVO: quick-filters cálidos
     const [onlyToday, setOnlyToday] = useState(false);
@@ -82,13 +136,14 @@ export default function EventsPage() {
             if (onlyWeekend && !isWeekend(d)) return false;
 
             if (onlySpots) {
-                const remaining = (ev.capacity ?? 0) - (ev.enrolled ?? 0);
+                const realEnrolled = counts[String(ev.id)] ?? (ev.enrolled ?? 0);
+                const remaining = (ev.capacity ?? 0) - realEnrolled;
                 if (!(remaining > 0)) return false;
             }
 
             return true;
         });
-    }, [filteredEvents, onlyToday, onlyWeekend, onlySpots]);
+    }, [filteredEvents, onlyToday, onlyWeekend, onlySpots, counts]);
 
     // Agrupa por mes (YYYY-MM) usando la lista mejorada
     const groupedByMonth = useMemo(() => {
@@ -317,13 +372,13 @@ export default function EventsPage() {
                                                 style={{ background: "linear-gradient(90deg,#FFF7ED 0%, rgba(255,247,237,0) 100%)" }}
                                             >
                                                 <Calendar className="h-4 w-4 text-emerald-600" />
-                                                <span className="font-sans">{group.label}</span>
+                                                <span className="font-sans">{(group as any).label}</span>
                                             </div>
                                         </div>
 
                                         {/* Lista tipo “fila papel” (sin tarjetas redondas) */}
                                         <div className="space-y-3">
-                                            {group.items.map((event: any) => {
+                                            {(group as any).items.map((event: any) => {
                                                 const d = new Date(event.date);
                                                 const isPast = d.getTime() < Date.now();
                                                 const isToday = d.toDateString() === new Date().toDateString();
@@ -331,7 +386,7 @@ export default function EventsPage() {
                                                 const mm = (d.getMonth() + 1).toString().padStart(2, "0");
                                                 const weekday = d.toLocaleDateString("es-ES", { weekday: "long" }).toUpperCase();
                                                 const cap = event.capacity ?? 0;
-                                                const enr = event.enrolled ?? 0;
+                                                const enr = (counts[String(event.id)] ?? event.enrolled ?? 0); // ⬅️ REAL
                                                 const hasSpots = cap > 0 ? cap - enr > 0 : true;
                                                 const pct = cap > 0 ? Math.min(100, Math.max(0, (enr / cap) * 100)) : 0;
 
@@ -343,10 +398,20 @@ export default function EventsPage() {
                                                         viewport={{ once: true, amount: 0.25 }}
                                                         whileHover={{ y: -2 }}
                                                         transition={{ type: "spring", stiffness: 90, damping: 16 }}
-                                                        className="group grid grid-cols-[104px,1fr,auto] sm:grid-cols-[124px,1fr,auto] items-stretch gap-4 sm:gap-6 rounded-xl bg-gradient-to-br from-white to-emerald-50/20 ring-1 ring-emerald-100/70 hover:ring-emerald-200 hover:shadow-[0_12px_28px_rgba(16,185,129,0.10)] transition relative overflow-hidden border-l-4 border-l-emerald-200/70"
+                                                        className=" group grid grid-cols-[104px,1fr,auto] sm:grid-cols-[124px,1fr,auto]
+    items-stretch gap-4 sm:gap-6
+    rounded-xl overflow-hidden relative
+    bg-gradient-to-br from-white to-emerald-50/20
+    ring-1 ring-inset ring-emerald-100/70 hover:ring-emerald-200
+    hover:shadow-[0_12px_28px_rgba(16,185,129,0.10)]
+    border-l-4 border-l-emerald-200/70
+    transition-[transform,box-shadow,border-color] duration-200 ease-out
+    filter-none"
                                                     >
                                                         {/* patrón sutil */}
-                                                        <div className="pointer-events-none absolute inset-0 opacity-[0.035] bg-[radial-gradient(circle_at_1px_1px,#10b981_1px,transparent_1px)] [background-size:14px_14px]" />
+                                                        <div className="pointer-events-none absolute inset-0 opacity-[0.035]
+               bg-[radial-gradient(circle_at_1px_1px,#10b981_1px,transparent_1px)]
+               [background-size:14px_14px]" />
 
                                                         {/* Mini poster */}
                                                         <Link href={`/events/${event.id}`} className="block h-full">
@@ -448,13 +513,13 @@ export default function EventsPage() {
                                                             <Link href={`/events/${event.id}`}>
                                                                 <Button
                                                                     size="sm"
-                                                                    className={`rounded-full font-sans ${isPast || !hasSpots
+                                                                    className={`rounded-full font-sans ${isPast || !(cap > 0 ? cap - (counts[String(event.id)] ?? event.enrolled ?? 0) > 0 : true)
                                                                         ? "bg-neutral-400 hover:bg-neutral-400 cursor-not-allowed"
                                                                         : "bg-emerald-600 hover:bg-emerald-700"
                                                                         }`}
-                                                                    disabled={isPast || !hasSpots}
+                                                                    disabled={isPast || !(cap > 0 ? cap - (counts[String(event.id)] ?? event.enrolled ?? 0) > 0 : true)}
                                                                 >
-                                                                    {isPast ? "Finalizado" : !hasSpots ? "Completo" : "Ver detalles"}
+                                                                    {isPast ? "Finalizado" : !(cap > 0 ? cap - (counts[String(event.id)] ?? event.enrolled ?? 0) > 0 : true) ? "Completo" : "Ver detalles"}
                                                                 </Button>
                                                             </Link>
                                                         </div>

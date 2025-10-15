@@ -42,14 +42,14 @@ export default function RegisterPage() {
             <section className="relative z-10 grid min-h-dvh place-items-center p-4 sm:p-6">
                 <div className="w-full max-w-2xl [&_*]:font-sans">
                     <div className="text-center mb-7">
-                        <h1 className="text-[32px] sm:text-[36px] font-sans tracking-tight text-neutral-900">
+                        <h1 className="text-[32px] sm:text-[36px] font-sans font-bold tracking-tight text-neutral-900">
                             Crear cuenta
                         </h1>
                         <p className="text-sm font-sans text-neutral-900 mt-2">
                             ¿Ya tenés cuenta?{" "}
                             <Link
                                 href="/login"
-                                className="font-sans underline underline-offset-4 text-boa-green hover:text-boa-green/50"
+                                className="font-sans underline underline-offset-4 text-boa-green hover:text-boa-green/50 font-semibold"
                             >
                                 Iniciar sesión
                             </Link>
