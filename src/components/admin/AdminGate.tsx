@@ -1,21 +1,26 @@
+// src/components/auth/AdminGate.tsx
 "use client";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+
+import { useAuth } from "@/stores/useAuth";
 import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export function AdminGate({ children }: { children: React.ReactNode }) {
-    const { isAdmin, loading } = useIsAdmin();
+    const { initialized, role } = useAuth();
 
-    if (loading) {
+    // Esperar a que Auth termine de inicializar SIEMPRE
+    if (!initialized) {
         return (
             <div className="grid place-items-center h-60 text-neutral-600">
                 <Loader2 className="h-5 w-5 animate-spin mr-2 inline" />
-                Verificando permisos…
+                Verificando sesión…
             </div>
         );
     }
-    if (!isAdmin) {
+
+    // Ya inicializado → check de rol
+    if (role !== "admin") {
         return (
             <div className="text-center rounded-xl border p-8">
                 <h1 className="text-xl font-semibold">Acceso restringido</h1>
@@ -24,5 +29,6 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
             </div>
         );
     }
+
     return <>{children}</>;
 }

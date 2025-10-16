@@ -284,7 +284,7 @@ export default function EventsHero({ events }: { events: any[] }) {
 
                     {/* Columna derecha: Flyer / Slider */}
                     <motion.div variants={itemUp} className="relative will-change-transform">
-                        <VerticalFlyerSlider events={events as any} autoPlayMs={10000} />
+                        <VerticalFlyerSlider events={events as any} maxSlides={3} autoPlayMs={10000} />
                     </motion.div>
                 </motion.div>
             </div>

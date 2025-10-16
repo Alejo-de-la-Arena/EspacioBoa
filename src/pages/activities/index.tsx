@@ -8,24 +8,11 @@ import ActivitiesCalendar from "@/components/ActivitiesCalendar";
 import { useActivitiesLive } from "@/hooks/useActivitiesLive";
 
 import * as React from "react";
-import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/stores/useAuth";
-import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/router";
 import type { Activity } from "@/types";
 import { useMemo } from "react";
+import { useRouter } from "next/router";
 
-
-function slugify(s: string) {
-    return s
-        .normalize("NFD").replace(/\p{Diacritic}/gu, "")
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)+/g, "");
-}
-
-// Deriva day/time desde start_at si falta schedule
 function deriveScheduleFromStart(startISO?: string) {
     if (!startISO) return { day: "—", time: "—" };
     const d = new Date(startISO);
@@ -36,23 +23,17 @@ function deriveScheduleFromStart(startISO?: string) {
     return { day: prettyDay, time: `${hh}:${mm}` };
 }
 
-// Acepta cualquier "UiActivity" y devuelve un Activity bien formado
 function normalizeActivity(ui: any): Activity {
-    // Admite snake_case o camelCase
-    const start_at: string | undefined =
-        ui.start_at ?? ui.startAt ?? ui.start ?? undefined;
-    const end_at: string | undefined =
-        ui.end_at ?? ui.endAt ?? ui.end ?? undefined;
-
-    // imágenes
+    const start_at: string | undefined = ui.start_at ?? ui.startAt ?? ui.start ?? undefined;
+    const end_at: string | undefined = ui.end_at ?? ui.endAt ?? ui.end ?? undefined;
     const gallery: string[] = Array.isArray(ui.gallery) ? ui.gallery : [];
-    const images: string[] =
-        Array.isArray(ui.images) ? ui.images
-            : ui.hero_image ? [ui.hero_image]
-                : ui.image ? [ui.image]
-                    : [];
-
-    // schedule (si no viene, lo derivamos del start_at)
+    const images: string[] = Array.isArray(ui.images)
+        ? ui.images
+        : ui.hero_image
+            ? [ui.hero_image]
+            : ui.image
+                ? [ui.image]
+                : [];
     const schedule = ui.schedule ?? deriveScheduleFromStart(start_at);
 
     return {
@@ -65,27 +46,37 @@ function normalizeActivity(ui: any): Activity {
         category: ui.category ?? "General",
         price: typeof ui.price === "number" ? ui.price : undefined,
         featured: !!ui.featured,
-
         schedule,
         location: ui.location ?? "Espacio BOA",
         enrolled: typeof ui.enrolled === "number" ? ui.enrolled : 0,
         capacity: typeof ui.capacity === "number" ? ui.capacity : 0,
-        instructor: ui.instructor, // opcional
-
-        // MUY IMPORTANTE para el calendario
+        instructor: ui.instructor,
         start_at,
         end_at,
-
         is_published: ui.is_published ?? undefined,
         hero_image: ui.hero_image ?? undefined,
         gallery,
     };
 }
 
-
-
 export default function ActivitiesPage() {
-    const { activities: rawActivities = [], loading } = useActivitiesLive();
+    // 👇 CLAVE: esperar a que Auth esté inicializado
+    const { initialized } = useAuth();
+
+    // Tu hook real de datos (asegurate de que internamente también espere `initialized`)
+    const { activities: rawActivities = [], loading: dataLoading } = useActivitiesLive();
+
+    // Loader combinado
+    const isLoading = !initialized || dataLoading;
+
+    // Escape hatch (anti spinner infinito)
+    const [stuck, setStuck] = React.useState(false);
+    const router = useRouter();
+    React.useEffect(() => {
+        if (!isLoading) return;
+        const id = setTimeout(() => setStuck(true), 10000); // 10s
+        return () => clearTimeout(id);
+    }, [isLoading]);
 
     const activities: Activity[] = useMemo(
         () => rawActivities.map(normalizeActivity),
@@ -96,7 +87,7 @@ export default function ActivitiesPage() {
         <>
             <Head><title>Actividades | BOA</title></Head>
 
-            {loading ? (
+            {isLoading && !stuck ? (
                 <section>
                     <div className="min-h-screen flex items-center justify-center">
                         <div className="animate-pulse text-emerald-600">
@@ -104,9 +95,21 @@ export default function ActivitiesPage() {
                         </div>
                     </div>
                 </section>
+            ) : stuck && isLoading ? (
+                <section className="min-h-screen grid place-items-center">
+                    <div className="text-center space-y-3">
+                        <p className="text-neutral-700">Tardó demasiado en cargar. Podés reintentar.</p>
+                        <button
+                            onClick={() => { setStuck(false); router.reload(); }}
+                            className="px-4 py-2 rounded-lg ring-1 ring-emerald-300 hover:bg-emerald-50"
+                        >
+                            Reintentar
+                        </button>
+                    </div>
+                </section>
             ) : (
                 <section>
-                    {/* Hero (NO TOCAR) */}
+                    {/* Hero */}
                     <section
                         className="relative min-h-[100vh] pt-28 pb-16 font-sans overflow-hidden grid place-items-center"
                         onMouseMove={(e) => {
@@ -209,234 +212,3 @@ export default function ActivitiesPage() {
         </>
     );
 }
-
-/* ===================== ADMIN PANEL (sin cambios de lógica) ===================== */
-
-// function ActivitiesAdminPanel() {
-//     const { user } = useAuth();
-//     const { toast } = useToast();
-//     const router = useRouter();
-
-//     const [isAdmin, setIsAdmin] = React.useState<boolean>(false);
-//     const [open, setOpen] = React.useState<boolean>(false);
-//     const [manage, setManage] = React.useState<boolean>(false);
-//     const [busy, setBusy] = React.useState<boolean>(false);
-
-//     // form
-//     const [editingId, setEditingId] = React.useState<string | null>(null);
-//     const [title, setTitle] = React.useState("");
-//     const [slug, setSlug] = React.useState("");
-//     const [description, setDescription] = React.useState("");
-//     const [startAt, setStartAt] = React.useState("");
-//     const [endAt, setEndAt] = React.useState("");
-//     const [capacity, setCapacity] = React.useState<number | undefined>(undefined);
-//     const [price, setPrice] = React.useState<number | undefined>(undefined);
-//     const [isPublished, setIsPublished] = React.useState<boolean>(false);
-//     const [location, setLocation] = React.useState("");
-//     const [category, setCategory] = React.useState("");
-//     const [heroImage, setHeroImage] = React.useState("");
-//     const [gallery, setGallery] = React.useState("");
-
-//     React.useEffect(() => {
-//         let ignore = false;
-
-//         const bootstrap = async () => {
-//             if (!user) return;
-//             const { data } = await supabase
-//                 .from("profiles")
-//                 .select("is_admin")
-//                 .eq("id", user.id)
-//                 .maybeSingle();
-
-//             if (!ignore) {
-//                 const ok = Boolean(data?.is_admin);
-//                 setIsAdmin(ok);
-//             }
-//         };
-
-//         bootstrap();
-//         return () => { ignore = true; };
-//     }, [user]);
-
-//     if (!isAdmin) return null;
-
-//     const resetForm = () => {
-//         setEditingId(null);
-//         setTitle(""); setSlug("");
-//         setDescription(""); setStartAt(""); setEndAt("");
-//         setCapacity(undefined); setPrice(undefined);
-//         setIsPublished(false);
-//         setLocation(""); setCategory(""); setHeroImage("");
-//         setGallery("");
-//     };
-
-//     const openCreate = () => {
-//         resetForm();
-//         setOpen(true);
-//     };
-
-//     const save = async () => {
-//         setBusy(true);
-//         const payload: any = {
-//             title,
-//             slug: slug || slugify(title),
-//             description: description || null,
-//             start_at: startAt ? new Date(startAt).toISOString() : null,
-//             end_at: endAt ? new Date(endAt).toISOString() : null,
-//             capacity: capacity ?? null,
-//             price: price ?? null,
-//             is_published: isPublished,
-//             location: location || null,
-//             category: category || null,
-//             hero_image: heroImage || null,
-//             gallery: gallery
-//                 ? gallery.split(",").map(s => s.trim()).filter(Boolean)
-//                 : [],
-//             created_by: user?.id ?? null,
-//         };
-
-//         let error;
-//         if (editingId) {
-//             ({ error } = await supabase.from("activities").update(payload).eq("id", editingId));
-//         } else {
-//             ({ error } = await supabase.from("activities").insert(payload));
-//         }
-
-//         setBusy(false);
-
-//         if (error) {
-//             const msg = typeof error?.message === "string" ? error.message : "Error";
-//             toast({ title: "No se pudo guardar", description: msg, variant: "destructive" });
-//             return;
-//         }
-
-//         toast({ title: "Actividad guardada" });
-//         setOpen(false);
-//         // refrescar para que el hook y el calendario tomen las fechas nuevas
-//         router.replace(router.asPath);
-//     };
-
-//     const removeOne = async (id: string) => {
-//         if (!confirm("¿Eliminar esta actividad? Esta acción no puede deshacerse.")) return;
-//         const { error } = await supabase.from("activities").delete().eq("id", id);
-//         if (error) {
-//             toast({ title: "No se pudo eliminar", description: (error as any).message, variant: "destructive" });
-//             return;
-//         }
-//         toast({ title: "Actividad eliminada" });
-//         router.replace(router.asPath);
-//     };
-
-//     return (
-//         <>
-//             {/* FABs admin */}
-//             <div className="fixed bottom-5 right-5 z-[60] flex gap-2">
-//                 <button
-//                     onClick={() => setManage(true)}
-//                     className="rounded-full bg-black/80 text-white px-4 py-2 text-sm shadow hover:bg-black"
-//                     title="Gestionar actividades"
-//                 >
-//                     Gestionar
-//                 </button>
-//                 <button
-//                     onClick={openCreate}
-//                     className="rounded-full bg-emerald-600 text-white px-4 py-2 text-sm shadow hover:bg-emerald-700"
-//                     title="Nueva actividad"
-//                 >
-//                     + Nueva
-//                 </button>
-//             </div>
-
-//             {/* Modal Crear/Editar */}
-//             {open && (
-//                 <div className="fixed inset-0 z-[70] grid place-items-center bg-black/60 p-4">
-//                     <div className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl">
-//                         {/* ... (tu mismo form, sin cambios) ... */}
-//                         {/* Usa setOpen(false) para cerrar y save() para guardar */}
-//                     </div>
-//                 </div>
-//             )}
-
-//             {/* Modal gestionar/listar */}
-//             {manage && (
-//                 <div className="fixed inset-0 z-[65] grid place-items-center bg-black/60 p-4">
-//                     <div className="w-full max-w-4xl rounded-2xl bg-white p-5 shadow-xl">
-//                         <div className="flex items-center justify-between">
-//                             <h3 className="text-lg font-semibold">Gestionar actividades</h3>
-//                             <button className="text-sm text-neutral-500 hover:text-black" onClick={() => setManage(false)}>
-//                                 Cerrar
-//                             </button>
-//                         </div>
-//                         <AdminList onEdit={() => { /* podrías reusar tu openEdit si querés */ }} onRemove={removeOne} />
-//                     </div>
-//                 </div>
-//             )}
-//         </>
-//     );
-// }
-
-// function AdminList({ onEdit, onRemove }: {
-//     onEdit: (row: Activity) => void; onRemove: (id: string) => void;
-// }) {
-//     const [items, setItems] = React.useState<Activity[]>([]);
-//     const { toast } = useToast();
-
-//     const reload = React.useCallback(async () => {
-//         const { data, error } = await supabase
-//             .from("activities")
-//             .select("*")
-//             .order("start_at", { ascending: false })
-//             .limit(200);
-
-//         if (error) {
-//             toast({ title: "No se pudo listar", variant: "destructive" });
-//             return;
-//         }
-
-//         // Asegúrate de castear `gallery` a string[] si viene como jsonb
-//         const rows = (data ?? []).map((r: any) => ({
-//             ...r,
-//             gallery: Array.isArray(r.gallery) ? r.gallery : [],
-//         })) as Activity[];
-
-//         setItems(rows);
-//     }, [toast]);
-
-//     React.useEffect(() => { reload(); }, [reload]);
-
-//     return (
-//         <div className="mt-4 overflow-auto max-h-[70vh]">
-//             <table className="w-full text-sm">
-//                 <thead className="text-left border-b">
-//                     <tr>
-//                         <th className="py-2 pr-3">Título</th>
-//                         <th className="py-2 pr-3">Inicio</th>
-//                         <th className="py-2 pr-3">Cupo</th>
-//                         <th className="py-2 pr-3">Publicado</th>
-//                         <th className="py-2 pr-3"></th>
-//                     </tr>
-//                 </thead>
-//                 <tbody>
-//                     {items.map((r) => (
-//                         <tr key={r.id} className="border-b last:border-0">
-//                             <td className="py-2 pr-3">{r.title}</td>
-//                             <td className="py-2 pr-3">{r.start_at ? new Date(r.start_at).toLocaleString("es-AR") : "-"}</td>
-//                             <td className="py-2 pr-3">{r.capacity ?? "-"}</td>
-//                             <td className="py-2 pr-3">{r.is_published ? "Sí" : "No"}</td>
-//                             <td className="py-2 pr-3 flex gap-2">
-//                                 <button className="px-3 py-1 rounded border" onClick={() => onEdit(r)}>Editar</button>
-//                                 <button className="px-3 py-1 rounded bg-red-600 text-white" onClick={() => onRemove(r.id)}>Eliminar</button>
-//                             </td>
-//                         </tr>
-//                     ))}
-//                     {items.length === 0 && (
-//                         <tr><td className="py-6 text-neutral-500" colSpan={5}>Sin actividades.</td></tr>
-//                     )}
-//                 </tbody>
-//             </table>
-//         </div>
-//     );
-// }
-
-
-

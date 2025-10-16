@@ -539,31 +539,102 @@ export default function EventsPage() {
 
 
             {/* CTA Section */}
-            <section className="py-20 bg-white">
+            <motion.section
+                className="py-20 bg-white"
+                initial={{ opacity: 0, y: 32 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
+            >
                 <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="max-w-3xl mx-auto text-center">
-                        <h2 className="boa-heading text-3xl font-semibold text-neutral-900 mb-4">
+                    <motion.div
+                        className="max-w-3xl mx-auto text-center"
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, amount: 0.25 }}
+                        variants={{
+                            hidden: {},
+                            visible: { transition: { staggerChildren: 0.12 } },
+                        }}
+                    >
+                        <motion.h2
+                            className="font-sans text-3xl font-semibold text-neutral-900 mb-4"
+                            variants={{
+                                hidden: { opacity: 0, y: 18 },
+                                visible: { opacity: 1, y: 0 },
+                            }}
+                            transition={{ duration: 0.6 }}
+                        >
                             ¿Tienes una idea para un evento?
-                        </h2>
-                        <p className="text-lg text-neutral-600 mb-8">
+                        </motion.h2>
+
+                        <motion.p
+                            className="font-sans text-lg text-neutral-600 mb-8"
+                            variants={{
+                                hidden: { opacity: 0, y: 14 },
+                                visible: { opacity: 1, y: 0 },
+                            }}
+                            transition={{ duration: 0.6 }}
+                        >
                             En BOA nos encanta colaborar con talentosos facilitadores y artistas.
                             Si tienes una propuesta para un taller, charla o evento especial, cuéntanos.
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Link href="/contact">
-                                <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-2xl">
+                        </motion.p>
+
+                        <motion.div
+                            className="flex justify-center"
+                            variants={{
+                                hidden: { opacity: 0, y: 10 },
+                                visible: { opacity: 1, y: 0 },
+                            }}
+                            transition={{ duration: 0.6 }}
+                        >
+                            <Link href="/contact" className="group">
+                                <Button
+                                    size="lg"
+                                    className="
+                  relative overflow-hidden font-sans px-8 py-3 rounded-2xl
+                  bg-emerald-700 text-white
+                  shadow-[0_12px_30px_rgba(16,185,129,.22)]
+                  transition-transform duration-300
+                  hover:-translate-y-0.5
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300
+                "
+                                    style={{ willChange: "transform" }}
+                                >
+                                    {/* Glow sutil en hover (no costoso) */}
+                                    <span
+                                        aria-hidden
+                                        className="
+                    pointer-events-none absolute inset-0 rounded-2xl opacity-0
+                    group-hover:opacity-100 transition-opacity duration-300
+                    shadow-[0_0_0_1px_rgba(255,255,255,.06),0_22px_40px_rgba(16,185,129,.28)]
+                  "
+                                    />
+                                    {/* Sheen animado */}
+                                    <span
+                                        aria-hidden
+                                        className="
+                    pointer-events-none absolute -inset-y-8 -left-1/3 w-1/3 rotate-12 
+                    bg-gradient-to-r from-transparent via-white/60 to-transparent
+                    translate-x-[-120%] group-hover:translate-x-[320%]
+                    transition-transform duration-700 ease-out
+                  "
+                                    />
+                                    {/* Borde/halo dinámico */}
+                                    <span
+                                        aria-hidden
+                                        className="
+                    absolute inset-0 rounded-2xl ring-1 ring-emerald-300/40
+                    group-hover:ring-emerald-200/70 transition duration-300
+                  "
+                                    />
                                     Proponer un evento
                                 </Button>
                             </Link>
-                            <Link href="/activities">
-                                <Button size="lg" variant="outline" className="bg-transparent hover:bg-neutral-50 px-8 py-3 rounded-2xl border-neutral-300 hover:border-emerald-300 hover:text-emerald-600">
-                                    Ver actividades regulares
-                                </Button>
-                            </Link>
-                        </div>
-                    </div>
+                        </motion.div>
+                    </motion.div>
                 </div>
-            </section>
+            </motion.section>
         </section>
     );
 }

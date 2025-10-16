@@ -1,7 +1,6 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
 import "@/styles/globals.css";
-import AuthInit from "@/components/auth/AuthInit";
 import { Montserrat, Dancing_Script } from "next/font/google";
 
 export const metadata: Metadata = {
@@ -32,7 +31,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         "
                 suppressHydrationWarning
             >
-                <AuthInit />
                 {children}
             </body>
         </html>

@@ -8,49 +8,59 @@ import EventFlyerCard, { FlyerEvent } from "./EventFlyerCard";
 
 type Props = {
     events: FlyerEvent[];
-    maxSlides?: number;
-    autoPlayMs?: number;  // default 9000
+    maxSlides?: number; // tope superior, por defecto 3
+    autoPlayMs?: number; // default 9000
 };
 
 export default function VerticalFlyerSlider({
     events,
-    maxSlides = 4,
+    maxSlides = 3,
     autoPlayMs = 9000,
 }: Props) {
     const slides = useMemo(() => {
-        const now = new Date();
+        const now = Date.now();
+        const featured = (events ?? []).filter((e) => e?.featured === true);
+        if (featured.length === 0) return [];
 
-        // futuros primero; si no hay, usar todos
-        const upcoming = [...events]
-            .filter(e => new Date(e.date as any).getTime() >= now.getTime())
-            .sort((a, b) => new Date(a.date as any).getTime() - new Date(b.date as any).getTime());
+        const toMs = (e: FlyerEvent) => new Date(e.date as any).getTime();
+        const upcoming = featured
+            .filter((e) => toMs(e) >= now)
+            .sort((a, b) => toMs(a) - toMs(b));
 
-        const pool = (upcoming.length ? upcoming : events) as FlyerEvent[];
+        const pool = (upcoming.length ? upcoming : [...featured].sort((a, b) => toMs(a) - toMs(b))) as FlyerEvent[];
 
-        // puntaje: 2 si es destacado + 1 si tiene flyerVertical/poster
-        const score = (x: any) =>
-            (x.featured ? 2 : 0) + ((x.flyerVertical || x.poster || x.image) ? 1 : 0);
+        const hasAsset = (e: FlyerEvent) => Boolean(e.flyerVertical || e.poster || e.image);
+        const withAsset = pool.filter(hasAsset);
+        const preferred = withAsset.length ? withAsset : pool;
 
-        const ordered = [...pool].sort((a, b) => score(b) - score(a));
-
-        // Mostrá 3 o `maxSlides`, lo que sea mayor (como ya tenías)
-        return ordered.slice(0, Math.max(maxSlides, 3));
+        const limit = Math.min(maxSlides, 3);
+        return preferred.slice(0, limit);
     }, [events, maxSlides]);
 
-
+    const hasSlides = slides.length > 0;
+    const len = hasSlides ? slides.length : 1; // evita /0
     const [index, setIndex] = useState(0);
-    const len = slides.length || 1;
 
-    const next = () => setIndex(i => (i + 1) % len);
-    const prev = () => setIndex(i => (i - 1 + len) % len);
-
+    // Resetea índice al cambiar la cantidad
     useEffect(() => {
+        setIndex(0);
+    }, [len]);
+
+    const next = () => setIndex((i) => (i + 1) % (hasSlides ? slides.length : 1));
+    const prev = () => setIndex((i) => (i - 1 + (hasSlides ? slides.length : 1)) % (hasSlides ? slides.length : 1));
+
+    // Autoplay solo si hay >1 slide
+    useEffect(() => {
+        if (!hasSlides || len <= 1) return;
         const id = setInterval(next, autoPlayMs);
         return () => clearInterval(id);
-    }, [autoPlayMs, len]);
+    }, [autoPlayMs, hasSlides, len]);
 
     const slideHeightPct = 100 / len;
     const shiftPct = (index * 100) / len;
+
+    // 👉 recien acá podés cortar el render
+    if (!hasSlides) return null;
 
     return (
         <div className="relative isolate w-full overflow-hidden rounded-[32px] h-[440px] sm:h-[560px]">
@@ -105,4 +115,4 @@ export default function VerticalFlyerSlider({
             </div>
         </div>
     );
-}
+};

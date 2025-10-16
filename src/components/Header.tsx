@@ -19,6 +19,7 @@ import {
     MapPin,
     ChevronRight,
     LayoutDashboard,
+    HeartHandshake,
     X,
 } from "lucide-react";
 
@@ -34,6 +35,7 @@ const navigation = [
     { name: "Gift Cards", href: "/giftcards", icon: Gift },
     { name: "Blog", href: "/blog", icon: BookOpen },
     { name: "Nosotros", href: "/about", icon: Users },
+    { name: "Contacto", href: "/contact", icon: HeartHandshake }
 ];
 
 export default function Header() {

@@ -126,20 +126,11 @@ export default function Footer() {
                             <span className="block h-[2px] w-8 mt-2 rounded-full bg-boa-green/70" />
                         </h3>
                         <div className="space-y-2 text-neutral-300 text-sm">
-                            <div className="flex items-center justify-between">
-                                <span>Lun–Vie</span>
-                                <span className="tabular-nums">7:00 – 22:00</span>
+                            <div className="flex items-center justify-between mb-4">
+                                <span>Lunes a Domingo</span>
+                                <span className="tabular-nums">9:00 - 19:30</span>
                             </div>
-                            <div className="flex items-center justify-between">
-                                <span>Sábados</span>
-                                <span className="tabular-nums">8:00 – 23:00</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span>Domingos</span>
-                                <span className="tabular-nums">9:00 – 21:00</span>
-                            </div>
-
-                            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/5 ring-1 ring-white/10 px-3 py-1.5">
+                            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/5 ring-1 ring-white/10 px-3 py-1.5 ">
                                 <Clock className="h-4 w-4 text-boa-green" />
                                 <span className="text-xs text-neutral-300">
                                     Los horarios pueden variar según actividades especiales.

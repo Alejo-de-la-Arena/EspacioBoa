@@ -1,28 +1,32 @@
 // src/components/auth/AuthInit.tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/stores/useAuth";
 
 export default function AuthInit() {
-    // usamos la API estática de zustand para evitar re-renders
-    const { setUserFromSession } = useAuth.getState();
+    // usamos el store “vivo” para no romper SSR/CSR y evitar re-renders innecesarios
+    const { setUserFromSession, applyUser } = useAuth();
+    const mounted = useRef(false);
 
     useEffect(() => {
+        if (mounted.current) return;
+        mounted.current = true;
+
         let unsub: (() => void) | null = null;
 
         (async () => {
-            // 1) Hidratar sesión al montar (esto pone loading=false adentro del store)
+            // 1) Hidratar la sesión una sola vez al montar
             await setUserFromSession();
 
-            // 2) Reaccionar a cambios de auth (login/logout/refresh)
-            const { data } = supabase.auth.onAuthStateChange(async () => {
-                await setUserFromSession();
+            // 2) Suscribirse a cambios de auth y aplicar el usuario directamente
+            const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+                applyUser(session?.user ?? null);
             });
-            unsub = () => data.subscription.unsubscribe();
+            unsub = sub?.subscription.unsubscribe ?? null;
 
-            // 3) Cuando volvés al tab, revalida (otro tab pudo cambiar sesión)
+            // 3) Revalidar al volver al tab (por si otra pestaña cambió la sesión)
             const onVis = async () => {
                 if (document.visibilityState === "visible") {
                     await setUserFromSession();
@@ -30,12 +34,16 @@ export default function AuthInit() {
             };
             document.addEventListener("visibilitychange", onVis);
 
+            // cleanup
             return () => {
                 document.removeEventListener("visibilitychange", onVis);
-                unsub?.();
             };
         })();
-    }, []);
+
+        return () => {
+            if (unsub) unsub();
+        };
+    }, [setUserFromSession, applyUser]);
 
     return null;
 }
