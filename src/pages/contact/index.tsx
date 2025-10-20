@@ -240,8 +240,7 @@ export default function ContactPage() {
                                     </h2>
                                 </div>
                                 <p className="mt-3 text-neutral-600">
-                                    Contanos en qué te ayudamos.{" "}
-                                    <span className="text-emerald-700">Respondemos en &lt; 24h.</span>
+                                    Contanos en qué te ayudamos.
                                 </p>
                             </CardHeader>
 
@@ -305,16 +304,16 @@ export default function ContactPage() {
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="Actividades y talleres">
-                                                        Actividades y talleres
+                                                        Actividades
                                                     </SelectItem>
                                                     <SelectItem value="Eventos privados">
-                                                        Eventos privados
+                                                        Eventos
                                                     </SelectItem>
                                                     <SelectItem value="Reserva de espacios">
                                                         Reserva de espacios
                                                     </SelectItem>
                                                     <SelectItem value="Menú y alimentación">
-                                                        Menú y alimentación
+                                                        Gastronomía
                                                     </SelectItem>
                                                     <SelectItem value="Colaboraciones">
                                                         Colaboraciones

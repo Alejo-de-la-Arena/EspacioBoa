@@ -336,7 +336,7 @@ export default function EventsPage() {
 
 
                     {/* Contenido del listado */}
-                    <div className="pt-8">
+                    <div className="pt-8 event-list">
                         {enhancedFilteredEvents.length === 0 ? (
                             <motion.div
                                 initial={{ opacity: 0, y: 8 }}
@@ -565,7 +565,7 @@ export default function EventsPage() {
                             }}
                             transition={{ duration: 0.6 }}
                         >
-                            ¿Tienes una idea para un evento?
+                            ¿Querés formar parte de nuestros Eventos?
                         </motion.h2>
 
                         <motion.p
@@ -576,8 +576,9 @@ export default function EventsPage() {
                             }}
                             transition={{ duration: 0.6 }}
                         >
-                            En BOA nos encanta colaborar con talentosos facilitadores y artistas.
-                            Si tienes una propuesta para un taller, charla o evento especial, cuéntanos.
+                            En BOA nos encanta colaborar con talentosos artistas.
+                            <br />
+                            Si tienes una propuesta para un taller, charla o evento especial, contánoslo.
                         </motion.p>
 
                         <motion.div
@@ -628,7 +629,7 @@ export default function EventsPage() {
                     group-hover:ring-emerald-200/70 transition duration-300
                   "
                                     />
-                                    Proponer un evento
+                                    Contáctanos 
                                 </Button>
                             </Link>
                         </motion.div>

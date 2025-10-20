@@ -1,10 +1,12 @@
 import Layout from "@/components/Layout";
 import { useApp } from "@/contexts/AppContext";
+import { useActivitiesLive } from "@/hooks/useActivitiesLive";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { mediaUrl } from "@/lib/mediaUrl";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -56,84 +58,69 @@ function pickRandom<T>(arr: T[], n: number) {
 
 
 export default function HomePage() {
-    const { activities, events, menuItems, giftCards, loading } = useApp();
+    const { events, menuItems, giftCards, loading: appLoading } = useApp();
+    const { activities: liveActivities = [], loading: actsLoading } = useActivitiesLive();
 
     const desired = 4;
 
     const experienceItems = useMemo(() => {
-        // Normalizar y filtrar “vacíos”
-        const actsRaw = Array.isArray(activities) ? activities : [];
+        const desired = 4;
+
+        // Normalizadores por si tus claves no son title/image siempre
+        const t = (x: any) => x?.title ?? x?.name ?? x?.activityTitle ?? x?.eventTitle ?? "";
+        const img = (x: any) => x?.image ?? x?.hero_image ?? x?.cover ?? x?.banner ?? x?.thumbnail ?? "";
+        const sid = (x: any) => x?.id ?? x?._id ?? x?.slug ?? x?.uuid ?? Math.random().toString(36).slice(2);
+
+        // 1) Bases desde el hook live
+        const actsRaw = Array.isArray(liveActivities) ? liveActivities : [];
         const evesRaw = Array.isArray(events) ? events : [];
 
-        const actsBase = actsRaw.length
-            ? (actsRaw.some((a: any) => a?.featured)
-                ? actsRaw.filter((a: any) => a?.featured)
-                : actsRaw)
-            : [];
+        // 2) Items “mostrables” y etiquetados
+        const acts = actsRaw
+            .filter(a => a && (t(a) || img(a)))
+            .map(a => ({ ...a, id: sid(a), title: t(a), image: img(a), _kind: "activity" as const }));
 
-        const evesBase = evesRaw.length
-            ? (evesRaw.some((e: any) => e?.featured)
-                ? evesRaw.filter((e: any) => e?.featured)
-                : evesRaw)
-            : [];
+        const eves = evesRaw
+            .filter(e => e && (t(e) || img(e)))
+            .map(e => ({ ...e, id: sid(e), title: t(e), image: img(e), _kind: "event" as const }));
 
-        // Sólo items con algo para mostrar
-        const acts = actsBase
-            .filter((a: any) => a && (a.title || a.image))
-            .map((a: any) => ({ ...a, _kind: "activity" as const }));
-
-        const eves = evesBase
-            .filter((e: any) => e && (e.title || e.image))
-            .map((e: any) => ({ ...e, _kind: "event" as const }));
-
-        // 1) Intentar 2 + 2
+        // 3) Pick 2 + 2
         const pickActs = pickRandom(acts, Math.min(2, acts.length));
         const pickEves = pickRandom(eves, Math.min(2, eves.length));
 
-        // 2) Completar hasta 4 alternando (priorizando actividades)
-        const usedKeys = new Set([
+        // 4) Completar hasta 4 alternando (prioriza actividades si hay)
+        const used = new Set<string>([
             ...pickActs.map(a => `activity:${a.id}`),
             ...pickEves.map(e => `event:${e.id}`),
         ]);
-
-        const remainingActs = shuffleInPlace(acts.filter(a => !usedKeys.has(`activity:${a.id}`)));
-        const remainingEves = shuffleInPlace(eves.filter(e => !usedKeys.has(`event:${e.id}`)));
+        const remainingActs = shuffleInPlace(acts.filter(a => !used.has(`activity:${a.id}`)));
+        const remainingEves = shuffleInPlace(eves.filter(e => !used.has(`event:${e.id}`)));
 
         let pool: ExpItem[] = [...pickActs, ...pickEves];
-
-        const takeNext = () => (remainingActs.length ? remainingActs.shift()! : (remainingEves.shift()!));
+        const takeNext = () => (remainingActs.length ? remainingActs.shift()! : remainingEves.shift()!);
         while (pool.length < desired && (remainingActs.length || remainingEves.length)) {
             pool.push(takeNext());
         }
 
-        // 3) Si existen actividades en origen, asegurar al menos 1 en pool
+        // 5) Garantía: si hay actividades de origen y no quedaron, mete 1
         if (acts.length > 0 && !pool.some(i => i._kind === "activity")) {
-            // Insertar al inicio una actividad
-            pool = [acts[0], ...pool.filter(i => i._kind !== "activity")];
+            pool = [acts[0], ...pool.filter(i => i._kind !== "activity")].slice(0, desired);
         }
 
-        // 4) Mezclar y recortar
-        return shuffleInPlace(pool).slice(0, Math.min(desired, pool.length));
-    }, [activities, events]);
+        return shuffleInPlace(pool).slice(0, desired);
+    }, [liveActivities, events]);
+
 
     useEffect(() => {
-        // Agrupamos todo en un log plegable
         console.groupCollapsed("%c[EXPERIENCES DIAG] HomePage", "color:#0b7; font-weight:bold;");
-
-        console.debug("activities length:", Array.isArray(activities) ? activities.length : activities);
-        console.debug("events length:", Array.isArray(events) ? events.length : events);
-
-        // Muestra 2 primeros para ver shape real
-        console.debug("activities sample:", Array.isArray(activities) ? activities.slice(0, 2) : activities);
-        console.debug("events sample:", Array.isArray(events) ? events.slice(0, 2) : events);
-
-        // Qué termina entrando al slider
-        console.debug("experienceItems length:", experienceItems.length);
-        console.debug("experienceItems kinds:", experienceItems.map(i => i?._kind));
-        console.debug("experienceItems ids:", experienceItems.map(i => i?.id));
-
+        console.debug("activities len:", Array.isArray(liveActivities) ? liveActivities.length : liveActivities);
+        console.debug("events len:", Array.isArray(events) ? events.length : events);
+        console.debug("experienceItems len:", experienceItems.length);
+        console.debug("kinds:", experienceItems.map(i => i?._kind));
+        console.debug("titles:", experienceItems.map(i => i?.title));
         console.groupEnd();
-    }, [activities, events, experienceItems]);
+    }, [liveActivities, events, experienceItems]);
+
 
 
     const featuredMenu = menuItems.filter(item => item.featured).slice(0, 3);
@@ -171,7 +158,8 @@ export default function HomePage() {
     };
 
 
-    if (loading) {
+    const isLoading = appLoading || actsLoading;
+    if (isLoading) {
         return (
             <section>
                 <div className="min-h-screen flex items-center justify-center">
@@ -182,6 +170,7 @@ export default function HomePage() {
             </section>
         );
     }
+
 
     return (
         <section>
@@ -218,15 +207,16 @@ export default function HomePage() {
                         variants={container}
                         className="relative isolate min-h-[90vh] flex items-end overflow-hidden"
                     >
-                        {/* Foto protagonista */}
                         <Image
-                            src="https://images.unsplash.com/photo-1600093463592-8e36ae95ef56?q=80&w=2400&auto=format&fit=crop"
-                            alt="Coffee bar cálido con madera, luz de tarde y plantas"
+                            src={mediaUrl("hero/1920/hero-portada.webp")}
+                            alt="Espacio BOA - Hero"
                             fill
                             priority
+                            fetchPriority="high"
                             sizes="100vw"
                             className="object-cover"
                         />
+
 
                         {/* Overlays */}
                         <div className="absolute inset-0 bg-gradient-to-t from-boa-cocoa/35 via-boa-cocoa/10 to-transparent" />
@@ -978,6 +968,7 @@ function ExperiencesSlider({ items }: { items: ExpItem[] }) {
                 style={{ scrollSnapType: "x mandatory" }}
             >
                 {items.map((item, i) => {
+                    if (i === 0) console.debug("[EXPERIENCES DIAG] first item:", item);
                     const isEvent = item._kind === "event";
                     const title = item.title ?? "Experiencia BOA";
                     const desc = item.description ?? "";
@@ -1056,11 +1047,8 @@ function ExperiencesSlider({ items }: { items: ExpItem[] }) {
                                             </div>
                                             {/* CTA */}
                                             <div className="mt-5">
-                                                <Link
-                                                    href={href}
-                                                    className="inline-flex items-center gap-2 rounded-full border border-boa-ink/20 bg-white px-5 py-2.5 text-sm font-medium text-boa-ink shadow-[inset_0_1px_0_rgba(255,255,255,.7)] hover:bg-white transition"
-                                                >
-                                                    {isEvent ? "Reservar" : "Inscribirme"}
+                                                <Link href={href} className="inline-flex items-center gap-2 ...">
+                                                    {isEvent ? "Ver detalles" : "Ver detalles"}
                                                     <ArrowRight className="h-4 w-4" />
                                                 </Link>
                                             </div>

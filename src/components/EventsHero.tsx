@@ -188,7 +188,7 @@ export default function EventsHero({ events }: { events: any[] }) {
                             variants={itemUp}
                             className="inline-flex items-center gap-2 rounded-full border border-neutral-200/80 bg-white/70 px-3 py-1 text-xs font-medium text-neutral-700 backdrop-blur"
                         >
-                            <Calendar className="h-4 w-4 text-emerald-600" />
+                            <Calendar className="h-4 w-4 text-boa-green" />
                             Eventos puntuales: talleres, ferias y charlas
                         </motion.span>
 
@@ -197,7 +197,7 @@ export default function EventsHero({ events }: { events: any[] }) {
                             className="mt-5 text-4xl sm:text-5xl md:text-6xl font-bold leading-tight text-neutral-900 font-sans"
                         >
                             Encuentros que conectan{" "}
-                            <span className="text-emerald-600">de verdad</span>
+                            <span className="text-boa-green">de verdad</span>
                         </motion.h1>
 
                         <motion.p
@@ -217,7 +217,7 @@ export default function EventsHero({ events }: { events: any[] }) {
                                 variants={itemUp}
                                 className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1.5 text-neutral-700 backdrop-blur ring-1 ring-neutral-200"
                             >
-                                <Sparkles className="h-4 w-4 text-emerald-600" />
+                                <Sparkles className="h-4 w-4 text-boa-green" />
                                 Próximos:{" "}
                                 <strong className="ml-1 text-neutral-900 font-sans">
                                     {events.filter(
@@ -230,7 +230,7 @@ export default function EventsHero({ events }: { events: any[] }) {
                                 variants={itemUp}
                                 className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1.5 text-neutral-700 backdrop-blur ring-1 ring-neutral-200"
                             >
-                                <Calendar className="h-4 w-4 text-emerald-600" />
+                                <Calendar className="h-4 w-4 text-boa-green" />
                                 Este mes:{" "}
                                 <strong className="ml-1 text-neutral-900 font-sans">
                                     {(() => {
@@ -252,7 +252,7 @@ export default function EventsHero({ events }: { events: any[] }) {
                                 variants={itemUp}
                                 className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1.5 text-neutral-700 backdrop-blur ring-1 ring-neutral-200"
                             >
-                                <Users className="h-4 w-4 text-emerald-600" />
+                                <Users className="h-4 w-4 text-boa-green" />
                                 Cupos libres:{" "}
                                 <strong className="ml-1 text-neutral-900 font-sans">
                                     {(() => {
@@ -275,7 +275,7 @@ export default function EventsHero({ events }: { events: any[] }) {
                             className="mt-8 flex flex-col sm:flex-row gap-3"
                         >
                             <Link href="#explorar">
-                                <button className="h-11 rounded-2xl bg-emerald-600 px-6 text-white hover:bg-emerald-700 transition-colors font-sans">
+                                <button className="h-11 rounded-2xl bg-boa-green px-6 text-white hover:bg-boa-cream hover:border hover:border-boa-green hover:text-boa-green transition-colors font-sans">
                                     Ver próximos eventos
                                 </button>
                             </Link>
