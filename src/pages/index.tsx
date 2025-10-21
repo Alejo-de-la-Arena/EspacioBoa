@@ -398,7 +398,7 @@ export default function HomePage() {
                                 aria-label="Explorar Actividades"
                                 className="snap-center shrink-0 w-[86%]"
                             >
-                                <div className="group relative block h-[480px] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
+                                <div className="group relative block h-[350] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
             [background:linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18))]
             hover:[background:linear-gradient(135deg,rgba(30,122,102,.32),rgba(213,149,121,.28))]">
                                     <div className="h-full w-full rounded-[30px] overflow-hidden ring-1 ring-boa-ink/5 bg-black shadow-[0_12px_28px_rgba(2,6,23,.10)] hover:shadow-[0_18px_40px_rgba(2,6,23,.15)] transition-shadow duration-500">
@@ -408,10 +408,10 @@ export default function HomePage() {
                                             fill
                                             sizes="(min-width:768px) 1200px, 800px"
                                             quality={90}
-                                            className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
+                                            className="object-cover object-[50%50%] transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
                                         />
 
-                                        <div className="absolute inset-0 bg-white/6 backdrop-blur-[1px]" />
+                                        <div className="absolute inset-0 bg-white/6" />
                                         <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
                                         <Card className="relative h-full bg-transparent border-0 text-white">
                                             <CardContent className="p-7 h-full flex flex-col justify-end">
@@ -442,20 +442,22 @@ export default function HomePage() {
                                 aria-label="Ver Gastronomía"
                                 className="snap-center shrink-0 w-[86%]"
                             >
-                                <div className="group relative block h-[480px] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
+                                <div className="group relative block h-[350px] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
             [background:linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18))]
             hover:[background:linear-gradient(135deg,rgba(30,122,102,.32),rgba(213,149,121,.28))]">
                                     <div className="h-full w-full rounded-[30px] overflow-hidden ring-1 ring-boa-ink/5 bg-black shadow-[0_12px_28px_rgba(2,6,23,.10)] hover:shadow-[0_18px_40px_rgba(2,6,23,.15)] transition-shadow duration-500">
+
                                         <Image
-                                            src={mediaUrl("1200/img-5210.webp")}
-                                            alt="Movimiento y bienestar en un espacio luminoso con plantas"
+                                            src={mediaUrl("images-verticales/2000/IMG_5484.webp")} // FUENTE GRANDE
+                                            alt="Movimiento y bienestar…"
                                             fill
-                                            sizes="(min-width:768px) 1200px, 800px"
                                             quality={90}
-                                            className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
+                                            sizes="(min-width:768px) 1200px, 90vw"      // en mobile calcula sobre ~90vw
+                                            className="object-cover object-[42%_35%] transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
                                         />
+
                                         <div className="absolute inset-0 bg-gradient-to-b from-boa-green/15 via-boa-ink/35 to-boa-ink/60" />
-                                        <div className="absolute inset-0 bg-white/6 backdrop-blur-[1px]" />
+                                        <div className="absolute inset-0 bg-white/6" />
                                         <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
                                         <Card className="relative h-full bg-transparent border-0 text-white">
                                             <CardContent className="p-7 h-full flex flex-col justify-end">
@@ -486,20 +488,19 @@ export default function HomePage() {
                                 aria-label="Conocer Espacios"
                                 className="snap-center shrink-0 w-[86%]"
                             >
-                                <div className="group relative block h-[480px] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
+                                <div className="group relative block h-[350] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
             [background:linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18))]
             hover:[background:linear-gradient(135deg,rgba(30,122,102,.32),rgba(213,149,121,.28))]">
                                     <div className="h-full w-full rounded-[30px] overflow-hidden ring-1 ring-boa-ink/5 bg-black shadow-[0_12px_28px_rgba(2,6,23,.10)] hover:shadow-[0_18px_40px_rgba(2,6,23,.15)] transition-shadow duration-500">
                                         <Image
-                                            src={mediaUrl("1200/img-5605.webp")}
+                                            src={mediaUrl("1200/img-5210.webp")}
                                             alt="Movimiento y bienestar en un espacio luminoso con plantas"
                                             fill
                                             sizes="(min-width:768px) 1200px, 800px"
                                             quality={90}
                                             className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
                                         />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-boa-terra/55 via-boa-ink/30 to-transparent" />
-                                        <div className="absolute inset-0 bg-white/6 backdrop-blur-[1px]" />
+
                                         <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
                                         <Card className="relative h-full bg-transparent border-0 text-white">
                                             <CardContent className="p-7 h-full flex flex-col justify-end">
@@ -526,44 +527,43 @@ export default function HomePage() {
                         </div>
                     </div>
 
-                    {/* ===== DESKTOP: grid intacta ===== */}
-                    <div className="hidden md:grid grid-cols-1 md:grid-cols-3 gap-10">
+                    {/* ===== DESKTOP: grid horizontal (desde 1024px) ===== */}
+                    <div className="hidden lg:grid grid-cols-3 gap-8">
                         {/* ================ ACTIVIDADES ================= */}
-                        <motion.div variants={cardItem} className="relative">
+                        <motion.div variants={cardItem} className="relative w-full">
                             <Link
                                 href="/activities"
                                 aria-label="Explorar Actividades"
-                                className="group relative block h-[480px] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
-            [background:linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18))]
-            hover:[background:linear-gradient(135deg,rgba(30,122,102,.32),rgba(213,149,121,.28))]"
+                                className="group relative block w-full h-[380px] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
+      [background:linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18))]
+      hover:[background:linear-gradient(135deg,rgba(30,122,102,.32),rgba(213,149,121,.28))]"
                             >
                                 <div className="h-full w-full rounded-[30px] overflow-hidden ring-1 ring-boa-ink/5 bg-black shadow-[0_12px_28px_rgba(2,6,23,.10)] hover:shadow-[0_18px_40px_rgba(2,6,23,.15)] transition-shadow duration-500">
                                     <Image
-                                        src="https://images.unsplash.com/photo-1552196563-55cd4e45efb3?auto=format&fit=crop&q=90&w=2400"
+                                        src={mediaUrl("1200/img-5242.webp")}
                                         alt="Movimiento y bienestar en un espacio luminoso con plantas"
                                         fill
                                         quality={90}
-                                        sizes="(min-width:1280px) 33vw, (min-width:768px) 50vw, 100vw"
-                                        className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
+                                        sizes="(min-width:1024px) 33vw, 100vw"
+                                        className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.04]"
                                         priority
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-boa-ink/60 via-boa-ink/25 to-transparent" />
-                                    <div className="absolute inset-0 bg-white/6 backdrop-blur-[1px]" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-boa-ink/55 via-boa-ink/20 to-transparent" />
                                     <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
                                     <Card className="relative h-full bg-transparent border-0 text-white">
-                                        <CardContent className="p-7 h-full flex flex-col justify-end">
-                                            <div className="absolute top-6 left-6 inline-flex items-center gap-2 rounded-full bg-white/75 text-boa-green px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
+                                        <CardContent className="p-6 h-full flex flex-col justify-end">
+                                            <div className="absolute top-4 left-4 inline-flex items-center gap-2 rounded-full bg-white/75 text-boa-green px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
                                                 <Heart className="h-3.5 w-3.5" />
                                                 BOA Actividades
                                             </div>
-                                            <h3 className="font-sans text-3xl sm:text-[32px] font-extrabold leading-tight drop-shadow-sm">
+                                            <h3 className="font-sans text-2xl xl:text-[28px] font-extrabold leading-tight drop-shadow-sm">
                                                 Movimiento & Bienestar
                                             </h3>
-                                            <p className="mt-2 font-sans text-sm/relaxed sm:text-base text-white/90">
+                                            <p className="mt-1 font-sans text-sm text-white/90">
                                                 Yoga, arte, respiración, talleres creativos.
                                             </p>
-                                            <div className="mt-5">
-                                                <span className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-4 py-2 font-sans text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,.25)] transition-all hover:bg-white/25 hover:border-white/60">
+                                            <div className="mt-4">
+                                                <span className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-3.5 py-1.5 font-sans text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,.25)] transition-all hover:bg-white/25 hover:border-white/60">
                                                     Explorar <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                                                 </span>
                                             </div>
@@ -574,40 +574,39 @@ export default function HomePage() {
                         </motion.div>
 
                         {/* ================ GASTRONOMÍA ================= */}
-                        <motion.div variants={cardItem} className="relative">
+                        <motion.div variants={cardItem} className="relative w-full">
                             <Link
                                 href="/menu"
                                 aria-label="Ver Gastronomía"
-                                className="group relative block h-[480px] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
-            [background:linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18))]
-            hover:[background:linear-gradient(135deg,rgba(30,122,102,.32),rgba(213,149,121,.28))]"
+                                className="group relative block w-full h-[380px] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
+      [background:linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18))]
+      hover:[background:linear-gradient(135deg,rgba(30,122,102,.32),rgba(213,149,121,.28))]"
                             >
                                 <div className="h-full w-full rounded-[30px] overflow-hidden ring-1 ring-boa-ink/5 bg-black shadow-[0_12px_28px_rgba(2,6,23,.10)] hover:shadow-[0_18px_40px_rgba(2,6,23,.15)] transition-shadow duration-500">
                                     <Image
-                                        src="https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&q=90&w=2400"
+                                        src={mediaUrl("images-verticales/2000/IMG_5484.webp")}
                                         alt="Café y cocina consciente con opciones de especialidad"
                                         fill
                                         quality={90}
-                                        sizes="(min-width:1280px) 33vw, (min-width:768px) 50vw, 100vw"
-                                        className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
+                                        sizes="(min-width:1024px) 33vw, 100vw"
+                                        className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.04]"
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-b from-boa-green/15 via-boa-ink/35 to-boa-ink/60" />
-                                    <div className="absolute inset-0 bg-white/6 backdrop-blur-[1px]" />
+                                    <div className="absolute inset-0 bg-gradient-to-b from-boa-green/15 via-boa-ink/30 to-boa-ink/60" />
                                     <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
                                     <Card className="relative h-full bg-transparent border-0 text-white">
-                                        <CardContent className="p-7 h-full flex flex-col justify-end">
-                                            <div className="absolute top-6 left-6 inline-flex items-center gap-2 rounded-full bg-white/75 text-boa-green px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
+                                        <CardContent className="p-6 h-full flex flex-col justify-end">
+                                            <div className="absolute top-4 left-4 inline-flex items-center gap-2 rounded-full bg-white/75 text-boa-green px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
                                                 <Coffee className="h-3.5 w-3.5" />
                                                 BOA Gastronomía
                                             </div>
-                                            <h3 className="font-sans text-3xl sm:text-[32px] font-extrabold leading-tight drop-shadow-sm">
+                                            <h3 className="font-sans text-2xl xl:text-[28px] font-extrabold leading-tight drop-shadow-sm">
                                                 Café & Cocina Consciente
                                             </h3>
-                                            <p className="mt-2 font-sans text-sm/relaxed sm:text-base text-white/90">
+                                            <p className="mt-1 font-sans text-sm text-white/90">
                                                 Especialidad y opciones que abrazan.
                                             </p>
-                                            <div className="mt-5">
-                                                <span className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-4 py-2 font-sans text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,.25)] transition-all hover:bg-white/25 hover:border-white/60">
+                                            <div className="mt-4">
+                                                <span className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-3.5 py-1.5 font-sans text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,.25)] transition-all hover:bg-white/25 hover:border-white/60">
                                                     Ver menú <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                                                 </span>
                                             </div>
@@ -618,40 +617,39 @@ export default function HomePage() {
                         </motion.div>
 
                         {/* ================ ESPACIOS ================= */}
-                        <motion.div variants={cardItem} className="relative">
+                        <motion.div variants={cardItem} className="relative w-full">
                             <Link
                                 href="/spaces"
                                 aria-label="Conocer Espacios"
-                                className="group relative block h-[480px] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
-            [background:linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18))]
-            hover:[background:linear-gradient(135deg,rgba(30,122,102,.32),rgba(213,149,121,.28))]"
+                                className="group relative block w-full h-[380px] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
+      [background:linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18))]
+      hover:[background:linear-gradient(135deg,rgba(30,122,102,.32),rgba(213,149,121,.28))]"
                             >
                                 <div className="h-full w-full rounded-[30px] overflow-hidden ring-1 ring-boa-ink/5 bg-black shadow-[0_12px_28px_rgba(2,6,23,.10)] hover:shadow-[0_18px_40px_rgba(2,6,23,.15)] transition-shadow duration-500">
                                     <Image
-                                        src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=90&w=2400"
+                                        src={mediaUrl("1200/img-5210.webp")}
                                         alt="Interior cálido con madera, plantas y luz de tarde"
                                         fill
                                         quality={90}
-                                        sizes="(min-width:1280px) 33vw, (min-width:768px) 50vw, 100vw"
-                                        className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
+                                        sizes="(min-width:1024px) 33vw, 100vw"
+                                        className="object-cover object-[42%_35%] transition-transform duration-[1200ms] ease-out group-hover:scale-[1.04]"
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-boa-terra/55 via-boa-ink/30 to-transparent" />
-                                    <div className="absolute inset-0 bg-white/6 backdrop-blur-[1px]" />
+                                    
                                     <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
                                     <Card className="relative h-full bg-transparent border-0 text-white">
-                                        <CardContent className="p-7 h-full flex flex-col justify-end">
-                                            <div className="absolute top-6 left-6 inline-flex items-center gap-2 rounded-full bg-white/75 text-boa-green px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
+                                        <CardContent className="p-6 h-full flex flex-col justify-end">
+                                            <div className="absolute top-4 left-4 inline-flex items-center gap-2 rounded-full bg-white/75 text-boa-green px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
                                                 <Leaf className="h-3.5 w-3.5" />
                                                 BOA Espacios
                                             </div>
-                                            <h3 className="font-sans text-3xl sm:text-[32px] font-extrabold leading-tight drop-shadow-sm">
+                                            <h3 className="font-sans text-2xl xl:text-[28px] font-extrabold leading-tight drop-shadow-sm">
                                                 Lugares que abrazan
                                             </h3>
-                                            <p className="mt-2 font-sans text-sm/relaxed sm:text-base text-white/90">
+                                            <p className="mt-1 font-sans text-sm text-white/90">
                                                 Verde, luz y texturas para inspirar y conectar.
                                             </p>
-                                            <div className="mt-5">
-                                                <span className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-4 py-2 font-sans text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,.25)] transition-all hover:bg-white/25 hover:border-white/60">
+                                            <div className="mt-4">
+                                                <span className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-3.5 py-1.5 font-sans text-sm font-medium shadow-[inset_0_1px_0_rgba(255,255,255,.25)] transition-all hover:bg-white/25 hover:border-white/60">
                                                     Conocer <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                                                 </span>
                                             </div>
@@ -661,6 +659,8 @@ export default function HomePage() {
                             </Link>
                         </motion.div>
                     </div>
+
+
                 </div>
             </motion.section>
 
