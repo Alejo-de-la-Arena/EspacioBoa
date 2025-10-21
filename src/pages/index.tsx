@@ -214,9 +214,11 @@ export default function HomePage() {
                             priority
                             fetchPriority="high"
                             sizes="100vw"
+                            quality={90}
                             className="object-cover"
                         />
-
+                        <div className="absolute inset-0 mix-blend-multiply bg-neutral-500/25" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-black/20 to-transparent" />
 
                         {/* Overlays */}
                         <div className="absolute inset-0 bg-gradient-to-t from-boa-cocoa/35 via-boa-cocoa/10 to-transparent" />
@@ -401,15 +403,14 @@ export default function HomePage() {
             hover:[background:linear-gradient(135deg,rgba(30,122,102,.32),rgba(213,149,121,.28))]">
                                     <div className="h-full w-full rounded-[30px] overflow-hidden ring-1 ring-boa-ink/5 bg-black shadow-[0_12px_28px_rgba(2,6,23,.10)] hover:shadow-[0_18px_40px_rgba(2,6,23,.15)] transition-shadow duration-500">
                                         <Image
-                                            src="https://images.unsplash.com/photo-1552196563-55cd4e45efb3?auto=format&fit=crop&q=90&w=2400"
+                                            src={mediaUrl("1200/img-5242.webp")}
                                             alt="Movimiento y bienestar en un espacio luminoso con plantas"
                                             fill
+                                            sizes="(min-width:768px) 1200px, 800px"
                                             quality={90}
-                                            sizes="100vw"
                                             className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
-                                            priority
                                         />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-boa-ink/60 via-boa-ink/25 to-transparent" />
+
                                         <div className="absolute inset-0 bg-white/6 backdrop-blur-[1px]" />
                                         <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
                                         <Card className="relative h-full bg-transparent border-0 text-white">
@@ -446,11 +447,11 @@ export default function HomePage() {
             hover:[background:linear-gradient(135deg,rgba(30,122,102,.32),rgba(213,149,121,.28))]">
                                     <div className="h-full w-full rounded-[30px] overflow-hidden ring-1 ring-boa-ink/5 bg-black shadow-[0_12px_28px_rgba(2,6,23,.10)] hover:shadow-[0_18px_40px_rgba(2,6,23,.15)] transition-shadow duration-500">
                                         <Image
-                                            src="https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&q=90&w=2400"
-                                            alt="Café y cocina consciente con opciones de especialidad"
+                                            src={mediaUrl("1200/img-5210.webp")}
+                                            alt="Movimiento y bienestar en un espacio luminoso con plantas"
                                             fill
+                                            sizes="(min-width:768px) 1200px, 800px"
                                             quality={90}
-                                            sizes="100vw"
                                             className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-b from-boa-green/15 via-boa-ink/35 to-boa-ink/60" />
@@ -490,11 +491,11 @@ export default function HomePage() {
             hover:[background:linear-gradient(135deg,rgba(30,122,102,.32),rgba(213,149,121,.28))]">
                                     <div className="h-full w-full rounded-[30px] overflow-hidden ring-1 ring-boa-ink/5 bg-black shadow-[0_12px_28px_rgba(2,6,23,.10)] hover:shadow-[0_18px_40px_rgba(2,6,23,.15)] transition-shadow duration-500">
                                         <Image
-                                            src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=90&w=2400"
-                                            alt="Interior cálido con madera, plantas y luz de tarde"
+                                            src={mediaUrl("1200/img-5605.webp")}
+                                            alt="Movimiento y bienestar en un espacio luminoso con plantas"
                                             fill
+                                            sizes="(min-width:768px) 1200px, 800px"
                                             quality={90}
-                                            sizes="100vw"
                                             className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-boa-terra/55 via-boa-ink/30 to-transparent" />
