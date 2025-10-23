@@ -349,11 +349,11 @@ export default function EventDetailPage() {
 
     /* ---------- Render ---------- */
     return (
-        <section>
+        <section className="overflow-hidden">
             {/* Back (dentro del contenedor, buen padding) */}
-            <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
+            <div className="container max-w-7xl mx-auto px-4 py-10 sm:px-6 lg:px-8  ">
                 <Button
-                    onClick={() => router.back()}
+                    onClick={() => router.push("/events")}
                     className="rounded-xl bg-white ring-1 ring-neutral-200 text-neutral-800 hover:bg-neutral-50"
                 >
                     <ArrowLeft className="h-4 w-4 mr-2" />
@@ -381,7 +381,7 @@ export default function EventDetailPage() {
                         <motion.div
                             variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 90, damping: 16 } } }}
                             className="relative self-stretch overflow-hidden"
-                            style={{ height: colH ?? "auto" }}
+                            style={{ height: "auto" }}
                         >
                             <motion.div
                                 initial={{ opacity: 0, clipPath: "inset(0 0 100% 0 round 28px)", scale: 1.02 }}

@@ -313,7 +313,7 @@ function ProductModal({
                         exit={{ y: 12, scale: 0.985, opacity: 0 }}
                         transition={{ type: "spring", stiffness: 120, damping: 18, mass: 0.7 }}
                         /* Tamaño grande y fondo cálido */
-                        className="relative w-screen md:w-full md:max-w-6xl h-[92vh] supports-[height:100svh]:h-[92svh] md:h-[86vh] rounded-none md:rounded-2xl overflow-hidden shadow-[0_30px_90px_rgba(16,185,129,.22)]"
+                        className="relative w-screen md:w-full md:max-w-6xl h-[100vh] supports-[height:100svh]:h-[100svh] md:h-[60vh] rounded-none md:rounded-2xl overflow-hidden shadow-[0_30px_90px_rgba(16,185,129,.22)]"
                         style={{
                             background: `linear-gradient(180deg, ${t.cream} 0%, #FFFFFF 140%)`,
                             boxShadow: `0 30px 90px ${t.accentSoft}`,
@@ -544,13 +544,13 @@ function CategoryModal({
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: 12, opacity: 0 }}
                         transition={{ type: "spring", stiffness: 110, damping: 18 }}
-                        className="relative w-screen md:w-full md:max-w-6xl h-[92vh] supports-[height:100svh]:h-[92svh] md:h-[86vh] rounded-none md:rounded-2xl overflow-hidden shadow-[0_28px_90px_rgba(16,185,129,.22)]"
+                        className="relative w-screen md:w-full md:max-w-7xl h-[92vh] supports-[height:100svh]:h-[92svh] md:h-[86vh] rounded-none md:rounded-2xl overflow-hidden shadow-[0_28px_90px_rgba(16,185,129,.22)]"
                         style={{
                             background: `linear-gradient(180deg, ${t.cream} 0%, #FFFFFF 160%)`,
                             outline: `1px solid ${t.ring}`,
                         }}
                     >
-                        <div className="grid grid-cols-1 md:grid-cols-[44%_56%] h-full">
+                        <div className="grid grid-cols-1 md:grid-cols-[50%_50%] h-full">
                             {/* IZQ: Hero */}
                             <div className="relative overflow-hidden hidden md:block">
                                 <img
@@ -755,7 +755,7 @@ function CategoryCard({
         <button
             onClick={() => onOpen(category)}
             className="
-        group relative text-left h-[16rem] sm:h-[20rem] lg:h-[22rem] w-full
+        group relative text-left h-[18rem] sm:h-[20rem] lg:h-[22rem] w-full
         rounded-[1.75rem] overflow-hidden bg-[#FFFBF4]
         ring-[2.5px] ring-[#1E7A66]/70 shadow-[0_14px_44px_rgba(16,185,129,.08)]
         transition-transform hover:-translate-y-0.5
@@ -860,7 +860,7 @@ export default function MenuPage() {
             {/* HERO */}
             <section aria-labelledby="boa-hero" className="relative z-10">
                 <motion.div
-                    className="container mx-auto max-w-6xl px-4 sm:px-6 py-24 sm:py-20 text-center"
+                    className="container mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-12 text-center"
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{
@@ -988,30 +988,3 @@ export default function MenuPage() {
         </section >
     );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

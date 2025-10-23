@@ -1,5 +1,5 @@
 // src/pages/spaces/index.tsx
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { mediaUrl } from "@/lib/mediaUrl";
@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import {
     Users,
     Sparkles,
-    Camera,
     Leaf,
     Coffee,
     LayoutGrid,
@@ -19,10 +18,11 @@ import {
     HeartHandshake,
     Paintbrush,
     Moon,
-    Feather,
+    SquareLibrary,
+    Vegan
 } from "lucide-react";
 
-// Helper para armar rutas por tamaño (400/800/1200)
+/* ----------------------------- Helpers IMG ----------------------------- */
 const img = (size: 400 | 800 | 1200, file: string) => {
     if (/^https?:\/\//.test(file)) {
         return file.replace(/\/(400|800|1200)\//, `/${size}/`);
@@ -30,48 +30,238 @@ const img = (size: 400 | 800 | 1200, file: string) => {
     return mediaUrl(`${size}/${file}`);
 };
 
+/* --------------------------------- Types -------------------------------- */
+// Todo opcional para poder omitir campos por espacio
 type SpaceItem = {
-    id: string;
-    name: string;
-    description: string;
-    capacity: number;
-    features: string[];
-    atmosphere: string;
-    bestFor: string[];
-    // Usamos basenames y calculamos rutas por tamaño con `img(...)`
-    images: [string, string, string]; // [principal, detalle1, detalle2]
-    tag: string;
-    icon:
+    id?: string;
+    name?: string;
+    description?: string;
+    capacity?: number;
+    features?: string[];
+    atmosphere?: string;
+    bestFor?: string[];
+    images?: string[];
+    tag?: string;
+    icon?:
     | typeof Coffee
     | typeof Paintbrush
     | typeof Moon
-    | typeof Feather
     | typeof Leaf
     | typeof LayoutGrid
     | typeof Sparkles
     | typeof HeartHandshake;
 };
 
+/* --------------------------- Slider Reusable UI ------------------------- */
+type SliderProps = {
+    images?: string[];
+    alt?: string;
+    sizes?: string;
+    /** Debe coincidir con sharedHeight para empatar alturas con el Card */
+    aspectClass?: string;
+};
+
+function CinematicSlider({
+    images,
+    alt = "Espacio BOA",
+    sizes = "(min-width:1024px) 50vw, 100vw",
+    // Alturas más generosas: sincronizar con sharedHeight en la página
+    aspectClass = "h-[74vw] sm:h-[60vw] lg:h-[clamp(520px,64vh,620px)] xl:h-[clamp(540px,66vh,640px)] 2xl:h-[clamp(500px,60vh,600px)]",
+}: SliderProps) {
+    const [index, setIndex] = useState(0);
+    const [paused, setPaused] = useState(false);
+    const startX = useRef<number | null>(null);
+    const tX = useRef<number>(0);
+
+    const valid = Array.isArray(images) ? images.filter(Boolean) : [];
+    const total = valid.length;
+    const next = () => setIndex((i) => (i + 1) % total);
+    const prev = () => setIndex((i) => (i - 1 + total) % total);
+
+    useEffect(() => {
+        if (total <= 1 || paused) return;
+        let raf = 0, t0 = 0;
+        const loop = (t: number) => {
+            if (!t0) t0 = t;
+            if (t - t0 > 5200) {
+                next();
+                t0 = t;
+            }
+            raf = requestAnimationFrame(loop);
+        };
+        raf = requestAnimationFrame(loop);
+        return () => cancelAnimationFrame(raf);
+    }, [paused, total]);
+
+    useEffect(() => {
+        const onVis = () => setPaused(document.hidden);
+        document.addEventListener("visibilitychange", onVis);
+        return () => document.removeEventListener("visibilitychange", onVis);
+    }, []);
+
+    const onPointerDown = (e: React.PointerEvent) => {
+        startX.current = e.clientX;
+    };
+    const onPointerUp = (e: React.PointerEvent) => {
+        if (startX.current == null) return;
+        const dx = e.clientX - startX.current;
+        startX.current = null;
+        if (Math.abs(dx) > 40) (dx < 0 ? next() : prev());
+    };
+    const onTouchStart = (e: React.TouchEvent) => (tX.current = e.changedTouches[0].clientX);
+    const onTouchEnd = (e: React.TouchEvent) => {
+        const dx = e.changedTouches[0].clientX - tX.current;
+        if (Math.abs(dx) > 40) (dx < 0 ? next() : prev());
+    };
+
+    if (total === 0) {
+        return (
+            <div className={`relative ${aspectClass} rounded-[2rem] overflow-hidden grid place-items-center bg-neutral-100`}>
+                <div className="text-neutral-500 text-sm">Sin imágenes disponibles</div>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            className={`relative ${aspectClass} select-none`}
+            role="region"
+            aria-roledescription="Carrusel de imágenes"
+            aria-label={alt}
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            onPointerDown={onPointerDown}
+            onPointerUp={onPointerUp}
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
+        >
+            {/* Marco cálido con glass suave y bordes orgánicos */}
+            <div className="absolute inset-0 rounded-[2rem] overflow-hidden shadow-[0_24px_60px_-25px_rgba(0,0,0,.45)] bg-gradient-to-br from-amber-50/80 via-emerald-50/70 to-white/70 backdrop-blur-[2px]">
+                {/* Grain/vibra hippie sutil */}
+                <div className="pointer-events-none absolute inset-0 opacity-[0.18] mix-blend-multiply bg-[radial-gradient(30rem_20rem_at_10%_-10%,#fde68a,transparent_60%),radial-gradient(28rem_22rem_at_110%_110%,#a7f3d0,transparent_60%)]" />
+                <div className="pointer-events-none absolute inset-0 opacity-[0.06] bg-[repeating-linear-gradient(120deg,rgba(0,0,0,.5)_0,rgba(0,0,0,.5)_1px,transparent_1px,transparent_3px)]" />
+
+                {/* Slides */}
+                <div className="absolute inset-0">
+                    {valid.map((file, i) => {
+                        const active = i === index;
+                        return (
+                            <div
+                                key={`${file}-${i}`}
+                                className={`absolute inset-0 transition-opacity duration-[900ms] ease-[cubic-bezier(.22,1,.36,1)] ${active ? "opacity-100" : "opacity-0"}`}
+                                aria-hidden={!active}
+                            >
+                                {/* Fondo cover con blur para rellenar */}
+                                <Image
+                                    src={img(1200, file)}
+                                    alt=""
+                                    fill
+                                    sizes={sizes}
+                                    quality={60}
+                                    className="object-cover blur-md scale-110 opacity-80"
+                                    aria-hidden
+                                />
+
+                                {/* Imagen principal: ahora COVER (más grande, más protagonista) */}
+                                <div className="absolute inset-0 p-2 sm:p-3 lg:p-4">
+                                    <div className="relative w-full h-full rounded-[1.4rem] overflow-hidden">
+                                        <Image
+                                            src={img(1200, file)}
+                                            alt={alt}
+                                            fill
+                                            sizes={sizes}
+                                            quality={90}
+                                            priority={i === 0}
+                                            className="object-cover"
+                                        />
+                                        {/* Vignette suave para dar contraste al contenido superpuesto */}
+                                        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,.18),transparent_22%,transparent_78%,rgba(0,0,0,.14))]" />
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Controles (desktop) */}
+                {total > 1 && (
+                    <>
+                        <button
+                            type="button"
+                            onClick={prev}
+                            aria-label="Imagen anterior"
+                            className="hidden lg:grid place-items-center absolute left-5 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/95 hover:bg-white text-neutral-900 text-[22px] shadow-md backdrop-blur transition active:scale-95"
+                        >
+                            ‹
+                        </button>
+                        <button
+                            type="button"
+                            onClick={next}
+                            aria-label="Imagen siguiente"
+                            className="hidden lg:grid place-items-center absolute right-5 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/95 hover:bg-white text-neutral-900 text-[22px] shadow-md backdrop-blur transition active:scale-95"
+                        >
+                            ›
+                        </button>
+
+                    </>
+                )}
+
+                {/* Miniaturas y dots dentro del slider (mobile/desktop) */}
+                {total > 1 && (
+                    <div className="absolute left-1/2 -translate-x-1/2 bottom-3 sm:bottom-4">
+                        <div className="flex items-center gap-2 rounded-full bg-black/30 backdrop-blur-md p-2">
+                            {valid.map((file, i) => {
+                                const active = i === index;
+                                return (
+                                    <button
+                                        key={`thumb-${i}`}
+                                        onClick={() => setIndex(i)}
+                                        aria-label={`Imagen ${i + 1}`}
+                                        className={`relative h-10 w-14 sm:h-12 sm:w-16 rounded-lg overflow-hidden border transition-all duration-300 ${active ? "border-emerald-400 ring-2 ring-emerald-300" : "border-white/60 hover:border-white"}`}
+                                    >
+                                        <Image src={img(400, file)} alt="" fill sizes="100px" className="object-cover" />
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        {/* Dots (solo mobile) */}
+                        <div className="mt-2 flex justify-center gap-1.5 lg:hidden">
+                            {valid.map((_, i) => (
+                                <span
+                                    key={`dot-${i}`}
+                                    className={`h-1.5 w-4 rounded-full transition-all ${i === index ? "bg-emerald-400 w-6" : "bg-white/70"}`}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+
+/* ------------------------------ Page Component --------------------------- */
 export default function SpacesPage() {
     const [activeSpace, setActiveSpace] = useState(0);
 
     const spaces: Readonly<SpaceItem[]> = [
         {
-            id: "entrada",
-            name: "Entrada",
+            id: "cafeteria-panaderia",
+            name: "Caféteria/Panadería",
             description:
-                "Ingreso principal con luz cálida, plantas y señalética BOA. Punto de bienvenida e información.",
-            capacity: 10,
-            features: ["Recepción", "Señalética", "Espacio de espera", "Luz natural"],
-            atmosphere: "Cálido y funcional",
-            bestFor: ["Recepción", "Fotos rápidas", "Punto de encuentro", "Check-in"],
+                "Nuestro café con barra y vitrina. Ideal para encuentros casuales y breaks de eventos.",
+            capacity: 45,
+            features: ["WiFi", "Enchufes", "Música ambiente", "Vitrina de panadería"],
+            atmosphere: "Cálido y social",
+            bestFor: ["Trabajo remoto", "Reuniones informales", "Breaks", "Lectura"],
             images: [
-                "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5180.webp",
-                "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5580.webp",
-                "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5440.jpg",
+                "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5450.webp",
+                "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5457.webp",
+                "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5420.webp",
             ],
-            tag: "Ingreso",
-            icon: LayoutGrid,
+            tag: "Espacio principal",
+            icon: Coffee,
         },
         {
             id: "biblioteca-libreria",
@@ -82,13 +272,9 @@ export default function SpacesPage() {
             features: ["Estanterías", "Sillas cómodas", "Luz regulable", "Silencioso"],
             atmosphere: "Sereno y contemplativo",
             bestFor: ["Lectura", "Estudio", "Encuentros tranquilos", "Curaduría"],
-            images: [
-                "espacios/biblioteca-1.webp",
-                "espacios/biblioteca-2.webp",
-                "espacios/biblioteca-3.webp",
-            ],
+            images: ["https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5300.webp", "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5320.webp", "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5302.webp"],
             tag: "Silencio",
-            icon: Sparkles,
+            icon: SquareLibrary,
         },
         {
             id: "habitacion-holistica",
@@ -100,29 +286,51 @@ export default function SpacesPage() {
             atmosphere: "Íntimo y armónico",
             bestFor: ["Terapias 1:1", "Masajes", "Reiki", "Meditación guiada"],
             images: [
-                "espacios/holistica-1.webp",
-                "espacios/holistica-2.webp",
-                "espacios/holistica-3.webp",
+                "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5400.webp",
+                "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5407.webp",
+                "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5395.webp",
             ],
             tag: "Intimidad",
             icon: HeartHandshake,
         },
         {
-            id: "shop-wellnes",
-            name: "Shop Wellnes",
+            id: "living",
+            name: "Living",
             description:
-                "Tienda de productos saludables y de autocuidado. Exhibidores modulares y mostrador.",
-            capacity: 8,
-            features: ["Exhibidores", "POS", "Iluminación puntual", "Curaduría"],
-            atmosphere: "Vibrante y práctico",
-            bestFor: ["Compras rápidas", "Descubrir productos", "Muestras"],
-            images: [
-                "espacios/shop-1.webp",
-                "espacios/shop-2.webp",
-                "espacios/shop-3.webp",
-            ],
-            tag: "Retail",
+                "Similar a la holística clásica, con más cuadros y espíritu creativo — ideal para terapias y procesos expresivos.",
+            capacity: 4,
+            features: ["Camilla/sillones", "Aromaterapia", "Luz cálida", "Decoración artística"],
+            atmosphere: "Creativo y sereno",
+            bestFor: ["Terapias 1:1", "Arteterapia", "Reiki", "Meditación guiada"],
+            images: ["https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5284.webp", "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5290.webp", "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5287.webp"],
+            tag: "Atmósfera artística",
             icon: Paintbrush,
+        },
+        {
+            id: "almacen-atural",
+            name: "Almacén Natural",
+            description:
+                "Sala íntima con piano, luz cálida y estantería con productos: aceites escenciales, granola casera y más.",
+            capacity: 4,
+            features: ["Piano", "Iluminación cálida", "Productos wellness", "Asientos cómodos"],
+            atmosphere: "Acogedor y musical",
+            bestFor: ["Sesiones 1:1", "Ensayos suaves", "Charlas íntimas", "Descanso"],
+            images: ["https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5327.webp", "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5347.webp", "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5365.webp"],
+            tag: "Rincón musical",
+            icon: Vegan,
+        },
+        {
+            id: "patio",
+            name: "Patio",
+            description:
+                "Área exterior con verde, mesitas y sombra. Perfecto para respirar, tomar sol suave y eventos al aire libre.",
+            capacity: 20,
+            features: ["Plantas y canteros", "Sombra natural", "Mobiliario exterior", "Iluminación tenue"],
+            atmosphere: "Natural y aireado",
+            bestFor: ["Círculos pequeños", "Lectura", "Café al sol", "Micro-eventos"],
+            images: ["https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5195.webp", "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5202.webp", "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5210.webp", "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5185.webp"],
+            tag: "Exterior",
+            icon: Leaf,
         },
         {
             id: "salon-multiespacio",
@@ -133,34 +341,13 @@ export default function SpacesPage() {
             features: ["Proyector/sonido", "Sillas y mesas", "Cortinas", "Piso madera"],
             atmosphere: "Versátil y luminoso",
             bestFor: ["Workshops", "Charlas", "Talleres creativos", "Meetups"],
-            images: [
-                "espacios/salon-1.webp",
-                "espacios/salon-2.webp",
-                "espacios/salon-3.webp",
-            ],
+            images: ["https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5259.webp", "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5271.webp", "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5268.webp"],
             tag: "Versatilidad",
             icon: Leaf,
         },
         {
-            id: "cafeteria-panaderia",
-            name: "Caféteria/Panadería",
-            description:
-                "Nuestro café con barra y vitrina. Ideal para encuentros casuales y breaks de eventos.",
-            capacity: 45,
-            features: ["WiFi", "Enchufes", "Música ambiente", "Vitrina de panadería"],
-            atmosphere: "Cálido y social",
-            bestFor: ["Trabajo remoto", "Reuniones informales", "Breaks", "Lectura"],
-            images: [
-                "espacios/cafeteria-1.webp",
-                "espacios/cafeteria-2.webp",
-                "espacios/cafeteria-3.webp",
-            ],
-            tag: "Espacio principal",
-            icon: Coffee,
-        },
-        {
-            id: "yoga-tarot",
-            name: "Yoga/Tarot",
+            id: "sala-meditacion-y-silencio",
+            name: "Sala de Meditación y Silencio",
             description:
                 "Sala para prácticas de yoga suave, círculos y lecturas. Piso de madera y luz tenue.",
             capacity: 12,
@@ -168,360 +355,216 @@ export default function SpacesPage() {
             atmosphere: "Calmo y místico",
             bestFor: ["Yoga suave", "Círculos", "Lecturas", "Meditación"],
             images: [
-                "espacios/yoga-1.webp",
-                "espacios/yoga-2.webp",
-                "espacios/yoga-3.webp",
+                "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5237.webp",
+                "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5242.webp",
+                "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5251.webp",
             ],
             tag: "Movimiento",
             icon: Moon,
         },
     ] as const;
 
-    const ActiveIcon = spaces[activeSpace].icon;
+    const active = spaces[activeSpace] ?? {};
+    const ActiveIcon = active.icon;
 
-    // Genera las rutas según tamaño para el espacio activo
-    const activeImgs = useMemo(() => {
-        const [a, b, c] = spaces[activeSpace].images;
-        return {
-            // Principal (grande)
-            principal: {
-                s400: img(400, a),
-                s800: img(800, a),
-                s1200: img(1200, a),
-            },
-            // Detalle 1
-            d1: {
-                s400: img(400, b),
-                s800: img(800, b),
-                s1200: img(1200, b),
-            },
-            // Detalle 2
-            d2: {
-                s400: img(400, c),
-                s800: img(800, c),
-                s1200: img(1200, c),
-            },
-        };
-    }, [activeSpace, spaces]);
+    // animación leve al cambiar de espacio
+    const [appear, setAppear] = useState(false);
+    useEffect(() => {
+        setAppear(false);
+        const id = setTimeout(() => setAppear(true), 10);
+        return () => clearTimeout(id);
+    }, [activeSpace]);
+
+    // Alturas compartidas (slider y card) — mantener sync con CinematicSlider.aspectClass
+    const sharedHeight = "h-[74vw] sm:h-[60vw] lg:h-[clamp(520px,64vh,620px)] xl:h-[clamp(400px,60vh,500px)] 2xl:h-[clamp(550px,55vh,540px)]";
+
 
     return (
         <section>
-            {/* ===== ENCABEZADO SIMPLE (sin hero) ===== */}
-            <section className="py-10 sm:py-14 bg-white">
-                <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <h1 className="font-sans text-4xl sm:text-5xl font-bold text-neutral-900">
-                        Conocé nuestros{" "}
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-700 to-emerald-500">
-                            espacios
-                        </span>
-                    </h1>
-                    <p className="mt-3 text-neutral-700 max-w-2xl mx-auto">
-                        Cada ambiente tiene su propia vibra. Elegí dónde querés crear, conectar y disfrutar.
-                    </p>
-                </div>
-            </section>
-
             {/* ===== SECCIÓN ESPACIOS ===== */}
-            <section id="espacios" className="pt-2 pb-16 bg-white">
-                <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    {/* Filtro mobile */}
+            <section id="espacios" className="relative py-14 sm:py-16">
+
+                <div className="absolute inset-0 -z-10">
+                    <Image
+                        src={mediaUrl("hero-spaces/spaces-bg.png")}
+                        alt="Pared blanca con plantas, estilo BOA"
+                        fill
+                        priority
+                        quality={90}
+                        sizes="100vw"
+                        className="object-cover object-[42%_35%]"
+                    />
+                    {/* Overlay suave para contraste de textos (ajustá opacidad si querés) */}
+                    <div className="pointer-events-none absolute inset-0 bg-white/60 sm:bg-white/50" />
+                </div>
+
+
+                <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-10 sm:mb-12">
+                        <h1 className="font-sans text-4xl sm:text-5xl font-bold text-neutral-900 mb-2">
+                            Conocé nuestros{" "}
+                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-700 to-emerald-500">
+                                espacios
+                            </span>
+                        </h1>
+                        <p className="text-neutral-700 max-w-2xl mx-auto">
+                            Cada ambiente tiene su propia vibra. Elegí dónde querés crear, conectar y disfrutar.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 lg:pb-16 xl:pb-20">
+                    {/* Filtro mobile (select) */}
                     <div className="lg:hidden mb-6">
-                        <label className="sr-only" htmlFor="space-filter">
-                            Elegir espacio
-                        </label>
+                        <label className="sr-only" htmlFor="space-filter">Elegir espacio</label>
                         <select
                             id="space-filter"
-                            className="w-full rounded-2xl border border-neutral-300 px-4 py-3 font-medium"
+                            className="w-full rounded-2xl border border-neutral-300 px-4 py-3 font-medium bg-white/80 backdrop-blur"
                             value={activeSpace}
                             onChange={(e) => setActiveSpace(Number(e.target.value))}
                         >
                             {spaces.map((s, i) => (
-                                <option key={s.id} value={i}>
-                                    {s.name}
+                                <option key={s.id ?? `space-${i}`} value={i}>
+                                    {s.name ?? `Espacio ${i + 1}`}
                                 </option>
                             ))}
                         </select>
                     </div>
 
-                    {/* Selector horizontal (desktop + tablet) */}
+                    {/* Selector horizontal (desktop/tablet) */}
                     <div className="hidden lg:block">
                         <div className="flex justify-center gap-3 sm:gap-4 mb-10 flex-wrap">
-                            {/* En desktop, si no entra, se envuelve en varias filas gracias a flex-wrap,
-                  y además podemos permitir scroll-x si querés: agrega overflow-x-auto */}
                             {spaces.map((s, i) => {
-                                const Icon = s.icon;
-                                const active = activeSpace === i;
+                                const IconComp = s.icon;
+                                const isActive = activeSpace === i;
                                 return (
                                     <button
-                                        key={s.id}
+                                        key={s.id ?? `space-${i}`}
                                         onClick={() => setActiveSpace(i)}
-                                        className={`relative px-5 sm:px-6 py-3 rounded-2xl border transition-all duration-300 flex items-center gap-2 ${active
-                                            ? "border-emerald-600 bg-emerald-50 text-emerald-700 shadow-[0_8px_24px_-12px_rgba(16,185,129,.5)]"
-                                            : "border-neutral-200 hover:border-emerald-300 hover:bg-neutral-50"
+                                        className={`group relative overflow-hidden px-5 sm:px-6 py-3 rounded-2xl border transition-all duration-300 flex items-center gap-2
+    ${isActive
+                                                ? "border-emerald-600 bg-white/90 text-emerald-700 shadow-[0_10px_28px_-14px_rgba(16,185,129,.45)] backdrop-blur"
+                                                : "border-neutral-200 bg-white/70 backdrop-blur hover:bg-white/85 hover:border-emerald-300"
                                             }`}
                                         style={{
                                             clipPath:
                                                 "path('M0 12 Q0 0 12 0 H100% Q100% 0 100% 12 V100% Q100% 100% 100% 100% H12 Q0 100% 0 88 Z')",
                                         }}
                                     >
-                                        <Icon className="h-4 w-4" />
-                                        <span className="font-medium">{s.name}</span>
+                                        <span className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                            <span className="absolute -inset-10 rotate-12 bg-gradient-to-r from-transparent via-emerald-200/50 to-transparent blur-xl animate-[shimmer_1.2s_ease-in-out]" />
+                                        </span>
+                                        {IconComp ? <IconComp className="h-4 w-4 relative z-10" /> : <span className="h-2 w-2 rounded-full bg-neutral-400 inline-block relative z-10" />}
+                                        <span className="font-medium relative z-10">{s.name ?? `Espacio ${i + 1}`}</span>
                                     </button>
                                 );
                             })}
                         </div>
                     </div>
 
-                    {/* Layout del espacio activo */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-                        {/* Collage asimétrico */}
-                        <div className="relative">
-                            <div className="relative rotate-[-1.5deg]">
-                                <div className="relative w-full h-80 rounded-3xl shadow-xl overflow-hidden">
-                                    <Image
-                                        // Usamos el de 1200 como src base; Next genera responsive a partir de eso.
-                                        src={activeImgs.principal.s1200}
-                                        alt={spaces[activeSpace].name}
-                                        fill
-                                        quality={90}
-                                        // 50% del viewport en desktop (columna izquierda), full en mobile
-                                        sizes="(min-width:1024px) 50vw, 100vw"
-                                        className="object-cover object-center transition-transform duration-[1200ms] ease-out group-hover:scale-[1.04]"
-                                    />
-                                </div>
-                                <Badge className="absolute top-5 left-5 bg-white/90 text-neutral-700">
-                                    <Camera className="h-3 w-3 mr-1" />
-                                    {spaces[activeSpace].tag}
-                                </Badge>
-                                <div className="absolute -top-3 left-10 w-24 h-5 bg-emerald-200/60 rounded-[2px] rotate-[4deg]" />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3 mt-4">
-                                <div className="relative rotate-[2deg]">
-                                    <div className="relative h-36 w-full rounded-2xl border border-neutral-200 overflow-hidden">
-                                        <Image
-                                            src={activeImgs.d1.s800}
-                                            alt={`${spaces[activeSpace].name} detalle 1`}
-                                            fill
-                                            quality={85}
-                                            sizes="(min-width:1024px) 25vw, 50vw"
-                                            className="object-cover object-center"
-                                        />
-                                    </div>
-                                    <div className="absolute -top-2 right-6 w-16 h-4 bg-neutral-200/70 rounded-[2px] rotate-[-6deg]" />
-                                </div>
-                                <div className="relative rotate-[-3deg]">
-                                    <div className="relative h-36 w-full rounded-2xl border border-neutral-200 overflow-hidden">
-                                        <Image
-                                            src={activeImgs.d2.s800}
-                                            alt={`${spaces[activeSpace].name} detalle 2`}
-                                            fill
-                                            quality={85}
-                                            sizes="(min-width:1024px) 25vw, 50vw"
-                                            className="object-cover object-center"
-                                        />
-                                    </div>
-                                    <div className="absolute -top-2 left-6 w-16 h-4 bg-emerald-100/80 rounded-[2px] rotate-[8deg]" />
-                                </div>
-                            </div>
+                    {/* GRID: Slider + Card (misma altura) */}
+                    <div
+                        className={`grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch transition-all duration-500 ease-[cubic-bezier(.22,1,.36,1)] ${appear ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}
+                    >
+                        {/* Slider */}
+                        <div className={sharedHeight}>
+                            <CinematicSlider
+                                images={active.images}
+                                alt={active.name ?? "Espacio"}
+                                sizes="(min-width:1024px) 50vw, 100vw"
+                                aspectClass={sharedHeight}
+                            />
                         </div>
 
-                        {/* Detalle en card */}
-                        <Card className="border-0 shadow-lg rounded-3xl bg-gradient-to-br from-emerald-50/60 to-white">
-                            <CardContent className="p-7 sm:p-8">
-                                <div className="flex items-center gap-2 text-emerald-700 mb-2">
-                                    <ActiveIcon className="h-5 w-5" />
-                                    <span className="text-sm font-medium">
-                                        {spaces[activeSpace].atmosphere}
-                                    </span>
-                                </div>
+                        {/* Card detalle */}
+                        <div className={`${sharedHeight} grid overflow-hidden`}>
+                            <Card className="h-full border-0 rounded-[2rem] bg-gradient-to-br from-white/90 via-amber-50/60 to-emerald-50/60 backdrop-blur">
+                                <CardContent className="p-7 sm:p-8 h-full min-h-0 flex flex-col">
+                                    {(active.icon || active.atmosphere) && (
+                                        <div className="flex items-center gap-2 text-emerald-700 mb-2">
+                                            {ActiveIcon ? <ActiveIcon className="h-5 w-5" /> : null}
+                                            {active.atmosphere ? <span className="text-sm font-medium">{active.atmosphere}</span> : null}
+                                        </div>
+                                    )}
 
-                                <h2 className="font-sans text-4xl font-semibold text-neutral-900">
-                                    {spaces[activeSpace].name}
-                                </h2>
-                                <p className="text-lg text-neutral-700 mt-2 mb-6">
-                                    {spaces[activeSpace].description}
-                                </p>
+                                    <h2 className="font-sans text-4xl font-semibold text-neutral-900">
+                                        {active.name ?? "Espacio"}
+                                    </h2>
 
-                                {/* Stats */}
-                                <div className="grid grid-cols-2 gap-6 mb-4">
-                                    <div className="flex items-center text-neutral-700">
-                                        <Users className="h-5 w-5 mr-3 text-emerald-600" />
-                                        <div>
-                                            <div className="font-semibold">Capacidad</div>
-                                            <div className="text-sm">
-                                                {spaces[activeSpace].capacity} personas
+                                    {active.description ? (
+                                        <p className="text-lg text-neutral-700 mt-2 mb-6 leading-relaxed">
+                                            {active.description}
+                                        </p>
+                                    ) : <div className="mb-4" />}
+
+                                    {(typeof active.capacity === "number" || active.atmosphere) && (
+                                        <div className="grid grid-cols-2 gap-6 mb-4">
+                                            {typeof active.capacity === "number" && (
+                                                <div className="flex items-center text-neutral-700">
+                                                    <Users className="h-5 w-5 mr-3 text-emerald-600" />
+                                                    <div>
+                                                        <div className="font-semibold">Capacidad</div>
+                                                        <div className="text-sm">{active.capacity} personas</div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {active.atmosphere && (
+                                                <div className="flex items-center text-neutral-700">
+                                                    <Sparkles className="h-5 w-5 mr-3 text-emerald-600" />
+                                                    <div>
+                                                        <div className="font-semibold">Ambiente</div>
+                                                        <div className="text-sm">{active.atmosphere}</div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {Array.isArray(active.features) && active.features.length > 0 && (
+                                        <div className="mb-4">
+                                            <h3 className="font-semibold text-neutral-900 mb-2">Características</h3>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {active.features.map((f, idx) => (
+                                                    <div key={idx} className="flex items-center text-sm text-neutral-700">
+                                                        <div className="w-2 h-2 bg-emerald-500 rounded-full mr-2" />
+                                                        {f}
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center text-neutral-700">
-                                        <Sparkles className="h-5 w-5 mr-3 text-emerald-600" />
-                                        <div>
-                                            <div className="font-semibold">Ambiente</div>
-                                            <div className="text-sm">
-                                                {spaces[activeSpace].atmosphere}
+                                    )}
+
+                                    {Array.isArray(active.bestFor) && active.bestFor.length > 0 && (
+                                        <div className="mb-6">
+                                            <h3 className="font-semibold text-neutral-900 mb-2">Ideal para</h3>
+                                            <div className="flex flex-wrap gap-2">
+                                                {active.bestFor.map((use, idx) => (
+                                                    <Badge key={idx} variant="secondary" className="bg-emerald-100 text-emerald-700">
+                                                        {use}
+                                                    </Badge>
+                                                ))}
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
+                                    )}
 
-                                {/* Features */}
-                                <div className="mb-4">
-                                    <h3 className="font-semibold text-neutral-900 mb-2">
-                                        Características
-                                    </h3>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {spaces[activeSpace].features.map((f, idx) => (
-                                            <div
-                                                key={idx}
-                                                className="flex items-center text-sm text-neutral-700"
+                                    <div className="mt-auto flex flex-col sm:flex-row gap-3">
+                                        <a href="#espacios" className="contents">
+                                            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white px-7 py-3 rounded-2xl">
+                                                Ver todos los espacios
+                                            </Button>
+                                        </a>
+                                        <Link href="/contact">
+                                            <Button
+                                                variant="outline"
+                                                className="bg-white hover:bg-neutral-50 px-7 py-3 rounded-2xl border-neutral-300 hover:border-emerald-300 hover:text-emerald-600"
                                             >
-                                                <div className="w-2 h-2 bg-emerald-500 rounded-full mr-2" />
-                                                {f}
-                                            </div>
-                                        ))}
+                                                <Clock className="mr-2 h-5 w-5" />
+                                                Agendar visita
+                                            </Button>
+                                        </Link>
                                     </div>
-                                </div>
-
-                                {/* Ideal para */}
-                                <div className="mb-6">
-                                    <h3 className="font-semibold text-neutral-900 mb-2">
-                                        Ideal para
-                                    </h3>
-                                    <div className="flex flex-wrap gap-2">
-                                        {spaces[activeSpace].bestFor.map((use, idx) => (
-                                            <Badge
-                                                key={idx}
-                                                variant="secondary"
-                                                className="bg-emerald-100 text-emerald-700"
-                                            >
-                                                {use}
-                                            </Badge>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* CTAs */}
-                                <div className="flex flex-col sm:flex-row gap-3">
-                                    <a href="#espacios">
-                                        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white px-7 py-3 rounded-2xl">
-                                            <LayoutGrid className="mr-2 h-5 w-5" />
-                                            Ver todos los espacios
-                                        </Button>
-                                    </a>
-                                    <Link href="/contact">
-                                        <Button
-                                            variant="outline"
-                                            className="bg-white hover:bg-neutral-50 px-7 py-3 rounded-2xl border-neutral-300 hover:border-emerald-300 hover:text-emerald-600"
-                                        >
-                                            <Clock className="mr-2 h-5 w-5" />
-                                            Agendar visita
-                                        </Button>
-                                    </Link>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
-            </section>
-
-            {/* ===== USO PRIVADO & ALQUILER ===== */}
-            <section className="py-20 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-neutral-50" />
-                <svg
-                    className="absolute inset-0 w-full h-full opacity-[0.08] text-emerald-900/30"
-                    preserveAspectRatio="none"
-                    aria-hidden
-                >
-                    <defs>
-                        <pattern
-                            id="boa-motif-3"
-                            width="140"
-                            height="140"
-                            patternUnits="userSpaceOnUse"
-                        >
-                            <path
-                                d="M0 70 Q35 35 70 70 T140 70"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="0.7"
-                            />
-                            <path
-                                d="M0 105 Q35 70 70 105 T140 105"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="0.7"
-                            />
-                        </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#boa-motif-3)" />
-                </svg>
-
-                <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-                        {/* Texto */}
-                        <div>
-                            <h2 className="font-sans text-4xl sm:text-5xl font-semibold text-neutral-900 mb-4">
-                                Usá BOA para tus momentos privados
-                            </h2>
-                            <p className="text-lg text-neutral-700 mb-6 max-w-xl">
-                                Nuestros espacios se adaptan a círculos íntimos, workshops, lanzamientos, cumpleaños pequeños y sesiones 1:1. Te acompañamos con ambientación, catering estilo café y logística simple.
-                            </p>
-
-                            {/* Etiquetas de disponibilidad */}
-                            <div className="flex flex-wrap gap-2 mb-8">
-                                <Badge className="bg-white text-emerald-700 border border-emerald-200">
-                                    Disponibilidad semanal
-                                </Badge>
-                                <Badge className="bg-white text-emerald-700 border border-emerald-200">
-                                    Bloques de 2/4 hs
-                                </Badge>
-                                <Badge className="bg-white text-emerald-700 border border-emerald-200">
-                                    Catering opcional
-                                </Badge>
-                                <Badge className="bg-white text-emerald-700 border border-emerald-200">
-                                    Ambientación a medida
-                                </Badge>
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <Link href="/contact">
-                                    <Button className="bg-emerald-600 hover:bg-emerald-700 rounded-2xl px-7 py-3">
-                                        Consultar disponibilidad
-                                    </Button>
-                                </Link>
-                                <Link href="/events">
-                                    <Button
-                                        variant="outline"
-                                        className="bg-white hover:bg-neutral-50 px-7 py-3 rounded-2xl border-neutral-300 hover:border-emerald-300 hover:text-emerald-600"
-                                    >
-                                        Ver formatos y montajes
-                                    </Button>
-                                </Link>
-                            </div>
-                        </div>
-
-                        {/* Galería vertical fina (con Supabase) */}
-                        <div className="grid grid-cols-3 gap-3 h-full">
-                            {[
-                                "eventos/detalle-1.webp",
-                                "eventos/detalle-2.webp",
-                                "eventos/detalle-3.webp",
-                            ].map((file, i) => (
-                                <div
-                                    key={i}
-                                    className="relative h-60 w-full rounded-2xl border border-neutral-200 overflow-hidden"
-                                >
-                                    <Image
-                                        src={img(800, file)}
-                                        alt={`Detalle evento ${i + 1}`}
-                                        fill
-                                        quality={85}
-                                        sizes="(min-width:1024px) 15vw, 33vw"
-                                        className="object-cover object-center"
-                                    />
-                                </div>
-                            ))}
+                                </CardContent>
+                            </Card>
                         </div>
                     </div>
                 </div>
@@ -531,9 +574,7 @@ export default function SpacesPage() {
             <section className="py-20 bg-white relative">
                 <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-10">
-                        <h2 className="font-sans text-4xl sm:text-5xl font-semibold text-neutral-900">
-                            Lo que dicen de BOA
-                        </h2>
+                        <h2 className="font-sans text-4xl sm:text-5xl font-semibold text-neutral-900">Lo que dicen de BOA</h2>
                         <p className="text-neutral-700 mt-3 max-w-2xl mx-auto">
                             Experiencias reales de quienes eligieron nuestros espacios para crear y celebrar.
                         </p>
@@ -557,35 +598,35 @@ export default function SpacesPage() {
                                 text: "La terraza al sol de la tarde es mágica. Mis alumnos salen renovados, yo también.",
                             },
                         ].map((t, i) => (
-                            <Card
-                                key={i}
-                                className="rounded-3xl border-0 shadow-xl bg-gradient-to-br from-emerald-50/60 to-white"
-                            >
-                                <CardContent className="p-7">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="h-10 w-10 rounded-full bg-emerald-600 text-white grid place-content-center font-semibold">
-                                            {t.name
-                                                .split(" ")
-                                                .map((p) => p[0])
-                                                .join("")}
-                                        </div>
-                                        <div>
-                                            <div className="font-semibold text-neutral-900">
-                                                {t.name}
-                                            </div>
-                                            <div className="text-sm text-neutral-600">{t.role}</div>
-                                        </div>
+                            <div key={i} className="rounded-3xl border-0 shadow-xl bg-gradient-to-br from-emerald-50/60 to-white p-7">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="h-10 w-10 rounded-full bg-emerald-600 text-white grid place-content-center font-semibold">
+                                        {t.name
+                                            .split(" ")
+                                            .map((p) => p[0])
+                                            .join("")}
                                     </div>
-                                    <p className="text-neutral-800 leading-relaxed">“{t.text}”</p>
-                                </CardContent>
-                            </Card>
+                                    <div>
+                                        <div className="font-semibold text-neutral-900">{t.name}</div>
+                                        <div className="text-sm text-neutral-600">{t.role}</div>
+                                    </div>
+                                </div>
+                                <p className="text-neutral-800 leading-relaxed">“{t.text}”</p>
+                            </div>
                         ))}
                     </div>
                 </div>
 
-                {/* banda decorativa sutil */}
                 <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-0 w-[90%] h-24 rounded-t-[2rem] bg-gradient-to-t from-emerald-100/40 to-transparent" />
             </section>
         </section>
     );
 }
+
+/* Tailwind keyframes para el shimmer del hover (mover a globals.css si no lo tienes):
+@keyframes shimmer {
+  0%   { transform: translateX(-60%); opacity: .0; }
+  20%  { opacity: .9; }
+  100% { transform: translateX(60%); opacity: 0; }
+}
+*/

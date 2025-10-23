@@ -205,10 +205,10 @@ export default function HomePage() {
                         initial="hidden"
                         animate="visible"
                         variants={container}
-                        className="relative isolate min-h-[90vh] flex items-end overflow-hidden"
+                        className="relative isolate min-h-[95vh] flex items-end overflow-hidden"
                     >
                         <Image
-                            src={mediaUrl("hero/1920/hero-portada.webp")}
+                            src={mediaUrl("hero/1920/hero-portada.jpg")}
                             alt="Espacio BOA - Hero"
                             fill
                             priority
@@ -552,7 +552,7 @@ export default function HomePage() {
                                     <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
                                     <Card className="relative h-full bg-transparent border-0 text-white">
                                         <CardContent className="p-6 h-full flex flex-col justify-end">
-                                            <div className="absolute top-4 left-4 inline-flex items-center gap-2 rounded-full bg-white/75 text-boa-green px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
+                                            <div className="absolute top-6 left-6 inline-flex items-center gap-2 rounded-full bg-white/75 text-boa-green px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
                                                 <Heart className="h-3.5 w-3.5" />
                                                 BOA Actividades
                                             </div>
@@ -589,13 +589,13 @@ export default function HomePage() {
                                         fill
                                         quality={90}
                                         sizes="(min-width:1024px) 33vw, 100vw"
-                                        className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.04]"
+                                        className="object-cover  object-[42%_35%] transition-transform duration-[1200ms] ease-out group-hover:scale-[1.04]"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-b from-boa-green/15 via-boa-ink/30 to-boa-ink/60" />
                                     <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
                                     <Card className="relative h-full bg-transparent border-0 text-white">
                                         <CardContent className="p-6 h-full flex flex-col justify-end">
-                                            <div className="absolute top-4 left-4 inline-flex items-center gap-2 rounded-full bg-white/75 text-boa-green px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
+                                            <div className="absolute top-6 left-6 inline-flex items-center gap-2 rounded-full bg-white/75 text-boa-green px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
                                                 <Coffee className="h-3.5 w-3.5" />
                                                 BOA Gastronomía
                                             </div>
@@ -638,7 +638,7 @@ export default function HomePage() {
                                     <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
                                     <Card className="relative h-full bg-transparent border-0 text-white">
                                         <CardContent className="p-6 h-full flex flex-col justify-end">
-                                            <div className="absolute top-4 left-4 inline-flex items-center gap-2 rounded-full bg-white/75 text-boa-green px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
+                                            <div className="absolute top-6 left-6 inline-flex items-center gap-2 rounded-full bg-white/75 text-boa-green px-3 py-1 text-xs tracking-wide shadow-sm backdrop-blur">
                                                 <Leaf className="h-3.5 w-3.5" />
                                                 BOA Espacios
                                             </div>

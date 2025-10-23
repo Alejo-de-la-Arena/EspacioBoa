@@ -311,6 +311,7 @@ export default function ActivityDetailPage() {
                     <div className="animate-pulse text-boa-green">
                         <Heart className="h-12 w-12" />
                     </div>
+
                 </div>
             </section>
         );
@@ -364,7 +365,7 @@ export default function ActivityDetailPage() {
 
             {/* Back */}
             <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-                <Button variant="ghost" onClick={() => router.back()} className="hover:bg-boa-green/10">
+                <Button variant="ghost" onClick={() => router.push("/activities")} className="hover:bg-boa-green/10">
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Volver
                 </Button>

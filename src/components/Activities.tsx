@@ -257,25 +257,10 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                                                 {a.location}
                                             </span>
 
-                                            <Link href={`/activities/${a.id}`} className="focus:outline-none">
-                                                <Button
-                                                    size="sm"
-                                                    className={`group/btn rounded-full px-4 ${a.enrolled >= a.capacity
-                                                            ? "bg-white/30 hover:bg-white/30 cursor-not-allowed"
-                                                            : "bg-white text-boa-ink hover:bg-white/90"
-                                                        }`}
-                                                    disabled={a.enrolled >= a.capacity}
-                                                >
-                                                    Ver detalles
-                                                    <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
-                                                </Button>
-                                            </Link>
                                         </div>
 
-
-
                                         {/* CTA: Ver detalles */}
-                                        {/* <div className="mt-3 flex justify-end">
+                                        <div className="mt-3 flex justify-end">
                                             <Link href={`/activities/${a.id}`} className="focus:outline-none">
                                                 <Button
                                                     size="sm"
@@ -289,7 +274,7 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                                                     <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
                                                 </Button>
                                             </Link>
-                                        </div> */}
+                                        </div>
 
                                     </div>
                                 </div>

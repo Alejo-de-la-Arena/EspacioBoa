@@ -364,7 +364,7 @@ export default function EventsPage() {
                         ) : (
                             <div className="space-y-12">
                                 {Object.entries(groupedByMonth).map(([key, group]) => (
-                                    <section key={key} className="space-y-4">
+                                    <section key={key} className="space-y-4 grid gap-5">
                                         {/* Encabezado de mes con franja crema (distinto a filtros) */}
                                         <div className="sticky top-[64px] z-[5] -mx-4 sm:mx-0 px-4 sm:px-0">
                                             <div
@@ -377,7 +377,7 @@ export default function EventsPage() {
                                         </div>
 
                                         {/* Lista tipo “fila papel” (sin tarjetas redondas) */}
-                                        <div className="space-y-3">
+                                        <div className="space-y-3 grid gap-5">
                                             {(group as any).items.map((event: any) => {
                                                 const d = new Date(event.date);
                                                 const isPast = d.getTime() < Date.now();
@@ -398,24 +398,35 @@ export default function EventsPage() {
                                                         viewport={{ once: true, amount: 0.25 }}
                                                         whileHover={{ y: -2 }}
                                                         transition={{ type: "spring", stiffness: 90, damping: 16 }}
-                                                        className=" group grid grid-cols-[104px,1fr,auto] sm:grid-cols-[124px,1fr,auto]
-    items-stretch gap-4 sm:gap-6
+                                                        className="
+    group
+    grid grid-cols-1                 /* MOBILE: apilado */
+    sm:grid-cols-[124px,1fr,auto]    /* DESKTOP: igual que antes */
+    items-stretch gap-3 sm:gap-6
     rounded-xl overflow-hidden relative
     bg-gradient-to-br from-white to-emerald-50/20
     ring-1 ring-inset ring-emerald-100/70 hover:ring-emerald-200
     hover:shadow-[0_12px_28px_rgba(16,185,129,0.10)]
     border-l-4 border-l-emerald-200/70
     transition-[transform,box-shadow,border-color] duration-200 ease-out
-    filter-none"
+    filter-none
+  "
                                                     >
                                                         {/* patrón sutil */}
                                                         <div className="pointer-events-none absolute inset-0 opacity-[0.035]
-               bg-[radial-gradient(circle_at_1px_1px,#10b981_1px,transparent_1px)]
-               [background-size:14px_14px]" />
+              bg-[radial-gradient(circle_at_1px_1px,#10b981_1px,transparent_1px)]
+              [background-size:14px_14px]" />
 
                                                         {/* Mini poster */}
                                                         <Link href={`/events/${event.id}`} className="block h-full">
-                                                            <div className="relative h-[120px] sm:h-[140px] w-[104px] sm:w-[124px] overflow-hidden rounded-l-xl">
+                                                            <div
+                                                                className="
+        relative overflow-hidden
+        w-full h-[200px] rounded-t-xl        /* MOBILE: imagen arriba a todo ancho */
+        sm:w-[124px] sm:h-[140px]            /* DESKTOP: igual que antes */
+        sm:rounded-l-xl sm:rounded-tr-none
+      "
+                                                            >
                                                                 <img
                                                                     src={event.flyerVertical || event.poster || event.image}
                                                                     alt={event.title}
@@ -435,95 +446,91 @@ export default function EventsPage() {
                                                             </div>
                                                         </Link>
 
-                                                        {/* Contenido */}
-                                                        <div className="py-3 pr-2">
-                                                            <Link href={`/events/${event.id}`}>
-                                                                <h4 className="text-[20px] sm:text-[22px] font-semibold text-neutral-900 group-hover:text-emerald-700 transition-colors font-sans">
-                                                                    {event.title}
-                                                                </h4>
-                                                            </Link>
+                                                        {/* MOBILE: contenedor en dos columnas; en desktop no afecta (display: contents) */}
+                                                        <div className="grid grid-cols-[1fr_auto] gap-2 px-3 pb-3 pt-2 sm:contents">
+                                                            {/* Contenido (izquierda en mobile) */}
+                                                            <div className="py-3 pr-2 sm:py-3 sm:pr-2 sm:pl-0">
+                                                                <Link href={`/events/${event.id}`}>
+                                                                    <h4 className="text-[20px] sm:text-[22px] font-semibold text-neutral-900 group-hover:text-emerald-700 transition-colors font-sans">
+                                                                        {event.title}
+                                                                    </h4>
+                                                                </Link>
 
-                                                            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-neutral-700 font-sans">
-                                                                <span className="inline-flex items-center gap-1.5">
-                                                                    <Calendar className="h-4 w-4 text-emerald-600" />
-                                                                    {`${weekday} ${dd}/${mm}`}
-                                                                </span>
-                                                                {event.time && (
+                                                                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-neutral-700 font-sans">
                                                                     <span className="inline-flex items-center gap-1.5">
-                                                                        <Clock className="h-4 w-4 text-emerald-600" />
-                                                                        {event.time}
+                                                                        <Calendar className="h-4 w-4 text-emerald-600" />
+                                                                        {`${weekday} ${dd}/${mm}`}
                                                                     </span>
-                                                                )}
-                                                                <span className="inline-flex items-center gap-1.5 min-w-0">
-                                                                    <MapPin className="h-4 w-4 text-emerald-600" />
-                                                                    <span className="truncate">
-                                                                        {event.location || "BOA – Espacio Principal"}
-                                                                    </span>
-                                                                </span>
-                                                            </div>
-
-                                                            {/* Barra de ocupación (da vida sin “chips redondos”) */}
-                                                            {/* Capacidad (medidor circular + texto claro) */}
-                                                            {(typeof cap === "number" && cap > 0) ? (
-                                                                <div className="mt-3 inline-flex items-center gap-3 rounded-lg bg-emerald-50/40 ring-1 ring-emerald-100 px-2.5 py-1.5 font-sans">
-                                                                    {/* Medidor circular conic */}
-                                                                    <div
-                                                                        className="relative h-8 w-8 rounded-full grid place-items-center"
-                                                                        style={{
-                                                                            background: `conic-gradient(#10b981 ${pct}%, #e6f5ef ${pct}% 100%)`,
-                                                                        }}
-                                                                        aria-label={`Capacidad ${enr} de ${cap}`}
-                                                                        role="img"
-                                                                    >
-                                                                        <div className="absolute inset-[3px] rounded-full bg-white" />
-                                                                        {/* número de cupos libres al centro */}
-                                                                        <span className="relative text-[10px] font-bold text-emerald-700 tabular-nums">
-                                                                            {Math.max(0, cap - enr)}
+                                                                    {event.time && (
+                                                                        <span className="inline-flex items-center gap-1.5">
+                                                                            <Clock className="h-4 w-4 text-emerald-600" />
+                                                                            {event.time}
                                                                         </span>
-                                                                    </div>
+                                                                    )}
+                                                                    <span className="inline-flex items-center gap-1.5 min-w-0">
+                                                                        <MapPin className="h-4 w-4 text-emerald-600" />
+                                                                        <span className="truncate">
+                                                                            {event.location || "BOA – Espacio Principal"}
+                                                                        </span>
+                                                                    </span>
+                                                                </div>
 
-                                                                    {/* Texto descriptivo */}
-                                                                    <div className="leading-tight">
-                                                                        <div className="text-[12px] font-semibold text-neutral-900">Capacidad</div>
-                                                                        <div className="text-[12px] text-neutral-700 tabular-nums">
-                                                                            {enr}/{cap} <span className="text-neutral-500">•</span> Quedan {Math.max(0, cap - enr)}
+                                                                {(typeof cap === "number" && cap > 0) ? (
+                                                                    <div className="mt-3 inline-flex items-center gap-3 rounded-lg bg-emerald-50/40 ring-1 ring-emerald-100 px-2.5 py-1.5 font-sans">
+                                                                        <div
+                                                                            className="relative h-8 w-8 rounded-full grid place-items-center"
+                                                                            style={{ background: `conic-gradient(#10b981 ${pct}%, #e6f5ef ${pct}% 100%)` }}
+                                                                            aria-label={`Capacidad ${enr} de ${cap}`} role="img"
+                                                                        >
+                                                                            <div className="absolute inset-[3px] rounded-full bg-white" />
+                                                                            <span className="relative text-[10px] font-bold text-emerald-700 tabular-nums">
+                                                                                {Math.max(0, cap - enr)}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="leading-tight">
+                                                                            <div className="text-[12px] font-semibold text-neutral-900">Capacidad</div>
+                                                                            <div className="text-[12px] text-neutral-700 tabular-nums">
+                                                                                {enr}/{cap} <span className="text-neutral-500">•</span> Quedan {Math.max(0, cap - enr)}
+                                                                            </div>
                                                                         </div>
                                                                     </div>
-                                                                </div>
-                                                            ) : (
-                                                                // fallback si no hay capacidad cargada
-                                                                <div className="mt-3 inline-flex items-center gap-2 rounded-lg bg-neutral-50 ring-1 ring-neutral-200 px-2.5 py-1">
-                                                                    <Users className="h-4 w-4 text-neutral-500" />
-                                                                    <span className="text-[12px] text-neutral-700 font-sans">Capacidad no definida</span>
-                                                                </div>
-                                                            )}
+                                                                ) : (
+                                                                    <div className="mt-3 inline-flex items-center gap-2 rounded-lg bg-neutral-50 ring-1 ring-neutral-200 px-2.5 py-1">
+                                                                        <Users className="h-4 w-4 text-neutral-500" />
+                                                                        <span className="text-[12px] text-neutral-700 font-sans">Capacidad no definida</span>
+                                                                    </div>
+                                                                )}
 
-                                                            {event.description && (
-                                                                <p className="mt-2 text-[13px] text-neutral-600 line-clamp-2 font-sans">
-                                                                    {event.description}
-                                                                </p>
-                                                            )}
-                                                        </div>
-
-                                                        {/* CTA + precio */}
-                                                        <div className="px-3 sm:px-4 py-3 flex flex-col items-end gap-2 sm:gap-3">
-                                                            <div className="text-[15px] font-bold text-emerald-700 font-sans">
-                                                                ${event.price}
+                                                                {event.description && (
+                                                                    <p className="mt-2 text-[13px] text-neutral-600 line-clamp-2 font-sans">
+                                                                        {event.description}
+                                                                    </p>
+                                                                )}
                                                             </div>
-                                                            <Link href={`/events/${event.id}`}>
-                                                                <Button
-                                                                    size="sm"
-                                                                    className={`rounded-full font-sans ${isPast || !(cap > 0 ? cap - (counts[String(event.id)] ?? event.enrolled ?? 0) > 0 : true)
-                                                                        ? "bg-neutral-400 hover:bg-neutral-400 cursor-not-allowed"
-                                                                        : "bg-emerald-600 hover:bg-emerald-700"
-                                                                        }`}
-                                                                    disabled={isPast || !(cap > 0 ? cap - (counts[String(event.id)] ?? event.enrolled ?? 0) > 0 : true)}
-                                                                >
-                                                                    {isPast ? "Finalizado" : !(cap > 0 ? cap - (counts[String(event.id)] ?? event.enrolled ?? 0) > 0 : true) ? "Completo" : "Ver detalles"}
-                                                                </Button>
-                                                            </Link>
+
+                                                            {/* Precio + CTA (derecha en mobile) */}
+                                                            <div className="px-1 sm:px-4 py-3 flex flex-col items-end gap-2 sm:gap-3">
+                                                                <div className="text-[15px] font-bold text-emerald-700 font-sans">
+                                                                    ${event.price}
+                                                                </div>
+                                                                <Link href={`/events/${event.id}`}>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        className={`rounded-full font-sans ${isPast || !(cap > 0 ? cap - (counts[String(event.id)] ?? event.enrolled ?? 0) > 0 : true)
+                                                                                ? "bg-neutral-400 hover:bg-neutral-400 cursor-not-allowed"
+                                                                                : "bg-emerald-600 hover:bg-emerald-700"
+                                                                            }`}
+                                                                        disabled={isPast || !(cap > 0 ? cap - (counts[String(event.id)] ?? event.enrolled ?? 0) > 0 : true)}
+                                                                    >
+                                                                        {isPast ? "Finalizado"
+                                                                            : !(cap > 0 ? cap - (counts[String(event.id)] ?? event.enrolled ?? 0) > 0 : true)
+                                                                                ? "Completo" : "Ver detalles"}
+                                                                    </Button>
+                                                                </Link>
+                                                            </div>
                                                         </div>
                                                     </motion.article>
+
                                                 );
                                             })}
                                         </div>
@@ -629,7 +636,7 @@ export default function EventsPage() {
                     group-hover:ring-emerald-200/70 transition duration-300
                   "
                                     />
-                                    Contáctanos 
+                                    Contáctanos
                                 </Button>
                             </Link>
                         </motion.div>
