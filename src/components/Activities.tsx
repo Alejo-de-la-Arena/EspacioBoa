@@ -1,5 +1,6 @@
 // components/Activities.tsx
 import { useMemo, useState } from "react";
+import { useRouter } from "next/router";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ export default function Activities({ activities }: { activities: Activity[] }) {
     const [search, setSearch] = useState("");
     const [day, setDay] = useState<"all" | string>("all");
     const [cat, setCat] = useState<"all" | string>("all");
+    const router = useRouter();
 
     // --- derived
     const days = useMemo(
@@ -164,11 +166,21 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                         {filtered.map((a, i) => (
                             <motion.article
                                 key={a.id}
-                                initial={{ opacity: 0, y: 16, scale: .99 }}
+                                initial={{ opacity: 0, y: 16, scale: 0.99 }}
                                 whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                                viewport={{ once: true, amount: .25 }}
-                                transition={{ duration: .5, delay: i * 0.03 }}
-                                className="group relative rounded-[28px] overflow-hidden ring-1 ring-[#EEDCC9] bg-[#FFF9F0] shadow-[0_16px_48px_rgba(82,47,0,.10)]"
+                                viewport={{ once: true, amount: 0.25 }}
+                                transition={{ duration: 0.5, delay: i * 0.03 }}
+                                role="link"
+                                tabIndex={0}
+                                aria-label={`Ver detalles de ${a.title}`}
+                                onClick={() => router.push(`/activities/${a.id}`)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        router.push(`/activities/${a.id}`);
+                                    }
+                                }}
+                                className="group relative rounded-[28px] overflow-hidden ring-1 ring-[#EEDCC9] bg-[#FFF9F0] shadow-[0_16px_48px_rgba(82,47,0,.10)] md:cursor-pointer"
                             >
                                 {/* Fondo imagen */}
                                 <img
@@ -198,7 +210,6 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                                     )}
                                 </div>
 
-                                {/* CONTENIDO */}
                                 <div className="relative z-[1] p-5 md:p-6 h-[360px] flex flex-col justify-end">
                                     {/* Título + precio */}
                                     <div className="flex items-start justify-between gap-3">
@@ -210,63 +221,52 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                                         )}
                                     </div>
 
-
-                                    {/* subrayado pincel */}
-                                    <svg className="mt-1 w-24 h-3" viewBox="0 0 120 12" fill="none" aria-hidden="true">
+                                    {/* subrayado */}
+                                    <svg className="mt-2 w-24 h-3" viewBox="0 0 120 12" fill="none" aria-hidden="true">
                                         <path d="M2 8C28 11 58 11 118 6" stroke="hsl(var(--boa-green))" strokeWidth="5" strokeLinecap="round" opacity=".8" />
                                     </svg>
 
-                                    {/* Intriga: tagline corto (1 línea) */}
-                                    <p className="text-white/80 text-sm line-clamp-1">
-                                        {a.description}
-                                    </p>
+                                    {/* descripción */}
+                                    <p className="mt-2 text-white/80 text-sm line-clamp-1">{a.description}</p>
 
-                                    {/* REVEAL: sube en hover/focus */}
-                                    <div className="mt-3 translate-y-0 transition-all duration-300 group-hover:opacity-100">
+                                    <div className="mt-4 translate-y-0 transition-all duration-300 group-hover:opacity-100">
                                         <div className="grid grid-cols-1 gap-2 text-[13px] text-white/90 sm:hidden">
                                             <div className="flex items-center"><Calendar className="h-4 w-4 mr-2" />{a.schedule.day}</div>
                                             <div className="flex items-center"><Clock className="h-4 w-4 mr-2" />{a.schedule.time}</div>
                                             <div className="flex items-center"><MapPin className="h-4 w-4 mr-2" />{a.location}</div>
                                         </div>
 
-                                        {/* Desktop: Día / Hora / Cupo (alineados) */}
                                         <div className="hidden sm:grid grid-cols-[1fr_auto_1fr] items-center text-[13px] text-white/90">
-                                            {/* Día: izquierda */}
                                             <div className="flex items-center justify-start">
                                                 <Calendar className="h-4 w-4 mr-2" />
                                                 {a.schedule.day}
                                             </div>
-
-                                            {/* Hora: CENTRADA */}
                                             <div className="flex items-center justify-center text-center">
                                                 <Clock className="h-4 w-4 mr-2" />
                                                 {a.schedule.time}
                                             </div>
-
-                                            {/* Cupo: totalmente a la DERECHA (alineado con el precio) */}
                                             <div className="flex items-center justify-end text-right">
                                                 <Users className="h-4 w-4 mr-2" />
                                                 <span className="tabular-nums">{a.enrolled}/{a.capacity}</span>
                                             </div>
                                         </div>
 
-                                        {/* Desktop: Ubicación (izq) + CTA (der) en la MISMA fila */}
                                         <div className="mt-4 hidden sm:flex items-center justify-between">
                                             <span className="inline-flex items-center text-[12px] text-white/90">
                                                 <MapPin className="h-4 w-4 mr-1.5" />
                                                 {a.location}
                                             </span>
 
-                                        </div>
-
-                                        {/* CTA: Ver detalles */}
-                                        <div className="mt-3 flex justify-end">
-                                            <Link href={`/activities/${a.id}`} className="focus:outline-none">
+                                            <Link
+                                                href={`/activities/${a.id}`}
+                                                className="focus:outline-none"
+                                                onClick={(e) => e.stopPropagation()} 
+                                            >
                                                 <Button
                                                     size="sm"
                                                     className={`group/btn rounded-full px-4 ${a.enrolled >= a.capacity
-                                                        ? "bg-white/30 hover:bg-white/30 cursor-not-allowed"
-                                                        : "bg-white text-boa-ink hover:bg-white/90"
+                                                            ? "bg-white/30 hover:bg-white/30 cursor-not-allowed"
+                                                            : "bg-white text-boa-ink hover:bg-white/90"
                                                         }`}
                                                     disabled={a.enrolled >= a.capacity}
                                                 >
@@ -276,8 +276,28 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                                             </Link>
                                         </div>
 
+                                        <div className="mt-3 flex justify-end sm:hidden">
+                                            <Link
+                                                href={`/activities/${a.id}`}
+                                                className="focus:outline-none"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <Button
+                                                    size="sm"
+                                                    className={`group/btn rounded-full px-4 ${a.enrolled >= a.capacity
+                                                            ? "bg-white/30 hover:bg-white/30 cursor-not-allowed"
+                                                            : "bg-white text-boa-ink hover:bg-white/90"
+                                                        }`}
+                                                    disabled={a.enrolled >= a.capacity}
+                                                >
+                                                    Ver detalles
+                                                    <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
+                                                </Button>
+                                            </Link>
+                                        </div>
                                     </div>
                                 </div>
+
 
                                 {/* glow para destacadas */}
                                 {a.featured && (

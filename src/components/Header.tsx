@@ -35,7 +35,7 @@ const navigation = [
     { name: "Gift Cards", href: "/giftcards", icon: Gift },
     { name: "Blog", href: "/blog", icon: BookOpen },
     { name: "Nosotros", href: "/about", icon: Users },
-    { name: "Contacto", href: "/contact", icon: HeartHandshake }
+    { name: "Contacto", href: "/contact", icon: HeartHandshake },
 ];
 
 export default function Header() {
@@ -146,14 +146,8 @@ export default function Header() {
                         <HeaderAuth />
                     </div>
 
-                    {/* Mobile Right: auth + menu trigger */}
+                    {/* Mobile Right: solo trigger del menú (sin auth inline) */}
                     <div className="flex items-center gap-2 lg:hidden">
-                        {/* Auth inline en mobile */}
-                        <div className="flex items-center">
-                            <HeaderAuth />
-                        </div>
-
-                        {/* Trigger del menú */}
                         <Sheet open={isOpen} onOpenChange={setIsOpen}>
                             <SheetTrigger asChild>
                                 <Button
@@ -169,22 +163,16 @@ export default function Header() {
 
                             <SheetContent
                                 side="right"
-                                className="w-80 bg-white border-l border-neutral-200/60 p-0 overflow-hidden
-+             [&>button.absolute.right-4.top-4]:hidden"
+                                className="w-80 bg-white border-l border-neutral-200/60 p-0 overflow-hidden [&>button.absolute.right-4.top-4]:hidden"
                             >
-                                {/* Encabezado del sheet: perfil alineado a la derecha y X visible */}
+                                {/* Encabezado simple (sin auth arriba) */}
                                 <div className="relative px-5 pt-5 pb-4 border-b border-neutral-200/60 bg-gradient-to-br from-emerald-50/70 to-white">
-                                    <div className="flex items-center justify-end gap-3">
-                                        {/* User profile a la derecha */}
-                                        <div className="shrink-0">
-                                            <HeaderAuth />
-                                        </div>
-
-                                        {/* Separación clara de la X */}
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm font-medium text-neutral-700">Menú</span>
                                         <SheetClose asChild>
                                             <button
                                                 aria-label="Cerrar menú"
-                                                className="ml-1 inline-flex items-center justify-center rounded-full h-10 w-10 text-neutral-700/80 hover:text-neutral-900 hover:bg-neutral-100/80 transition-opacity"
+                                                className="inline-flex items-center justify-center rounded-full h-10 w-10 text-neutral-700/80 hover:text-neutral-900 hover:bg-neutral-100/80 transition-opacity"
                                             >
                                                 <X className="h-6 w-6" />
                                             </button>
@@ -192,7 +180,7 @@ export default function Header() {
                                     </div>
                                 </div>
 
-                                {/* Navegación móvil con animación suave */}
+                                {/* Navegación móvil */}
                                 <div className="p-5">
                                     <AnimatePresence mode="popLayout">
                                         <nav className="flex flex-col space-y-2">
@@ -226,12 +214,16 @@ export default function Header() {
                                             })}
 
                                             {isAdmin && (
-                                                <>                    <div className="h-px my-2 bg-neutral-200/80" />
+                                                <>
+                                                    <div className="h-px my-2 bg-neutral-200/80" />
                                                     <motion.div
                                                         initial={{ opacity: 0, y: 6 }}
                                                         animate={{ opacity: 1, y: 0 }}
                                                         exit={{ opacity: 0, y: 6 }}
-                                                        transition={{ delay: 0.02 * (navigation.length + 1), duration: 0.18 }}
+                                                        transition={{
+                                                            delay: 0.02 * (navigation.length + 1),
+                                                            duration: 0.18,
+                                                        }}
                                                     >
                                                         <Link
                                                             href="/admin"
@@ -245,9 +237,13 @@ export default function Header() {
                                                     </motion.div>
                                                 </>
                                             )}
-
                                         </nav>
                                     </AnimatePresence>
+
+                                    {/* Auth al final para mejor clickeo */}
+                                    <div className="mt-5 pt-4 border-t border-neutral-200/70">
+                                        <HeaderAuth />
+                                    </div>
                                 </div>
                             </SheetContent>
                         </Sheet>

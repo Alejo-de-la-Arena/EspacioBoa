@@ -7,6 +7,8 @@ import Activities from "@/components/Activities";
 import ActivitiesCalendar from "@/components/ActivitiesCalendar";
 import { useActivitiesLive } from "@/hooks/useActivitiesLive";
 
+import { RevealOnScroll, REVEAL_PRESET_CYCLE } from "@/components/RevealOnScroll";
+
 import * as React from "react";
 import { useAuth } from "@/stores/useAuth";
 import type { Activity } from "@/types";
@@ -111,7 +113,7 @@ export default function ActivitiesPage() {
                 <section>
                     {/* Hero */}
                     <section
-                        className="relative min-h-[100vh] pt-28 pb-16 font-sans overflow-hidden grid place-items-center"
+                        className="relative min-h-[80vh] sm:min-h-[100vh] pt-28 pb-16 font-sans overflow-hidden grid place-items-center"
                         onMouseMove={(e) => {
                             const el = e.currentTarget as HTMLElement;
                             const r = el.getBoundingClientRect();
@@ -121,7 +123,7 @@ export default function ActivitiesPage() {
                     >
                         <div className="absolute inset-0 -z-10">
                             <motion.div
-                                className="absolute inset-0"
+                                className="absolute inset-0 hidden sm:block"
                                 initial={{ scale: 1.06, y: 8, opacity: 0.98 }}
                                 animate={{ scale: 1, y: 0, opacity: 1 }}
                                 transition={{ duration: 1.2, ease: "easeOut" }}
@@ -134,6 +136,22 @@ export default function ActivitiesPage() {
                                     filter: "saturate(0.96) brightness(1) contrast(1.04)",
                                 }}
                             />
+
+                            <motion.div
+                                className="absolute inset-0 block sm:hidden"
+                                initial={{ scale: 1.06, y: 8, opacity: 0.98 }}
+                                animate={{ scale: 1, y: 0, opacity: 1 }}
+                                transition={{ duration: 1.2, ease: "easeOut" }}
+                                style={{
+                                    backgroundImage:
+                                        "url('https://res.cloudinary.com/dasch1s5i/image/upload/v1761316955/activities-bg-mobile_diuocb.webp')",
+                                    backgroundSize: "cover",
+                                    backgroundPosition: "center 18%",
+                                    backgroundRepeat: "no-repeat",
+                                    filter: "saturate(0.96) brightness(1) contrast(1.04)",
+                                }}
+                            />
+
                             <div className="absolute inset-0 bg-[#FBF7EC]/60 mix-blend-multiply" />
                             <div
                                 aria-hidden
@@ -195,9 +213,9 @@ export default function ActivitiesPage() {
                                         whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                                         viewport={{ once: true, amount: 0.2 }}
                                         transition={{ duration: 0.55, ease: "easeOut", delay: 0.12 }}
-                                        className="mt-2 text-base sm:text-lg leading-relaxed relative z-20 text-neutral-800"
+                                        className="mt-4 text-base sm:text-xl leading-relaxed relative z-20 text-neutral-800 max-w-[100%] mx-auto"
                                     >
-                                        Movimiento, arte y bienestar en un mismo lugar. Descubrí tu próxima clase y reservá en segundos.
+                                        Movimiento, arte y bienestar en un mismo lugar. <br /> Descubrí tu próxima clase y reservá en segundos.
                                     </motion.p>
                                 </div>
                             </div>

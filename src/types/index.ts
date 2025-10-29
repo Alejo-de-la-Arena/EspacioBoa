@@ -17,7 +17,7 @@ export interface Person {
 }
 
 export interface Activity {
-    id: string ;              // ← vuelve a permitir number
+    id: string;              // ← vuelve a permitir number
     slug?: string;
     title: string;
     description: string;
@@ -44,8 +44,8 @@ export interface Event {
     title: string;
     description: string;
     image: string;
-    flyerVertical?: string;  
-    poster?: string;    
+    flyerVertical?: string;
+    poster?: string;
     date: string;
     time: string;
     capacity: number;
@@ -85,6 +85,8 @@ export interface GiftCard {
     value: number;
     benefits: string[];
     popular?: boolean;
+    image_url?: string | null; 
+    is_active?: boolean | null;
 }
 
 export interface AppContextType {

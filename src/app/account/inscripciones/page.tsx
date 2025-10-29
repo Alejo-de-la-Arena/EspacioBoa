@@ -52,7 +52,6 @@ type EventLite = {
   flyerVertical?: string | null;
 };
 
-
 type EventRegistrationRow = {
   id: string;
   event_id: string;
@@ -61,16 +60,18 @@ type EventRegistrationRow = {
   event: EventLite | null;
 };
 
+
+
 export default function InscripcionesPage() {
-  const { user } = useAuth();
+  const { user, initialized } = useAuth() as any;
   const { toast } = useToast();
 
-  // ====== Actividades (ya existía) ======
+  // ====== Actividades ======
   const [rows, setRows] = React.useState<RegistrationRow[] | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [busyId, setBusyId] = React.useState<string | null>(null);
 
-  // ====== Eventos (nuevo) ======
+  // ====== Eventos ======
   const [eventRows, setEventRows] = React.useState<EventRegistrationRow[] | null>(null);
   const [loadingEvents, setLoadingEvents] = React.useState(true);
   const [busyEventId, setBusyEventId] = React.useState<string | null>(null);
@@ -79,12 +80,10 @@ export default function InscripcionesPage() {
   const mountedRef = React.useRef(true);
   React.useEffect(() => {
     mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
+    return () => { mountedRef.current = false; };
   }, []);
 
-  // Evitar condiciones de carrera (ignorar respuestas viejas)
+  // Evitar carreras (ignorar respuestas viejas)
   const reqSeqRef = React.useRef(0);
   const reqSeqEventsRef = React.useRef(0);
 
@@ -109,7 +108,6 @@ export default function InscripcionesPage() {
       })
       : "—";
 
-
   const eventImage = (ev?: EventLite | null) =>
     ev?.hero_image || ev?.flyerVertical || ev?.poster || ev?.image || null;
 
@@ -124,12 +122,10 @@ export default function InscripcionesPage() {
         const base = fmtDate(ev.date);
         return ev.time ? `${base} · ${ev.time}` : base;
       }
-
       return ev.time ? `${ev.date} · ${ev.time}` : String(ev.date);
     }
     return "—";
   };
-
 
   /* =================== LOAD ACTIVITIES =================== */
   const loadActivities = React.useCallback(async (opts?: { silent?: boolean }) => {
@@ -197,7 +193,6 @@ export default function InscripcionesPage() {
   /* =================== LOAD EVENTS =================== */
   const loadEvents = React.useCallback(async (opts?: { silent?: boolean }) => {
     const silent = Boolean(opts?.silent);
-
     if (!user) {
       if (mountedRef.current) {
         setEventRows(null);
@@ -208,10 +203,8 @@ export default function InscripcionesPage() {
     if (!silent && mountedRef.current) setLoadingEvents(true);
 
     const mySeq = ++reqSeqEventsRef.current;
-
     try {
       const { data, error } = await supabase.rpc("my_event_registrations");
-
       if (!mountedRef.current || mySeq !== reqSeqEventsRef.current) return;
 
       if (error) {
@@ -225,12 +218,7 @@ export default function InscripcionesPage() {
         return;
       }
 
-      type Row = {
-        id: string;
-        event_id: string;
-        created_at: string;
-        event: any | null;
-      };
+      type Row = { id: string; event_id: string; created_at: string; event: any | null };
 
       const regs: EventRegistrationRow[] = (data ?? []).map((r: Row) => ({
         id: r.id,
@@ -253,7 +241,6 @@ export default function InscripcionesPage() {
           : null,
       }));
 
-
       regs.sort((a, b) => {
         const sa = a.event?.date ? new Date(a.event.date).getTime() : 0;
         const sb = b.event?.date ? new Date(b.event.date).getTime() : 0;
@@ -267,15 +254,15 @@ export default function InscripcionesPage() {
     }
   }, [toast, user]);
 
-
-
-  // Carga inicial visible
+  // Cargar cuando la sesión esté lista y haya usuario
   React.useEffect(() => {
+    if (!initialized) return;
+    if (!user) return;
     loadActivities({ silent: false });
     loadEvents({ silent: false });
-  }, [loadActivities, loadEvents]);
+  }, [initialized, user, loadActivities, loadEvents]);
 
-  // Re-carga silenciosa al reenfocar/visibilizar y cambio de auth
+  // Re-cargas silenciosas: foco/visibilidad y cambios de auth (para refrescar listas)
   React.useEffect(() => {
     const onFocus = () => { loadActivities({ silent: true }); loadEvents({ silent: true }); };
     const onVisibility = () => {
@@ -285,50 +272,78 @@ export default function InscripcionesPage() {
     document.addEventListener("visibilitychange", onVisibility);
 
     const { data: authSub } = supabase.auth.onAuthStateChange(() => {
-      if (!loading) { loadActivities({ silent: true }); loadEvents({ silent: true }); }
+      loadActivities({ silent: true });
+      loadEvents({ silent: true });
     });
+
+    /* =================== CANCEL HANDLERS =================== */
+    const cancelOne = async (activityId: string, regId: string) => {
+      if (!user) return;
+      setBusyId(regId);
+      try {
+        const { error } = await supabase.rpc("cancel_activity", { p_activity_id: activityId });
+        if (error) throw error;
+
+        // optimista
+        setRows(prev => (prev ? prev.filter(r => r.id !== regId) : prev));
+        toast({ title: "Inscripción cancelada", description: "Se liberó tu lugar. ¡Te esperamos en otra actividad! ✨" });
+
+        // refresco silencioso
+        loadActivities({ silent: true });
+      } catch {
+        toast({
+          title: "No pudimos cancelar",
+          description: "Probá de nuevo en unos instantes.",
+          variant: "destructive",
+        });
+      } finally {
+        setBusyId(null);
+      }
+    };
+
+    const cancelEventOne = async (eventId: string, regId: string) => {
+      if (!user) return;
+      setBusyEventId(regId);
+      try {
+        const { error } = await supabase.rpc("cancel_event_registration", { eid: eventId });
+        if (error) throw error;
+
+        // optimista
+        setEventRows(prev => (prev ? prev.filter(r => r.id !== regId) : prev));
+        toast({ title: "Inscripción cancelada", description: "Se liberó tu lugar en el evento." });
+
+        // refresco silencioso
+        loadEvents({ silent: true });
+      } catch {
+        toast({
+          title: "No pudimos cancelar",
+          description: "Probá de nuevo en unos instantes.",
+          variant: "destructive",
+        });
+      } finally {
+        setBusyEventId(null);
+      }
+    };
+
 
     return () => {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibility);
       authSub.subscription.unsubscribe();
     };
-  }, [loadActivities, loadEvents, loading]);
+  }, [loadActivities, loadEvents]);
 
-  /* =================== CANCEL HANDLERS =================== */
-  const cancelOne = async (activityId: string, regId: string) => {
-    if (!user) return;
-    setBusyId(regId);
-    try {
-      const { error } = await supabase.rpc("cancel_activity", { p_activity_id: activityId });
-      if (error) throw error;
-
-      setRows((prev) => (prev ? prev.filter((r) => r.id !== regId) : prev));
-      toast({ title: "Inscripción cancelada", description: "Se liberó tu lugar. ¡Te esperamos en otra actividad! ✨" });
-      loadActivities({ silent: true });
-    } catch {
-      toast({ title: "No pudimos cancelar", description: "Probá de nuevo en unos instantes.", variant: "destructive" });
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const cancelEventOne = async (eventId: string, regId: string) => {
-    if (!user) return;
-    setBusyEventId(regId);
-    try {
-      const { error } = await supabase.rpc("cancel_event_registration", { eid: eventId });
-      if (error) throw error;
-
-      setEventRows((prev) => (prev ? prev.filter((r) => r.id !== regId) : prev));
-      toast({ title: "Inscripción cancelada", description: "Se liberó tu lugar en el evento." });
-      loadEvents({ silent: true });
-    } catch {
-      toast({ title: "No pudimos cancelar", description: "Probá de nuevo en unos instantes.", variant: "destructive" });
-    } finally {
-      setBusyEventId(null);
-    }
-  };
+  // Guards de sesión
+  if (!initialized) {
+    return (
+      <main className="container mx-auto max-w-3xl px-4 py-10 font-sans">
+        <div className="rounded-xl border p-6 text-center text-neutral-600">
+          <Loader2 className="mx-auto mb-3 h-6 w-6 animate-spin" />
+          Verificando tu sesión…
+        </div>
+      </main>
+    );
+  }
 
   if (!user) {
     return (
@@ -344,6 +359,56 @@ export default function InscripcionesPage() {
 
   const hasActivities = !!rows && rows.length > 0;
   const hasEvents = !!eventRows && eventRows.length > 0;
+
+  /* =================== CANCEL HANDLERS =================== */
+  const cancelOne = async (activityId: string, regId: string) => {
+    if (!user) return;
+    setBusyId(regId);
+    try {
+      const { error } = await supabase.rpc("cancel_activity", { p_activity_id: activityId });
+      if (error) throw error;
+
+      // optimista
+      setRows(prev => (prev ? prev.filter(r => r.id !== regId) : prev));
+      toast({ title: "Inscripción cancelada", description: "Se liberó tu lugar. ¡Te esperamos en otra actividad! ✨" });
+
+      // refresco silencioso
+      loadActivities({ silent: true });
+    } catch {
+      toast({
+        title: "No pudimos cancelar",
+        description: "Probá de nuevo en unos instantes.",
+        variant: "destructive",
+      });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const cancelEventOne = async (eventId: string, regId: string) => {
+    if (!user) return;
+    setBusyEventId(regId);
+    try {
+      const { error } = await supabase.rpc("cancel_event_registration", { eid: eventId });
+      if (error) throw error;
+
+      // optimista
+      setEventRows(prev => (prev ? prev.filter(r => r.id !== regId) : prev));
+      toast({ title: "Inscripción cancelada", description: "Se liberó tu lugar en el evento." });
+
+      // refresco silencioso
+      loadEvents({ silent: true });
+    } catch {
+      toast({
+        title: "No pudimos cancelar",
+        description: "Probá de nuevo en unos instantes.",
+        variant: "destructive",
+      });
+    } finally {
+      setBusyEventId(null);
+    }
+  };
+
 
   return (
     <main className="container justify-center mx-auto max-w-4xl px-4 mt-10 py-10 font-sans
@@ -465,7 +530,7 @@ export default function InscripcionesPage() {
         </>
       ) : null}
 
-      {/* ======= EVENTOS (nuevo) ======= */}
+      {/* ======= EVENTOS ======= */}
       {loadingEvents ? (
         <div className="mt-10 rounded-xl border p-8 text-center text-neutral-600">
           <Loader2 className="mx-auto mb-3 h-6 w-6 animate-spin" />
@@ -479,7 +544,6 @@ export default function InscripcionesPage() {
               const ev = row.event;
               if (!ev) return null;
               const img = eventImage(ev);
-
 
               return (
                 <li key={row.id} className="flex flex-col rounded-xl border md:flex-row overflow-hidden bg-white">
@@ -566,13 +630,11 @@ export default function InscripcionesPage() {
         </>
       ) : null}
 
-      {/* Vacío total */}
       {!loading && !loadingEvents && !hasActivities && !hasEvents ? <EmptyState /> : null}
     </main>
   );
 }
 
-/* ========= Empty ========= */
 function EmptyState() {
   return (
     <div className="mt-6 rounded-xl border p-8 text-center font-sans">

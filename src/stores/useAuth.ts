@@ -1,22 +1,29 @@
+// src/stores/useAuth.ts
+"use client";
+
 import { create } from "zustand";
 import { supabase } from "@/lib/supabaseClient";
 
 type Role = "admin" | "user" | null;
 
 type AuthState = {
-    loading: boolean;      // carga transitoria (consultas / transiciones)
-    initialized: boolean;  // auth ya se resolvió al menos una vez
+    loading: boolean;      
+    initialized: boolean;  
     user: any | null;
     role: Role;
-    setUserFromSession: () => Promise<void>;
+
+    // Setters utilitarios
     applyUser: (user: any | null) => void;
+    setUserFromSession: () => Promise<void>;
+
+    // Acciones
     signOut: () => Promise<void>;
 };
 
 const adminSet = new Set(
     (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "")
         .split(",")
-        .map(e => e.trim().toLowerCase())
+        .map((e) => e.trim().toLowerCase())
         .filter(Boolean)
 );
 
@@ -33,8 +40,8 @@ export const useAuth = create<AuthState>((set) => ({
     },
 
     setUserFromSession: async () => {
-        // getSession es más determinista que getUser en el primer paint
-        const { data, error } = await supabase.auth.getSession();
+        // Para el primer paint es más estable que getUser()
+        const { data } = await supabase.auth.getSession();
         const user = data?.session?.user ?? null;
         const email = user?.email?.toLowerCase() ?? "";
         const role: Role = user ? (adminSet.has(email) ? "admin" : "user") : null;
@@ -42,6 +49,7 @@ export const useAuth = create<AuthState>((set) => ({
     },
 
     signOut: async () => {
+        set({ loading: true });                // feedback optimista
         await supabase.auth.signOut();
         set({ user: null, role: null, loading: false, initialized: true });
     },

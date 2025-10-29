@@ -1,10 +1,12 @@
-import Layout from "@/components/Layout";
+
+import { useInView, motion as m } from "framer-motion";
 import { useApp } from "@/contexts/AppContext";
 import { useActivitiesLive } from "@/hooks/useActivitiesLive";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { GiftCardCard } from "@/components/GiftCardCard";
 import { Badge } from "@/components/ui/badge";
 import { mediaUrl } from "@/lib/mediaUrl";
 import Link from "next/link";
@@ -55,6 +57,156 @@ function pickRandom<T>(arr: T[], n: number) {
     shuffleInPlace(copy);
     return copy.slice(0, Math.min(n, copy.length));
 }
+
+type RevealVariant = "fadeUp" | "slideLeft" | "pop" | "tiltUp";
+
+function RevealOnScroll({
+    children,
+    className = "",
+    amount = 0.25,
+    delay = 0,
+    variant = "fadeUp",
+}: {
+    children: React.ReactNode;
+    className?: string;
+    amount?: number;
+    delay?: number;
+    variant?: RevealVariant;
+}) {
+    const ref = useRef<HTMLDivElement | null>(null);
+    const inView = useInView(ref, { amount, margin: "0px 0px -10% 0px" });
+    const state = inView ? "visible" : "hidden";
+
+    const variants: Record<RevealVariant, { hidden: any; visible: any }> = {
+        fadeUp: { hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0 } },
+        slideLeft: { hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } },
+        pop: { hidden: { opacity: 0, scale: 0.97 }, visible: { opacity: 1, scale: 1 } },
+        tiltUp: { hidden: { opacity: 0, y: 18, rotateX: -6 }, visible: { opacity: 1, y: 0, rotateX: 0 } },
+    };
+
+    return (
+        <section
+            ref={ref}
+            className={["relative isolate", className || ""].join(" ")}
+            style={{ overflow: "hidden", contain: "paint", willChange: "transform" }}
+        >
+            {/* Contenido con padding simétrico (NO usar pt internas raras) */}
+            <m.div
+                initial="hidden"
+                animate={state}
+                variants={variants[variant]}
+                transition={{ duration: 0.55, ease: "easeOut", delay }}
+                className="relative z-10 will-change-transform"
+                style={{ transformStyle: "preserve-3d", backfaceVisibility: "hidden" }}
+            >
+                <div className="py-16 sm:py-18 md:py-20 lg:py-24">
+                    {children}
+                </div>
+            </m.div>
+        </section>
+    );
+}
+
+
+
+function HeroTitle() {
+    const STEP = 0.08; // delay entre palabras
+
+    const prefix = "Donde lo rico y lo que hace bien";
+    const seWord = "se";
+    const focusWord = "encuentran";
+
+    // cada palabra es una unidad (no se parte)
+    const renderWords = (text: string, startIndex = 0) =>
+        text.trim().split(/\s+/).map((word, i) => (
+            <span
+                key={`${startIndex}-${i}-${word}`}
+                className="inline-block opacity-0 translate-y-[6px] whitespace-nowrap"
+                style={{
+                    animation: "boaRise .7s ease-out forwards",
+                    animationDelay: `${(startIndex + i) * STEP}s`,
+                    // al ser inline-block con whitespace-nowrap, nunca se corta dentro de la palabra
+                }}
+            >
+                {word}&nbsp;
+            </span>
+        ));
+
+    // para calcular el delay del subrayado y del punto final
+    const wordsPrefix = prefix.trim().split(/\s+/).length;
+    const wordsSe = seWord.trim().split(/\s+/).length;
+
+    return (
+        <h1
+            className="font-sans text-white drop-shadow-[0_10px_30px_rgba(0,0,0,.45)]
+text-3xl sm:text-2xl md:text-5xl font-extrabold tracking-tight
+leading-[1.08] sm:leading-[1.06] break-normal whitespace-normal hyphens-auto text-balance
+mx-auto"
+
+            style={{ textWrap: "balance" as any }}
+        >
+            {/* Línea 1 */}
+            <span className="block">
+                {renderWords(prefix, 0)}
+                {/* Línea 2 */}
+                <span className="inline-block">
+                    {renderWords(seWord, wordsPrefix)}
+                </span>
+
+            </span>
+
+
+            <span className="relative inline-block opacity-0 translate-y-[6px]"
+                style={{
+                    animation: "boaRise .7s ease-out forwards",
+                    animationDelay: `${(wordsPrefix + wordsSe) * STEP}s`,
+                }}
+            >
+                {focusWord}
+                <svg
+                    className="absolute left-1/2 -translate-x-1/2 w-full opacity-0 bottom-[-0.7rem]"
+                    viewBox="0 0 100 7"
+                    fill="none"
+                    preserveAspectRatio="none"
+                    aria-hidden="true"
+                    style={{
+                        animation: "boaUnderline .6s ease-out forwards",
+                        animationDelay: `${(wordsPrefix + wordsSe + 0.5) * STEP}s`,
+                    }}
+                >
+                    <defs>
+                        <linearGradient id="boaBrush" x1="0" x2="1" y1="0" y2="0">
+                            <stop offset="0%" stopColor="hsl(var(--boa-green))" stopOpacity="0.55" />
+                            <stop offset="50%" stopColor="hsl(var(--boa-green))" stopOpacity="0.65" />
+                            <stop offset="100%" stopColor="hsl(var(--boa-green))" stopOpacity="0.55" />
+                        </linearGradient>
+                        <filter id="boaShadow" x="-10%" y="-300%" width="120%" height="700%">
+                            <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="black" floodOpacity="0.22" />
+                        </filter>
+                    </defs>
+                    <path
+                        d="M2 6 C26 2, 74 2, 98 6"
+                        stroke="url(#boaBrush)"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        filter="url(#boaShadow)"
+                    />
+                </svg>
+                &nbsp;
+            </span>
+
+            {/* Punto final */}
+            <span
+                className="inline-block opacity-0 translate-y-[6px]"
+                style={{ animation: "boaRise .7s ease-out forwards", animationDelay: `${(wordsPrefix + wordsSe + 1) * STEP}s` }}
+            >
+
+            </span>
+        </h1>
+    );
+}
+
+
 
 
 export default function HomePage() {
@@ -173,32 +325,10 @@ export default function HomePage() {
 
 
     return (
-        <section>
+        <section className="overflow-x-hidden">
+
             {/* ======= HERO — BOA ======= */}
             {(() => {
-                // helper para revelar texto letra por letra (con espacios no-rompibles)
-                const renderRevealed = (text: string, startIndex = 0, baseDelay = 0.03) =>
-                    Array.from(text).map((ch, i) => {
-                        const char = ch === " " ? "\u00A0" : ch;
-                        return (
-                            <span
-                                key={`${startIndex}-${i}-${char}`}
-                                className="inline-block opacity-0 translate-y-[6px]"
-                                style={{
-                                    animation: "boaRise .7s ease-out forwards",
-                                    animationDelay: `${(startIndex + i) * baseDelay}s`,
-                                }}
-                            >
-                                {char}
-                            </span>
-                        );
-                    });
-
-                const baseDelay = 0.03;
-                const prefix = "Donde lo rico y lo que hace bien ";
-                const seWord = "se ";
-                const focusWord = "encuentran";
-                const totalChars = prefix.length + seWord.length + focusWord.length;
 
                 return (
                     <motion.section
@@ -217,11 +347,11 @@ export default function HomePage() {
                             quality={90}
                             className="object-cover"
                         />
-                        <div className="absolute inset-0 mix-blend-multiply bg-neutral-500/25" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-black/20 to-transparent" />
+                        <div className="absolute inset-0 z-0 mix-blend-multiply bg-neutral-500/25" />
+                        <div className="absolute inset-0 z-0 bg-gradient-to-t from-black/25 via-black/20 to-transparent" />
 
                         {/* Overlays */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-boa-cocoa/35 via-boa-cocoa/10 to-transparent" />
+                        <div className="absolute inset-0 z-0 bg-gradient-to-t from-boa-cocoa/35 via-boa-cocoa/10 to-transparent" />
                         <div className="pointer-events-none absolute inset-0 [box-shadow:inset_0_-80px_120px_rgba(0,0,0,0.18)]" />
 
                         {/* Ornamentos */}
@@ -233,75 +363,26 @@ export default function HomePage() {
                         {/* Contenido */}
                         <div className="relative z-10 container mx-auto px-5 pb-14 sm:pb-16">
                             <motion.div variants={item} className="max-w-5xl mx-auto text-center">
-                                {/* Título */}
-                                <h1 className="font-sans text-white drop-shadow-[0_10px_30px_rgba(0,0,0,.45)] text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.07] inline-block whitespace-pre-wrap">
-                                    {renderRevealed(prefix, 0, baseDelay)}
-                                    {renderRevealed(seWord, prefix.length, baseDelay)}
 
-                                    {/* Solo “encuentran” con subrayado */}
-                                    <span className="relative inline-block">
-                                        {renderRevealed(focusWord, prefix.length + seWord.length, baseDelay)}
-
-                                        {/* SUBRAYADO: más abajo, un poco más fino y aparece al final */}
-                                        <svg
-                                            className="absolute left-1/2 -translate-x-1/2 w-full opacity-0 bottom-[-0.7rem]"
-                                            viewBox="0 0 100 7"
-                                            fill="none"
-                                            preserveAspectRatio="none"
-                                            aria-hidden="true"
-                                            style={{
-                                                animation: "boaUnderline .6s ease-out forwards",
-                                                animationDelay: `${totalChars * baseDelay + 0.05}s`, // aparece luego de todo el título
-                                            }}
-                                        >
-                                            <defs>
-                                                <linearGradient id="boaBrush" x1="0" x2="1" y1="0" y2="0">
-                                                    <stop offset="0%" stopColor="hsl(var(--boa-green))" stopOpacity="0.55" />
-                                                    <stop offset="50%" stopColor="hsl(var(--boa-green))" stopOpacity="0.65" />
-                                                    <stop offset="100%" stopColor="hsl(var(--boa-green))" stopOpacity="0.55" />
-                                                </linearGradient>
-                                                <filter id="boaShadow" x="-10%" y="-300%" width="120%" height="700%">
-                                                    <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="black" floodOpacity="0.22" />
-                                                </filter>
-                                            </defs>
-                                            <path
-                                                d="M2 6 C26 2, 74 2, 98 6"
-                                                stroke="url(#boaBrush)"
-                                                strokeWidth="3"        // ↓ un poco más fino
-                                                strokeLinecap="round"
-                                                filter="url(#boaShadow)"
-                                            />
-                                        </svg>
-                                    </span>
-
-                                    {/* punto final */}
-                                    <span
-                                        className="inline-block opacity-0 translate-y-[6px]"
-                                        style={{
-                                            animation: "boaRise .7s ease-out forwards",
-                                            animationDelay: `${totalChars * baseDelay}s`,
-                                        }}
-                                    >
-                                        .
-                                    </span>
-                                </h1>
+                                <HeroTitle />
 
                                 {/* Pill animada */}
-                                <div className="mt-5 flex justify-center">
-                                    <div className="boa-pill flex items-center gap-3 rounded-full bg-white/18 border border-white/30 px-4 py-2 backdrop-blur-sm text-white/95 drop-shadow-[0_6px_18px_rgba(0,0,0,.35)]">
-                                        <Coffee className="h-4 w-4" />
-                                        <span className="uppercase tracking-wide text-sm">café</span>
+                                <div className="mt-4 flex justify-center">
+                                    <div className="boa-pill flex items-center gap-2 rounded-full bg-white/18 border border-white/30 px-3 py-1.5 backdrop-blur-sm max-w-[88%] lg:mt-2 text-white/95 drop-shadow-[0_6px_18px_rgba(0,0,0,.35)]">
+                                        <Coffee className="h-3.5 w-3.5" />
+                                        <span className="uppercase tracking-wide text-xs">café</span>
                                         <span className="opacity-60">·</span>
-                                        <Leaf className="h-4 w-4" />
-                                        <span className="uppercase tracking-wide text-sm">bienestar</span>
+                                        <Leaf className="h-3.5 w-3.5" />
+                                        <span className="uppercase tracking-wide text-xs">bienestar</span>
                                         <span className="opacity-60">·</span>
-                                        <Sparkles className="h-4 w-4" />
-                                        <span className="uppercase tracking-wide text-sm">arte</span>
+                                        <Sparkles className="h-3.5 w-3.5" />
+                                        <span className="uppercase tracking-wide text-xs">arte</span>
                                         <span className="opacity-60">·</span>
-                                        <Users className="h-4 w-4" />
-                                        <span className="uppercase tracking-wide text-sm">movimiento</span>
+                                        <Users className="h-3.5 w-3.5" />
+                                        <span className="uppercase tracking-wide text-xs">movimiento</span>
                                     </div>
                                 </div>
+
 
                                 {/* CTAs */}
                                 <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -357,15 +438,13 @@ export default function HomePage() {
 
 
             {/* ===================== DEPARTAMENTOS — BOA (contenedor 7xl) ===================== */}
-            <motion.section
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.2 }}
-                variants={cardsContainer}
-                className="relative py-24 font-sans overflow-hidden"
+            <RevealOnScroll
+                variant="tiltUp"
+                amount={0.22}
+                className="relative "
             >
                 {/* Fondo */}
-                <div className="absolute inset-0 bg-gradient-to-b from-emerald-50/50 via-amber-50/40 to-white" />
+                <div className="absolute inset-0 z-0 bg-gradient-to-b from-emerald-50/50 via-amber-50/40 to-white" />
                 <div className="pointer-events-none absolute -top-20 -left-20 h-64 w-64 rounded-full bg-emerald-300/10 blur-3xl" />
                 <div className="pointer-events-none absolute -bottom-10 -right-10 h-72 w-72 rounded-full bg-amber-300/10 blur-3xl" />
 
@@ -398,7 +477,7 @@ export default function HomePage() {
                                 aria-label="Explorar Actividades"
                                 className="snap-center shrink-0 w-[86%]"
                             >
-                                <div className="group relative block h-[350] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
+                                <div className="group relative block h-[350px] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
             [background:linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18))]
             hover:[background:linear-gradient(135deg,rgba(30,122,102,.32),rgba(213,149,121,.28))]">
                                     <div className="h-full w-full rounded-[30px] overflow-hidden ring-1 ring-boa-ink/5 bg-black shadow-[0_12px_28px_rgba(2,6,23,.10)] hover:shadow-[0_18px_40px_rgba(2,6,23,.15)] transition-shadow duration-500">
@@ -411,7 +490,7 @@ export default function HomePage() {
                                             className="object-cover object-[50%50%] transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
                                         />
 
-                                        <div className="absolute inset-0 bg-white/6" />
+                                        <div className="absolute inset-0 z-0 bg-white/6" />
                                         <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
                                         <Card className="relative h-full bg-transparent border-0 text-white">
                                             <CardContent className="p-7 h-full flex flex-col justify-end">
@@ -456,8 +535,8 @@ export default function HomePage() {
                                             className="object-cover object-[42%_35%] transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]"
                                         />
 
-                                        <div className="absolute inset-0 bg-gradient-to-b from-boa-green/15 via-boa-ink/35 to-boa-ink/60" />
-                                        <div className="absolute inset-0 bg-white/6" />
+                                        <div className="absolute inset-0 z-0 bg-gradient-to-b from-boa-green/15 via-boa-ink/35 to-boa-ink/60" />
+                                        <div className="absolute inset-0 z-0 bg-white/6" />
                                         <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
                                         <Card className="relative h-full bg-transparent border-0 text-white">
                                             <CardContent className="p-7 h-full flex flex-col justify-end">
@@ -548,7 +627,7 @@ export default function HomePage() {
                                         className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.04]"
                                         priority
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-boa-ink/55 via-boa-ink/20 to-transparent" />
+                                    <div className="absolute inset-0 z-0 bg-gradient-to-t from-boa-ink/55 via-boa-ink/20 to-transparent" />
                                     <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
                                     <Card className="relative h-full bg-transparent border-0 text-white">
                                         <CardContent className="p-6 h-full flex flex-col justify-end">
@@ -591,7 +670,7 @@ export default function HomePage() {
                                         sizes="(min-width:1024px) 33vw, 100vw"
                                         className="object-cover  object-[42%_35%] transition-transform duration-[1200ms] ease-out group-hover:scale-[1.04]"
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-b from-boa-green/15 via-boa-ink/30 to-boa-ink/60" />
+                                    <div className="absolute inset-0 z-0 bg-gradient-to-b from-boa-green/15 via-boa-ink/30 to-boa-ink/60" />
                                     <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
                                     <Card className="relative h-full bg-transparent border-0 text-white">
                                         <CardContent className="p-6 h-full flex flex-col justify-end">
@@ -634,7 +713,7 @@ export default function HomePage() {
                                         sizes="(min-width:1024px) 33vw, 100vw"
                                         className="object-cover object-[42%_35%] transition-transform duration-[1200ms] ease-out group-hover:scale-[1.04]"
                                     />
-                                    
+
                                     <span className="pointer-events-none absolute inset-4 rounded-[24px] ring-1 ring-white/15" />
                                     <Card className="relative h-full bg-transparent border-0 text-white">
                                         <CardContent className="p-6 h-full flex flex-col justify-end">
@@ -662,21 +741,19 @@ export default function HomePage() {
 
 
                 </div>
-            </motion.section>
+            </RevealOnScroll>
 
 
             {/* ===================== SLIDER EXPERIENCIAS — BOA ===================== */}
-            < motion.section
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.2 }
-                }
-                className="relative py-20 font-sans overflow-hidden"
+            < RevealOnScroll
+                variant="slideLeft"
+                amount={0.25}
+                className="relative  font-sans"
             >
                 {/* Fondo cálido y sutil */}
-                < div className="absolute inset-0 bg-[linear-gradient(180deg,#FEFCF7_0%,#FFFFFF_78%)]" />
+                < div className="absolute inset-0 z-0 bg-[linear-gradient(180deg,#FEFCF7_0%,#FFFFFF_78%)]" />
                 <div
-                    className="absolute inset-0 opacity-[0.05] pointer-events-none"
+                    className="absolute inset-0 z-0 opacity-[0.05] pointer-events-none"
                     style={{
                         backgroundImage:
                             "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'><defs><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0.1'/><feComponentTransfer><feFuncA type='table' tableValues='0 0.04'/></feComponentTransfer></filter></defs><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")",
@@ -699,20 +776,18 @@ export default function HomePage() {
                     {/* Componente Slider */}
                     <ExperiencesSlider items={experienceItems} />
                 </div>
-            </motion.section >
+            </RevealOnScroll >
 
             {/* Gift Cards Section */}
-            < motion.section
-                id="gift-cards"
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.25 }}
-                className="relative py-28 font-sans overflow-hidden"
+            < RevealOnScroll
+                variant="pop"
+                amount={0.25}
+                className="relative font-sans"
             >
                 {/* Fondo cálido + patrón sutil “wrapping” */}
-                < div className="absolute inset-0 bg-[linear-gradient(180deg,#FEFCF7_0%,#FFFFFF_85%)]" />
+                < div className="absolute inset-0 z-0 bg-[linear-gradient(180deg,#FEFCF7_0%,#FFFFFF_85%)]" />
                 <div
-                    className="absolute inset-0 opacity-[0.06] pointer-events-none"
+                    className="absolute inset-0 z-0 opacity-[0.06] pointer-events-none"
                     style={{
                         backgroundImage:
                             "radial-gradient(rgba(30,122,102,.14) 1px, transparent 1px), radial-gradient(rgba(213,149,121,.10) 1px, transparent 1px)",
@@ -744,65 +819,7 @@ export default function HomePage() {
                                 transition={{ type: "spring", stiffness: 260, damping: 26 }}
                                 className="relative group"
                             >
-                                {/* Marco artístico (paleta BOA) */}
-                                <div
-                                    className="relative p-[16px] rounded-[30px] shadow-xl"
-                                    style={{
-                                        backgroundImage: `
-                linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18)),
-                radial-gradient(180px 180px at 0% 0%, rgba(0,0,0,.06), transparent),
-                radial-gradient(200px 200px at 100% 100%, rgba(0,0,0,.06), transparent)
-              `,
-                                        backgroundBlendMode: "overlay, normal, normal",
-                                        boxShadow: "inset 0 0 0 2px rgba(255,255,255,.28), 0 18px 32px rgba(0,0,0,.18)",
-                                        borderRadius: "30px",
-                                    }}
-                                >
-                                    {/* Lienzo crema interior */}
-                                    <div className="relative rounded-[22px] overflow-hidden bg-[#FAF8F2] ring-1 ring-black/10">
-                                        {/* Textura papel sutil */}
-                                        <div
-                                            className="absolute inset-0 opacity-[0.08] pointer-events-none"
-                                            style={{
-                                                backgroundImage:
-                                                    "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>\")",
-                                                backgroundSize: "260px 260px",
-                                            }}
-                                            aria-hidden
-                                        />
-
-                                        {/* Contenido */}
-                                        <div className="p-8 relative z-10">
-                                            <h3 className="font-sans text-2xl font-extrabold text-neutral-900 mb-2">{gc.name}</h3>
-                                            <p className="font-sans text-base text-neutral-700 mb-5">{gc.description}</p>
-
-                                            <div className="font-sans text-3xl font-extrabold text-neutral-900 mb-5">
-                                                ${gc.value.toLocaleString()}
-                                            </div>
-
-                                            <ul className="space-y-2 font-sans text-sm text-neutral-800 mb-6">
-                                                {gc.benefits.slice(0, 3).map((b: string, i: number) => (
-                                                    <li key={i} className="flex items-center gap-2">
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-boa-green" />
-                                                        {b}
-                                                    </li>
-                                                ))}
-                                                {gc.benefits.length > 3 && (
-                                                    <li className="text-neutral-500 text-xs">+ {gc.benefits.length - 3} más</li>
-                                                )}
-                                            </ul>
-
-                                            <Link
-                                                href="https://wa.me/5491112345678"
-                                                target="_blank"
-                                                className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-sans font-semibold
-                             bg-boa-green text-white hover:bg-boa-green/90 transition"
-                                            >
-                                                Coordinar por WhatsApp
-                                            </Link>
-                                        </div>
-                                    </div>
-                                </div>
+                                <GiftCardCard gc={gc} />
                             </motion.div>
                         ))}
                     </div>
@@ -838,18 +855,16 @@ export default function HomePage() {
       100% { background-position: 100% 50%; }
     }
   `}</style>
-            </motion.section >
+            </RevealOnScroll >
 
             {/* About BOA Preview */}
-            < motion.section
-                id="about-boa"
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.25 }}
-                className="relative py-28 font-sans overflow-hidden"
+            <RevealOnScroll
+                variant="fadeUp"
+                amount={0.25}
+                className="relative py-24 font-sans"
             >
                 {/* Fondo cálido */}
-                < div className="absolute inset-0 bg-[linear-gradient(180deg,#FAF8F2_0%,#FFFFFF_85%)]" />
+                < div className="absolute inset-0 z-0 bg-[linear-gradient(180deg,#FAF8F2_0%,#FFFFFF_85%)]" />
 
                 <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -888,17 +903,17 @@ export default function HomePage() {
                         >
                             <div className="rounded-[28px] overflow-hidden shadow-2xl ring-1 ring-black/10">
                                 <Image
-                                    src="https://res.cloudinary.com/dfrhrnwwi/image/upload/v1756339994/ai-render-6923122_k6pwhi.jpg"
+                                    src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5183.webp"
                                     alt="Gente compartiendo en BOA"
                                     width={800}
-                                    height={600}
+                                    height={800}
                                     className="object-cover"
                                 />
                             </div>
                         </motion.div>
                     </div>
                 </div>
-            </motion.section >
+            </RevealOnScroll >
 
         </section >
     );
@@ -1004,8 +1019,8 @@ function ExperiencesSlider({ items }: { items: ExpItem[] }) {
                                     className="object-cover"
                                 />
                                 {/* Viñeta + veladura cálida (para foto) */}
-                                <div className="absolute inset-0 bg-[radial-gradient(120%_70%_at_50%_80%,rgba(0,0,0,.35)_0%,rgba(0,0,0,.08)_55%,transparent_80%)]" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-boa-ink/40 via-boa-ink/10 to-transparent" />
+                                <div className="absolute inset-0 z-0 bg-[radial-gradient(120%_70%_at_50%_80%,rgba(0,0,0,.35)_0%,rgba(0,0,0,.08)_55%,transparent_80%)]" />
+                                <div className="absolute inset-0 z-0 bg-gradient-to-t from-boa-ink/40 via-boa-ink/10 to-transparent" />
 
                                 {/* Card editorial con mayor opacidad/contraste */}
                                 <div className="absolute inset-x-4 sm:inset-x-6 md:left-8 md:right-auto md:max-w-[560px] bottom-6 md:bottom-8">

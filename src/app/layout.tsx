@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
 import { Montserrat, Dancing_Script } from "next/font/google";
+import AuthHydrator from "./_auth-hydrator"; // 👈
 
 export const metadata: Metadata = {
     title: "BOA",
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 const montserrat = Montserrat({
     subsets: ["latin"],
     weight: ["400", "600", "700", "800", "900"],
-    variable: "--font-sans",   // 👈 alimenta a Tailwind (font-sans)
+    variable: "--font-sans",
     display: "swap",
 });
 
@@ -24,13 +25,14 @@ const dancing = Dancing_Script({
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="es" className={`${montserrat.variable} ${dancing.variable}`} suppressHydrationWarning>
-            <body
-                className="
-          min-h-dvh antialiased font-sans
-        "
-                suppressHydrationWarning
-            >
+        <html
+            lang="es"
+            className={`${montserrat.variable} ${dancing.variable}`}
+            suppressHydrationWarning
+        >
+            <body className="min-h-dvh antialiased font-sans" suppressHydrationWarning>
+                {/* Hidrata sesión una vez y mantiene suscripción */}
+                <AuthHydrator />
                 {children}
             </body>
         </html>

@@ -945,7 +945,7 @@ export default function AdminGiftcards() {
                                 </div>
 
                                 <div className="sm:col-span-2 grid gap-1">
-                                    <label className="text-sm">Imagen / Diseño (URL pública)</label>
+                                    <label className="text-sm">Imagen / Diseño (URL pública) <span className="text-red-500 font-semibold">NO TOCAR</span></label>
                                     <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." />
                                     <p className="text-xs text-neutral-500">Tip: subí tu diseño a Supabase Storage o Cloudinary y pegá la URL (WhatsApp mostrará el preview).</p>
                                 </div>

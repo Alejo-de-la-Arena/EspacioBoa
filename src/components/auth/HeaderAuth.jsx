@@ -8,15 +8,40 @@ export default function HeaderAuth() {
     const { user, loading } = useAuth();
 
     if (loading) {
-        return <div className="w-32 h-9 rounded-md bg-neutral-200 animate-pulse" />;
+        // En mobile ocupa el ancho completo, en desktop mantiene ancho fijo
+        return <div className="h-9 w-full md:w-32 rounded-md bg-neutral-200 animate-pulse" />;
     }
 
-    return user ? (
-        <UserMenu />      // 👈 sin props
-    ) : (
-        <div className="flex items-center gap-2">
-            <Link href="/login" className="px-3 py-1.5 rounded-md border">Iniciar sesión</Link>
-            <Link href="/register" className="px-3 py-1.5 rounded-md bg-boa-green text-white">Crear cuenta</Link>
+    if (user) {
+        return <UserMenu />; // sin cambios para usuarios logueados
+    }
+
+    // Invitado: botones full-width apilados en mobile, inline en desktop
+    return (
+        <div className="w-full flex flex-col gap-2 md:w-auto md:flex-row md:items-center md:gap-2">
+            <Link
+                href="/login"
+                className="
+          inline-flex justify-center items-center
+          w-full md:w-auto
+          px-3 py-2.5 md:py-2 rounded-md border
+          text-sm font-medium font-sans hover:bg-boa-green hover:border hover:border-white hover:text-white hover:font-semibold
+        "
+            >
+                Iniciar sesión
+            </Link>
+
+            <Link
+                href="/register"
+                className="
+          inline-flex justify-center items-center
+          w-full md:w-auto
+          px-3 py-2.5 md:py-2 rounded-md bg-boa-green text-white
+          text-sm font-medium font-sans hover:bg-white hover:border hover:border-boa-green hover:text-boa-green hover:font-semibold
+        "
+            >
+                Crear cuenta
+            </Link>
         </div>
     );
 }

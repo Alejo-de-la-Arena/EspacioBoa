@@ -2,8 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { mediaUrl } from "@/lib/mediaUrl";
-
+import { RevealOnScroll, REVEAL_PRESET_CYCLE } from "@/components/RevealOnScroll";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +52,37 @@ type SpaceItem = {
     | typeof Sparkles
     | typeof HeartHandshake;
 };
+
+/* ======= LQIP / Base64 helpers (scope de módulo) ======= */
+const toBase64 = (str: string) => {
+    if (typeof window === "undefined") {
+        // SSR (Node)
+        return Buffer.from(str).toString("base64");
+    }
+    // Browser
+    return window.btoa(unescape(encodeURIComponent(str)));
+};
+
+const shimmer = (w: number, h: number) => {
+    const svg = `
+    <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="g">
+          <stop stop-color="#f3f4f6" offset="20%"/>
+          <stop stop-color="#e5e7eb" offset="50%"/>
+          <stop stop-color="#f3f4f6" offset="70%"/>
+        </linearGradient>
+      </defs>
+      <rect width="${w}" height="${h}" fill="#f3f4f6"/>
+      <rect id="r" width="${w}" height="${h}" fill="url(#g)"/>
+      <animate xlink:href="#r" attributeName="x" from="-${w}" to="${w}" dur="1.2s" repeatCount="indefinite"/>
+    </svg>`;
+    return `data:image/svg+xml;base64,${toBase64(svg)}`;
+};
+
+// placeholder chico, súper liviano para <Image placeholder="blur" />
+const blurPlaceholder = shimmer(32, 20);
+
 
 /* --------------------------- Slider Reusable UI ------------------------- */
 type SliderProps = {
@@ -376,13 +408,13 @@ export default function SpacesPage() {
     }, [activeSpace]);
 
     // Alturas compartidas (slider y card) — mantener sync con CinematicSlider.aspectClass
-    const sharedHeight = "h-[74vw] sm:h-[60vw] lg:h-[clamp(520px,64vh,620px)] xl:h-[clamp(400px,60vh,500px)] 2xl:h-[clamp(550px,55vh,540px)]";
+    const sharedHeight = "h-[74vw] sm:h-[60vw] lg:h-[clamp(520px,64vh,620px)] xl:h-[clamp(520px,64vh,500px)] 2xl:h-[clamp(550px,55vh,540px)]";
 
 
     return (
         <section>
             {/* ===== SECCIÓN ESPACIOS ===== */}
-            <section id="espacios" className="relative py-14 sm:py-16">
+            <section id="espacios" className="relative pt-14 pb-40 sm:py-16">
 
                 <div className="absolute inset-0 -z-10">
                     <Image
@@ -417,18 +449,40 @@ export default function SpacesPage() {
                     {/* Filtro mobile (select) */}
                     <div className="lg:hidden mb-6">
                         <label className="sr-only" htmlFor="space-filter">Elegir espacio</label>
-                        <select
-                            id="space-filter"
-                            className="w-full rounded-2xl border border-neutral-300 px-4 py-3 font-medium bg-white/80 backdrop-blur"
-                            value={activeSpace}
-                            onChange={(e) => setActiveSpace(Number(e.target.value))}
-                        >
-                            {spaces.map((s, i) => (
-                                <option key={s.id ?? `space-${i}`} value={i}>
-                                    {s.name ?? `Espacio ${i + 1}`}
-                                </option>
-                            ))}
-                        </select>
+
+                        <Select value={String(activeSpace)} onValueChange={(v) => setActiveSpace(Number(v))}>
+                            <SelectTrigger
+                                id="space-filter"
+                                // ↑ el icono de shadcn rota solo con data-[state=open]
+                                className="
+        relative w-full rounded-2xl
+        min-h-[48px] py-3 px-4 pr-4
+        text-base bg-white/90 backdrop-blur
+        border border-neutral-300 ring-1 ring-black/5 shadow-sm
+        focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-300
+        data-[placeholder]:text-neutral-500
+      "
+                            >
+                                <SelectValue placeholder="Elegir espacio" />
+                            </SelectTrigger>
+
+                            <SelectContent className="rounded-xl border-neutral-200 shadow-xl max-h-[60vh] overflow-auto">
+                                {spaces.map((s, i) => (
+                                    <SelectItem
+                                        key={s.id ?? `space-${i}`}
+                                        value={String(i)}
+                                        className="
+            py-3 px-3 text-base
+            data-[state=checked]:bg-emerald-50 data-[state=checked]:text-emerald-700
+            hover:bg-neutral-50
+            border-b last:border-b-0 border-neutral-200
+          "
+                                    >
+                                        {s.name ?? `Espacio ${i + 1}`}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     {/* Selector horizontal (desktop/tablet) */}
@@ -477,43 +531,51 @@ export default function SpacesPage() {
                         </div>
 
                         {/* Card detalle */}
-                        <div className={`${sharedHeight} grid overflow-hidden`}>
+                        {/* Card detalle */}
+                        <div className={`${sharedHeight} grid overflow-visible`}>
                             <Card className="h-full border-0 rounded-[2rem] bg-gradient-to-br from-white/90 via-amber-50/60 to-emerald-50/60 backdrop-blur">
-                                <CardContent className="p-7 sm:p-8 h-full min-h-0 flex flex-col">
+                                <CardContent
+                                    className="
+        p-5 sm:p-8
+        h-full min-h-0 flex flex-col
+        overflow-y-auto lg:overflow-visible  /* evita que se corte en mobile */
+        [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+      "
+                                >
                                     {(active.icon || active.atmosphere) && (
-                                        <div className="flex items-center gap-2 text-emerald-700 mb-2">
-                                            {ActiveIcon ? <ActiveIcon className="h-5 w-5" /> : null}
-                                            {active.atmosphere ? <span className="text-sm font-medium">{active.atmosphere}</span> : null}
+                                        <div className="flex items-center gap-2 text-emerald-700 mb-1.5 sm:mb-2">
+                                            {ActiveIcon ? <ActiveIcon className="h-4 w-4 sm:h-5 sm:w-5" /> : null}
+                                            {active.atmosphere ? <span className="text-xs sm:text-sm font-medium">{active.atmosphere}</span> : null}
                                         </div>
                                     )}
 
-                                    <h2 className="font-sans text-4xl font-semibold text-neutral-900">
+                                    <h2 className="font-sans text-2xl sm:text-4xl font-semibold text-neutral-900 leading-tight">
                                         {active.name ?? "Espacio"}
                                     </h2>
 
                                     {active.description ? (
-                                        <p className="text-lg text-neutral-700 mt-2 mb-6 leading-relaxed">
+                                        <p className="text-sm sm:text-lg text-neutral-700 mt-2 mb-5 sm:mb-6 leading-relaxed">
                                             {active.description}
                                         </p>
                                     ) : <div className="mb-4" />}
 
                                     {(typeof active.capacity === "number" || active.atmosphere) && (
-                                        <div className="grid grid-cols-2 gap-6 mb-4">
+                                        <div className="grid grid-cols-2 gap-4 sm:gap-6 mb-4">
                                             {typeof active.capacity === "number" && (
                                                 <div className="flex items-center text-neutral-700">
-                                                    <Users className="h-5 w-5 mr-3 text-emerald-600" />
+                                                    <Users className="h-4 w-4 sm:h-5 sm:w-5 mr-2.5 sm:mr-3 text-emerald-600" />
                                                     <div>
-                                                        <div className="font-semibold">Capacidad</div>
-                                                        <div className="text-sm">{active.capacity} personas</div>
+                                                        <div className="font-semibold text-sm sm:text-base">Capacidad</div>
+                                                        <div className="text-xs sm:text-sm">{active.capacity} personas</div>
                                                     </div>
                                                 </div>
                                             )}
                                             {active.atmosphere && (
                                                 <div className="flex items-center text-neutral-700">
-                                                    <Sparkles className="h-5 w-5 mr-3 text-emerald-600" />
+                                                    <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 mr-2.5 sm:mr-3 text-emerald-600" />
                                                     <div>
-                                                        <div className="font-semibold">Ambiente</div>
-                                                        <div className="text-sm">{active.atmosphere}</div>
+                                                        <div className="font-semibold text-sm sm:text-base">Ambiente</div>
+                                                        <div className="text-xs sm:text-sm">{active.atmosphere}</div>
                                                     </div>
                                                 </div>
                                             )}
@@ -522,11 +584,11 @@ export default function SpacesPage() {
 
                                     {Array.isArray(active.features) && active.features.length > 0 && (
                                         <div className="mb-4">
-                                            <h3 className="font-semibold text-neutral-900 mb-2">Características</h3>
+                                            <h3 className="font-semibold text-neutral-900 mb-2 text-sm sm:text-base">Características</h3>
                                             <div className="grid grid-cols-2 gap-2">
                                                 {active.features.map((f, idx) => (
-                                                    <div key={idx} className="flex items-center text-sm text-neutral-700">
-                                                        <div className="w-2 h-2 bg-emerald-500 rounded-full mr-2" />
+                                                    <div key={idx} className="flex items-center text-xs sm:text-sm text-neutral-700">
+                                                        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-500 rounded-full mr-2" />
                                                         {f}
                                                     </div>
                                                 ))}
@@ -535,11 +597,11 @@ export default function SpacesPage() {
                                     )}
 
                                     {Array.isArray(active.bestFor) && active.bestFor.length > 0 && (
-                                        <div className="mb-6">
-                                            <h3 className="font-semibold text-neutral-900 mb-2">Ideal para</h3>
-                                            <div className="flex flex-wrap gap-2">
+                                        <div className="mb-5 sm:mb-6">
+                                            <h3 className="font-semibold text-neutral-900 mb-2 text-sm sm:text-base">Ideal para</h3>
+                                            <div className="flex flex-wrap gap-1.5 sm:gap-2">
                                                 {active.bestFor.map((use, idx) => (
-                                                    <Badge key={idx} variant="secondary" className="bg-emerald-100 text-emerald-700">
+                                                    <Badge key={idx} variant="secondary" className="bg-emerald-100 text-emerald-700 text-[11px] sm:text-xs">
                                                         {use}
                                                     </Badge>
                                                 ))}
@@ -547,18 +609,18 @@ export default function SpacesPage() {
                                         </div>
                                     )}
 
-                                    <div className="mt-auto flex flex-col sm:flex-row gap-3">
+                                    <div className="mt-auto flex flex-col sm:flex-row gap-2.5 sm:gap-3">
                                         <a href="#espacios" className="contents">
-                                            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white px-7 py-3 rounded-2xl">
+                                            <Button className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-6 sm:px-7 py-3 rounded-2xl text-sm sm:text-base">
                                                 Ver todos los espacios
                                             </Button>
                                         </a>
                                         <Link href="/contact">
                                             <Button
                                                 variant="outline"
-                                                className="bg-white hover:bg-neutral-50 px-7 py-3 rounded-2xl border-neutral-300 hover:border-emerald-300 hover:text-emerald-600"
+                                                className="w-full sm:w-auto bg-white hover:bg-neutral-50 px-6 sm:px-7 py-3 rounded-2xl border-neutral-300 hover:border-emerald-300 hover:text-emerald-600 text-sm sm:text-base"
                                             >
-                                                <Clock className="mr-2 h-5 w-5" />
+                                                <Clock className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                                                 Agendar visita
                                             </Button>
                                         </Link>
@@ -566,12 +628,13 @@ export default function SpacesPage() {
                                 </CardContent>
                             </Card>
                         </div>
+
                     </div>
                 </div>
             </section>
 
             {/* ===== TESTIMONIOS ===== */}
-            <section className="py-20 bg-white relative">
+            {/* <section className="py-20 bg-white relative">
                 <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-10">
                         <h2 className="font-sans text-4xl sm:text-5xl font-semibold text-neutral-900">Lo que dicen de BOA</h2>
@@ -618,15 +681,9 @@ export default function SpacesPage() {
                 </div>
 
                 <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-0 w-[90%] h-24 rounded-t-[2rem] bg-gradient-to-t from-emerald-100/40 to-transparent" />
-            </section>
+            </section> */}
         </section>
     );
 }
 
-/* Tailwind keyframes para el shimmer del hover (mover a globals.css si no lo tienes):
-@keyframes shimmer {
-  0%   { transform: translateX(-60%); opacity: .0; }
-  20%  { opacity: .9; }
-  100% { transform: translateX(60%); opacity: 0; }
-}
-*/
+

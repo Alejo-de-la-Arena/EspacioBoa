@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useApp } from "@/contexts/AppContext";
+import { RevealOnScroll, REVEAL_PRESET_CYCLE } from "@/components/RevealOnScroll";
 import { Button } from "@/components/ui/button";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
@@ -517,8 +518,8 @@ export default function EventsPage() {
                                                                     <Button
                                                                         size="sm"
                                                                         className={`rounded-full font-sans ${isPast || !(cap > 0 ? cap - (counts[String(event.id)] ?? event.enrolled ?? 0) > 0 : true)
-                                                                                ? "bg-neutral-400 hover:bg-neutral-400 cursor-not-allowed"
-                                                                                : "bg-emerald-600 hover:bg-emerald-700"
+                                                                            ? "bg-neutral-400 hover:bg-neutral-400 cursor-not-allowed"
+                                                                            : "bg-emerald-600 hover:bg-emerald-700"
                                                                             }`}
                                                                         disabled={isPast || !(cap > 0 ? cap - (counts[String(event.id)] ?? event.enrolled ?? 0) > 0 : true)}
                                                                     >

@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { RevealOnScroll, REVEAL_PRESET_CYCLE } from "@/components/RevealOnScroll";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,7 +40,7 @@ const RAW_POSTS: Post[] = [
         excerpt:
             "Una secuencia accesible para activar el cuerpo, despejar la mente y arrancar el día con energía.",
         image:
-            "https://images.unsplash.com/photo-1510894347713-fc3ed6fdf539?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+            "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5251.webp",
         category: "Bienestar",
         readTime: "10 min",
         featured: true,
@@ -52,7 +53,7 @@ const RAW_POSTS: Post[] = [
         excerpt:
             "Por qué crear arte ayuda a procesar emociones, reducir estrés y mejorar el bienestar mental.",
         image:
-            "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=1600&auto=format&fit=crop&q=80",
+            "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5527.webp",
         category: "Arte",
         readTime: "8 min",
         featured: true,
@@ -65,7 +66,7 @@ const RAW_POSTS: Post[] = [
         excerpt:
             "Estrategias simples para comer más despacio, reconocer saciedad y disfrutar la comida.",
         image:
-            "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1600&auto=format&fit=crop&q=80",
+            "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5605.webp",
         category: "Nutrición",
         readTime: "7 min",
         featured: true,
@@ -78,7 +79,7 @@ const RAW_POSTS: Post[] = [
         excerpt:
             "La definición de la SCA y qué significa para productores, tostadores y amantes del café.",
         image:
-            "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=1600&auto=format&fit=crop&q=80",
+            "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5266.webp",
         category: "Café",
         readTime: "6 min",
         featured: false,
@@ -144,12 +145,11 @@ export default function BlogPage() {
         <section>
             <main className="font-sans">
                 {/* ======================= HERO (nuevo — editorial split) ======================= */}
-                <motion.section
-                    initial="hidden"
-                    animate="visible"
-                    variants={container}
-                    className="relative isolate overflow-hidden py-16 sm:py-20"
-                >
+                <RevealOnScroll
+                    variant="tiltUp"
+                    className="relative isolate overflow-hidden py-16 sm:py-20">
+
+
                     <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="grid lg:grid-cols-12 gap-10 items-stretch">
                             {/* Columna texto */}
@@ -181,7 +181,7 @@ export default function BlogPage() {
                                     {/* alto */}
                                     <div className="col-span-2 row-span-2 relative rounded-3xl overflow-hidden ring-1 ring-boa-ink/10 shadow-xl">
                                         <Image
-                                            src="https://images.unsplash.com/photo-1631130650210-e3863c8d9f8d?q=80&w=1169&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                                            src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5210.webp"
                                             alt="Café de especialidad en mesa cálida"
                                             fill
                                             className="object-cover"
@@ -190,7 +190,7 @@ export default function BlogPage() {
                                     {/* dos piezas chicas */}
                                     <div className="relative rounded-3xl overflow-hidden ring-1 ring-boa-ink/10">
                                         <Image
-                                            src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=799&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                                            src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5420.webp"
                                             alt="Cuaderno y lápiz — escribir y crear"
                                             fill
                                             className="object-cover"
@@ -198,7 +198,7 @@ export default function BlogPage() {
                                     </div>
                                     <div className="relative rounded-3xl overflow-hidden ring-1 ring-boa-ink/10">
                                         <Image
-                                            src="https://res.cloudinary.com/dasch1s5i/image/upload/v1755904741/boa-bowl_v6wn6a.jpg"
+                                            src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5190.webp"
                                             alt="Charla entre amigos"
                                             fill
                                             className="object-cover"
@@ -212,11 +212,11 @@ export default function BlogPage() {
                     {/* halos suaves */}
                     <div className="pointer-events-none absolute -left-24 -bottom-24 w-[28rem] h-[28rem] rounded-full bg-boa-green/10 blur-3xl" />
                     <div className="pointer-events-none absolute -right-24 -top-24 w-[24rem] h-[24rem] rounded-full bg-boa-terra/12 blur-3xl" />
-                </motion.section>
+                </RevealOnScroll>
 
                 {/* ======================= DESTACADOS (magazine layout) ======================= */}
                 {featured.length > 0 && (
-                    <section className="relative py-14 overflow-hidden">
+                    <RevealOnScroll variant="zoomRotate" amount={0.2} className="relative py-14 overflow-hidden">
                         <div className="absolute inset-0 bg-[linear-gradient(180deg,#FEFCF7_0%,#FFFFFF_78%)]" />
                         <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                             <div className="text-center mb-8">
@@ -288,11 +288,11 @@ export default function BlogPage() {
                                 </div>
                             </div>
                         </div>
-                    </section>
+                    </RevealOnScroll>
                 )}
 
                 {/* ======================= FILTROS ======================= */}
-                <section className="py-8 border-y border-neutral-100 bg-white sticky top-0 z-20">
+                <section  className="py-8 border-y border-neutral-100 bg-white sticky top-0 z-20">
                     <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
                         <div className="flex items-center gap-2 text-neutral-600">
                             <Coffee className="h-5 w-5" />
@@ -318,7 +318,7 @@ export default function BlogPage() {
                 </section>
 
                 {/* ======================= LISTA (row cards – experiencia de lectura) ======================= */}
-                <section className="py-16 bg-white">
+                <RevealOnScroll className="py-16 bg-white">
                     <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         {posts.length === 0 ? (
                             <div className="text-center py-20 text-neutral-500">
@@ -372,10 +372,10 @@ export default function BlogPage() {
                             </ul>
                         )}
                     </div>
-                </section>
+                </RevealOnScroll>
 
                 {/* ======================= CTA NEWSLETTER ======================= */}
-                <section className="relative py-24 overflow-hidden">
+                <RevealOnScroll variant="tiltUp" className="relative py-24 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-neutral-900 to-emerald-800" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(16,185,129,0.1)_0%,transparent_50%)]" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(34,197,94,0.08)_0%,transparent_50%)]" />
@@ -438,7 +438,7 @@ export default function BlogPage() {
                             </div>
                         </div>
                     </div>
-                </section>
+                </RevealOnScroll>
             </main>
 
             {/* util local */}

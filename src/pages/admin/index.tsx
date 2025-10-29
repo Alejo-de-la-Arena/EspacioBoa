@@ -35,8 +35,8 @@ export default function AdminHome() {
 
     const cards = [
         { href: "/admin/activities", title: "Administrar Actividades", desc: "Crear, editar y eliminar actividades." },
-        { href: "/admin/events", title: "Administrar Eventos", desc: "CRUD de eventos. (Próximamente)" },
-        { href: "/admin/giftcards", title: "Administrar Giftcards", desc: "CRUD de giftcards. (Próximamente)" },
+        { href: "/admin/events", title: "Administrar Eventos", desc: "Crear, editar y eliminar eventos." },
+        { href: "/admin/giftcards", title: "Administrar Giftcards", desc: "Crear, copiar, descargar, editar y eliminar giftcards" },
     ];
 
     return (

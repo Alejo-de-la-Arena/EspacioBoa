@@ -1,8 +1,10 @@
 // pages/giftcards/index.tsx
 import { useApp } from "@/contexts/AppContext";
+import { RevealOnScroll, REVEAL_PRESET_CYCLE } from "@/components/RevealOnScroll";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { GiftCardCard } from "@/components/GiftCardCard";
 import { ArrowRight } from "lucide-react";
 
 
@@ -76,37 +78,7 @@ export default function GiftCardsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
                         {list.map((gc: any, i: number) => (
                             <motion.div key={`${gc.id ?? gc.name}-${i}`} variants={item} whileHover={{ y: -6 }}>
-                                <GiftCardShell>
-                                    <div className="p-7 sm:p-8 relative z-10">
-                                        <h3 className="text-xl sm:text-2xl font-extrabold text-neutral-900 mb-1">{gc.name}</h3>
-                                        <p className="text-neutral-700 mb-5">{gc.description}</p>
-
-
-                                        <div className="text-2xl sm:text-3xl font-extrabold text-neutral-900 mb-5">
-                                            ${Number(gc.value ?? 0).toLocaleString()}
-                                        </div>
-
-
-                                        <ul className="space-y-2 text-sm text-neutral-800 mb-6">
-                                            {(gc.benefits ?? []).slice(0, 3).map((b: string, j: number) => (
-                                                <li key={j} className="flex items-center gap-2">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-boa-green" />
-                                                    {b}
-                                                </li>
-                                            ))}
-                                        </ul>
-
-
-                                        <Link
-                                            href="https://wa.me/5491112345678"
-                                            target="_blank"
-                                            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold bg-boa-green text-white hover:bg-boa-green/90 transition"
-                                        >
-                                            Coordinar por WhatsApp
-                                            <ArrowRight className="h-4 w-4" />
-                                        </Link>
-                                    </div>
-                                </GiftCardShell>
+                                <GiftCardCard gc={gc} />
                             </motion.div>
                         ))}
                     </div>

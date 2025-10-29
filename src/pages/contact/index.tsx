@@ -1,12 +1,10 @@
 "use client";
 
-
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { RevealOnScroll, REVEAL_PRESET_CYCLE } from "@/components/RevealOnScroll";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -17,69 +15,110 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
-
-// Marca (fallbacks)
 import { MdLocalPhone } from "react-icons/md";
 import { SiGmail } from "react-icons/si";
 import { FaWhatsapp, FaInstagram } from "react-icons/fa6";
-
-
 import { MapPin, ArrowUpRight, Mail } from "lucide-react";
 
-
-// ======= Defaults (podés cambiarlos sin tocar más código) =======
+// ======= Defaults =======
 const DEFAULT_BG_URL =
-    // referencia: papel/grano muy sutil
     "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1600&auto=format&fit=crop";
-const DEFAULT_BG_OPACITY = 0.06; // 6% (muy tenue)
-
+const DEFAULT_BG_OPACITY = 0.06;
 
 const DEFAULT_ICON_URLS = {
-    phone: "", // vacío => usa fallback vector (MdLocalPhone)
-    gmail: "https://cdn.simpleicons.org/gmail", // color oficial (SVG)
+    phone: "",
+    gmail: "https://cdn.simpleicons.org/gmail",
     whatsapp: "https://cdn.simpleicons.org/whatsapp",
     instagram: "https://cdn.simpleicons.org/instagram",
 };
 
+type FormData = {
+    name: string;
+    email: string;
+    phone: string;
+    subject: string;
+    message: string;
+    website?: string; // honeypot (oculto)
+};
+
+type FormErrors = Partial<Record<keyof FormData, string>>;
 
 export default function ContactPage() {
-    // ======= Controles visuales (inputs) =======
+    // ======= Controles visuales =======
     const [bgUrl, setBgUrl] = useState<string>(DEFAULT_BG_URL);
     const [bgOpacity, setBgOpacity] = useState<number>(DEFAULT_BG_OPACITY);
-
-
     const [iconUrls, setIconUrls] = useState<Record<"phone" | "gmail" | "whatsapp" | "instagram", string>>({
         ...DEFAULT_ICON_URLS,
     });
 
-
-    const [showStylePanel, setShowStylePanel] = useState<boolean>(true); // dejalo true para editar fácil
-
-
     // ======= Form =======
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<FormData>({
         name: "",
         email: "",
         phone: "",
         subject: "",
         message: "",
+        website: "", // honeypot
     });
+    const [errors, setErrors] = useState<FormErrors>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [status, setStatus] = useState<null | { type: "success" | "error"; msg: string }>(null);
 
+    const validate = (data: FormData): FormErrors => {
+        const e: FormErrors = {};
+        if (!data.name?.trim() || data.name.trim().length < 2) e.name = "Decinos tu nombre (mín. 2 caracteres).";
+        const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email);
+        if (!emailOk) e.email = "Ingresá un email válido.";
+        if (!data.subject) e.subject = "Elegí un tema.";
+        if (!data.message?.trim() || data.message.trim().length < 10)
+            e.message = "Contanos un poco más (mín. 10 caracteres).";
+        // Honeypot: si viene con algo, es bot
+        if (data.website && data.website.trim() !== "") e.website = "Bot detectado.";
+        return e;
+    };
+
+    const handleInputChange = (field: keyof FormData, value: string) => {
+        setFormData((p) => ({ ...p, [field]: value }));
+        // limpiar error on change
+        setErrors((prev) => ({ ...prev, [field]: undefined }));
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsSubmitting(true);
-        await new Promise((r) => setTimeout(r, 1000));
-        alert("¡Gracias! Te respondemos dentro de las próximas 24 horas.");
-        setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
-        setIsSubmitting(false);
+        setStatus(null);
+        const v = validate(formData);
+        setErrors(v);
+        if (Object.keys(v).length > 0) return;
+
+        try {
+            setIsSubmitting(true);
+            const res = await fetch("/api/contact", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: formData.name.trim(),
+                    email: formData.email.trim(),
+                    phone: formData.phone.trim(),
+                    subject: formData.subject,
+                    message: formData.message.trim(),
+                    // metadata adicional que puede servir
+                    source: "contact-page",
+                }),
+            });
+
+            if (!res.ok) {
+                const j = await res.json().catch(() => ({}));
+                throw new Error(j?.message || "No pudimos enviar tu mensaje.");
+            }
+
+            setStatus({ type: "success", msg: "¡Gracias! Te respondemos dentro de las próximas 24 horas." });
+            setFormData({ name: "", email: "", phone: "", subject: "", message: "", website: "" });
+        } catch (err: any) {
+            setStatus({ type: "error", msg: err?.message || "Ocurrió un error al enviar. Probá de nuevo." });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
-
-
-    const handleInputChange = (field: string, value: string) =>
-        setFormData((p) => ({ ...p, [field]: value }));
-
 
     // ======= Cards =======
     const contactMethods = useMemo(
@@ -136,12 +175,10 @@ export default function ContactPage() {
         [iconUrls]
     );
 
-
     return (
         <section>
-            {/* Wrapper global con font-sans + background imagen MUY tenue */}
             <div className="relative font-sans">
-                {/* Capa de imagen (editable) */}
+                {/* BG tenue */}
                 <div
                     aria-hidden
                     className="pointer-events-none absolute inset-0 -z-10"
@@ -152,7 +189,6 @@ export default function ContactPage() {
                         opacity: bgOpacity,
                     }}
                 />
-                {/* Capa de textura/gradiente que ya tenías */}
                 <div
                     aria-hidden
                     className="pointer-events-none absolute inset-0 -z-10"
@@ -161,9 +197,6 @@ export default function ContactPage() {
                             "radial-gradient(800px 400px at 10% 10%, rgba(16,185,129,.12), transparent 60%), radial-gradient(600px 300px at 90% 20%, rgba(2,6,23,.06), transparent 60%)",
                     }}
                 />
-
-
-
 
                 {/* ======== CARDS DE CONTACTO ======== */}
                 <section className="relative py-12 sm:py-14">
@@ -183,31 +216,18 @@ export default function ContactPage() {
                                         transition={{ duration: 0.35, delay: i * 0.05 }}
                                         className={`no-underline ${m.span} group`}
                                     >
-                                        <Card
-                                            className={`border-0 shadow-lg hover:shadow-xl transition-all duration-300 ${m.skew}`}
-                                        >
+                                        <Card className={`border-0 shadow-lg hover:shadow-xl transition-all duration-300 ${m.skew}`}>
                                             <CardContent className="p-6 text-center">
                                                 <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/75 text-emerald-700 flex items-center justify-center group-hover:scale-105 transition overflow-hidden">
                                                     {m.img ? (
-                                                        <img
-                                                            src={m.img}
-                                                            alt={`${m.title} icon`}
-                                                            className="h-8 w-8 object-contain"
-                                                            loading="lazy"
-                                                        />
+                                                        <img src={m.img} alt={`${m.title} icon`} className="h-8 w-8 object-contain" loading="lazy" />
                                                     ) : (
                                                         <IconFallback className="h-8 w-8" />
                                                     )}
                                                 </div>
-                                                <h3 className="font-semibold text-neutral-900 mb-1">
-                                                    {m.title}
-                                                </h3>
-                                                <p className="text-lg font-medium text-emerald-700">
-                                                    {m.details}
-                                                </p>
-                                                <p className="text-sm text-neutral-600 mt-1">
-                                                    {m.description}
-                                                </p>
+                                                <h3 className="font-semibold text-neutral-900 mb-1">{m.title}</h3>
+                                                <p className="text-lg font-medium text-emerald-700">{m.details}</p>
+                                                <p className="text-sm text-neutral-600 mt-1">{m.description}</p>
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
@@ -224,7 +244,6 @@ export default function ContactPage() {
                     </div>
                 </section>
 
-
                 {/* ======== FORM + MAPA ======== */}
                 <section className="py-12 bg-neutral-50">
                     <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -235,18 +254,37 @@ export default function ContactPage() {
                                     <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700">
                                         <Mail className="h-5 w-5" />
                                     </span>
-                                    <h2 className="text-2xl sm:text-3xl font-semibold text-neutral-900">
-                                        Escribinos
-                                    </h2>
+                                    <h2 className="text-2xl sm:text-3xl font-semibold text-neutral-900">Escribinos</h2>
                                 </div>
-                                <p className="mt-3 text-neutral-600">
-                                    Contanos en qué te ayudamos.
-                                </p>
+                                <p className="mt-3 text-neutral-600">Contanos en qué te ayudamos.</p>
                             </CardHeader>
 
-
                             <CardContent className="space-y-6 pt-6">
-                                <form onSubmit={handleSubmit} className="space-y-6">
+                                {/* Alertas globales */}
+                                {status && (
+                                    <div
+                                        role="alert"
+                                        className={`rounded-xl px-4 py-3 text-sm ${status.type === "success"
+                                            ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                            : "bg-rose-50 text-rose-800 border border-rose-200"
+                                            }`}
+                                    >
+                                        {status.msg}
+                                    </div>
+                                )}
+
+                                <form onSubmit={handleSubmit} noValidate className="space-y-6">
+                                    {/* Honeypot */}
+                                    <input
+                                        type="text"
+                                        name="website"
+                                        value={formData.website}
+                                        onChange={(e) => handleInputChange("website", e.target.value)}
+                                        className="hidden"
+                                        tabIndex={-1}
+                                        autoComplete="off"
+                                    />
+
                                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
                                         <div className="sm:col-span-6">
                                             <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -257,30 +295,39 @@ export default function ContactPage() {
                                                 onChange={(e) => handleInputChange("name", e.target.value)}
                                                 placeholder="Tu nombre"
                                                 required
-                                                className="rounded-xl"
+                                                className={`rounded-xl ${errors.name ? "ring-2 ring-rose-300" : ""}`}
+                                                aria-invalid={!!errors.name}
+                                                aria-describedby={errors.name ? "err-name" : undefined}
                                             />
+                                            {errors.name && (
+                                                <p id="err-name" className="mt-1 text-xs text-rose-600">
+                                                    {errors.name}
+                                                </p>
+                                            )}
                                         </div>
                                         <div className="sm:col-span-6">
-                                            <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                                Email *
-                                            </label>
+                                            <label className="block text-sm font-medium text-neutral-700 mb-2">Email *</label>
                                             <Input
                                                 type="email"
                                                 value={formData.email}
                                                 onChange={(e) => handleInputChange("email", e.target.value)}
                                                 placeholder="tu@email.com"
                                                 required
-                                                className="rounded-xl"
+                                                className={`rounded-xl ${errors.email ? "ring-2 ring-rose-300" : ""}`}
+                                                aria-invalid={!!errors.email}
+                                                aria-describedby={errors.email ? "err-email" : undefined}
                                             />
+                                            {errors.email && (
+                                                <p id="err-email" className="mt-1 text-xs text-rose-600">
+                                                    {errors.email}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
 
-
                                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
                                         <div className="sm:col-span-6">
-                                            <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                                Teléfono
-                                            </label>
+                                            <label className="block text-sm font-medium text-neutral-700 mb-2">Teléfono</label>
                                             <Input
                                                 type="tel"
                                                 value={formData.phone}
@@ -290,60 +337,58 @@ export default function ContactPage() {
                                             />
                                         </div>
                                         <div className="sm:col-span-6">
-                                            <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                                Asunto *
-                                            </label>
+                                            <label className="block text-sm font-medium text-neutral-700 mb-2">Asunto *</label>
                                             <Select
                                                 value={formData.subject}
-                                                onValueChange={(value) =>
-                                                    handleInputChange("subject", value)
-                                                }
+                                                onValueChange={(value) => handleInputChange("subject", value)}
                                             >
-                                                <SelectTrigger className="rounded-xl">
+                                                <SelectTrigger
+                                                    className={`rounded-xl ${errors.subject ? "ring-2 ring-rose-300" : ""}`}
+                                                    aria-invalid={!!errors.subject}
+                                                    aria-describedby={errors.subject ? "err-subject" : undefined}
+                                                >
                                                     <SelectValue placeholder="Seleccioná un tema" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="Actividades y talleres">
-                                                        Actividades
-                                                    </SelectItem>
-                                                    <SelectItem value="Eventos privados">
-                                                        Eventos
-                                                    </SelectItem>
-                                                    <SelectItem value="Reserva de espacios">
-                                                        Reserva de espacios
-                                                    </SelectItem>
-                                                    <SelectItem value="Menú y alimentación">
-                                                        Gastronomía
-                                                    </SelectItem>
-                                                    <SelectItem value="Colaboraciones">
-                                                        Colaboraciones
-                                                    </SelectItem>
+                                                    <SelectItem value="Actividades y talleres">Actividades</SelectItem>
+                                                    <SelectItem value="Eventos privados">Eventos</SelectItem>
+                                                    <SelectItem value="Reserva de espacios">Reserva de espacios</SelectItem>
+                                                    <SelectItem value="Menú y alimentación">Gastronomía</SelectItem>
+                                                    <SelectItem value="Colaboraciones">Colaboraciones</SelectItem>
                                                     <SelectItem value="Sugerencias">Sugerencias</SelectItem>
                                                 </SelectContent>
                                             </Select>
+                                            {errors.subject && (
+                                                <p id="err-subject" className="mt-1 text-xs text-rose-600">
+                                                    {errors.subject}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
 
-
                                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
                                         <div className="sm:col-span-12">
-                                            <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                                Mensaje *
-                                            </label>
+                                            <label className="block text-sm font-medium text-neutral-700 mb-2">Mensaje *</label>
                                             <Textarea
                                                 value={formData.message}
                                                 onChange={(e) => handleInputChange("message", e.target.value)}
                                                 placeholder="¿Qué te gustaría hacer en BOA? Compartinos fecha, cantidad de personas y necesidades especiales."
                                                 rows={5}
                                                 required
-                                                className="rounded-xl"
+                                                className={`rounded-xl ${errors.message ? "ring-2 ring-rose-300" : ""}`}
+                                                aria-invalid={!!errors.message}
+                                                aria-describedby={errors.message ? "err-message" : undefined}
                                             />
+                                            {errors.message && (
+                                                <p id="err-message" className="mt-1 text-xs text-rose-600">
+                                                    {errors.message}
+                                                </p>
+                                            )}
                                             <p className="mt-2 text-xs text-neutral-500">
                                                 Si es urgente, escribinos por WhatsApp y te respondemos más rápido.
                                             </p>
                                         </div>
                                     </div>
-
 
                                     <Button
                                         type="submit"
@@ -364,8 +409,7 @@ export default function ContactPage() {
                             </CardContent>
                         </Card>
 
-
-                        {/* Mapa */}
+                        {/* MAPA */}
                         <Card className="border-0 shadow-lg bg-white">
                             <CardContent className="p-8">
                                 <div className="flex items-start gap-4 mb-6">
@@ -373,9 +417,7 @@ export default function ContactPage() {
                                         <MapPin className="h-6 w-6" />
                                     </div>
                                     <div className="flex-1">
-                                        <h3 className="text-xl font-semibold text-neutral-900 mb-2">
-                                            Ubicación
-                                        </h3>
+                                        <h3 className="text-xl font-semibold text-neutral-900 mb-2">Ubicación</h3>
                                         <p className="text-neutral-600 mb-4">
                                             Juncal 399
                                             <br />
@@ -383,7 +425,6 @@ export default function ContactPage() {
                                         </p>
                                     </div>
                                 </div>
-
 
                                 <div className="w-full rounded-xl overflow-hidden border border-neutral-200">
                                     <iframe
@@ -404,6 +445,3 @@ export default function ContactPage() {
         </section>
     );
 }
-
-
-

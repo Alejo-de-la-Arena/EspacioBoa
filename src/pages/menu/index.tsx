@@ -9,10 +9,7 @@ import { Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { X, Leaf, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-
-
-
+import { RevealOnScroll, REVEAL_PRESET_CYCLE } from "@/components/RevealOnScroll";
 import rawImages from "@/data/images.json";
 type ImagesJSON = {
     categories: Record<string, string>;
@@ -859,14 +856,9 @@ export default function MenuPage() {
         >
             {/* HERO */}
             <section aria-labelledby="boa-hero" className="relative z-10">
-                <motion.div
+                <RevealOnScroll
                     className="container mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-12 text-center"
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                        duration: 0.8,
-                        ease: [0.25, 0.1, 0.25, 1],
-                    }}
+                    variant="zoomRotate" amount={0.2}
                 >
                     <h1
                         id="boa-hero"
@@ -923,7 +915,7 @@ export default function MenuPage() {
                             Ver el menú
                         </a>
                     </motion.div>
-                </motion.div>
+                </RevealOnScroll>
             </section>
 
 
