@@ -252,7 +252,7 @@ export default function LoginView() {
 
                                 <div className="text-right">
                                     <Link
-                                        href="/reset"
+                                        href="/forgot-password"
                                         className="text-sm underline underline-offset-4 text-neutral-900 hover:text-neutral-700"
                                     >
                                         ¿Olvidaste tu contraseña?

@@ -150,12 +150,9 @@ export default function AboutPage() {
                     <div className="container mx-auto max-w-6xl px-4">
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-10 items-start">
                             {/* Texto */}
-                            <motion.div
+                            <RevealOnScroll
+                                variant="tiltUp" amount={0.3}
                                 className="md:col-span-2"
-                                variants={stagger}
-                                initial="hidden"
-                                whileInView="visible"
-                                viewport={{ once: true, amount: 0.2 }}
                             >
                                 <motion.div variants={fadeUp} className="flex items-center gap-2">
                                     <span className="inline-block h-2 w-2 rounded-full bg-emerald-600" />
@@ -182,11 +179,11 @@ export default function AboutPage() {
                                         Todo en uno, sin pose.
                                     </span>
                                 </motion.p>
-                            </motion.div>
+                            </RevealOnScroll>
 
 
                             {/* Galería */}
-                            <div className="md:col-span-3">
+                            <RevealOnScroll variant="zoomRotate" amount={0.3} className="md:col-span-3">
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-2">
                                         <Camera className="h-5 w-5 text-emerald-700" />
@@ -227,7 +224,7 @@ export default function AboutPage() {
                                         );
                                     })}
                                 </motion.div>
-                            </div>
+                            </RevealOnScroll>
 
                         </div>
                     </div>
@@ -239,12 +236,9 @@ export default function AboutPage() {
                     <div className="container mx-auto max-w-6xl px-4">
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-10 items-center">
                             {/* Texto izquierdo (lead + pilares + micro-manifiesto) */}
-                            <motion.div
+                            <RevealOnScroll
+                                variant="blurRise" amount={0.3}
                                 className="md:col-span-3"
-                                variants={stagger}
-                                initial="hidden"
-                                whileInView="visible"
-                                viewport={{ once: true, amount: 0.25 }}
                             >
                                 <motion.div variants={fadeUp} className="flex items-center gap-2">
                                     <span className="inline-block h-2 w-2 rounded-full bg-emerald-600" />
@@ -295,66 +289,74 @@ export default function AboutPage() {
                                         Si te vas con el corazón un poco más liviano, hicimos bien nuestro trabajo.”
                                     </p>
                                 </motion.div>
-                            </motion.div>
+                            </RevealOnScroll>
 
-                            {/* Imagen/collage derecho (más editorial) */}
-                            <motion.div
+
+                            <RevealOnScroll
+                                as="div"
+                                variant="pop"
+                                amount={0.28}
                                 className="md:col-span-2"
-                                initial={{ opacity: 0, y: 8 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, amount: 0.3 }}
+                                style={{ overflow: "visible", contain: "none" }}
                             >
-                                <div className="relative">
-                                    {/* marco principal */}
-                                    <div className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
-                                        <Image
-                                            src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5407.webp"
-                                            alt="Mesa larga con café y plantas"
-                                            width={1200}
-                                            height={900}
-                                            className="object-cover w-full h-[360px]"
-                                            priority
-                                        />
-                                        {/* velo suave */}
-                                        <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/10 to-transparent" />
-                                    </div>
-
-                                    {/* tarjetita flotante */}
-                                    <div className="absolute -bottom-5 -left-4 sm:-left-6">
-                                        <div className="rounded-2xl bg-white shadow-lg border border-neutral-200 px-4 py-3 flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center ring-1 ring-emerald-100">
-                                                <Coffee className="h-5 w-5" />
-                                            </div>
-                                            <div className="leading-tight">
-                                                <div className="text-sm font-semibold text-neutral-900">Desde 2025</div>
-                                                <div className="text-xs text-neutral-500">Martínez, Buenos Aires</div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* mini collage lateral */}
-                                    <div className="hidden sm:flex flex-col gap-3 absolute -right-6 top-6 w-28">
-                                        <div className="rounded-2xl overflow-hidden border border-neutral-200 shadow-sm">
-                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                            <img
-                                                src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5327.webp"
-                                                alt="Detalle en barra"
-                                                className="w-full h-28 object-cover"
-                                                loading="lazy"
+                                <motion.div
+                                    className="md:col-span-2"
+                                    initial={{ opacity: 0, y: 8 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true, amount: 0.3 }}
+                                >
+                                    <div className="relative">
+                                        {/* marco principal */}
+                                        <div className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
+                                            <Image
+                                                src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5407.webp"
+                                                alt="Mesa larga con café y plantas"
+                                                width={1200}
+                                                height={900}
+                                                className="object-cover w-full h-[360px]"
+                                                priority
                                             />
+                                            {/* velo suave */}
+                                            <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/10 to-transparent" />
                                         </div>
-                                        <div className="rounded-2xl overflow-hidden border border-neutral-200 shadow-sm">
-                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                            <img
-                                                src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5284.webp"
-                                                alt="Plantas y luz"
-                                                className="w-full h-28 object-cover"
-                                                loading="lazy"
-                                            />
+
+                                        {/* tarjetita flotante */}
+                                        <div className="absolute -bottom-5 -left-4 sm:-left-6">
+                                            <div className="rounded-2xl bg-white shadow-lg border border-neutral-200 px-4 py-3 flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center ring-1 ring-emerald-100">
+                                                    <Coffee className="h-5 w-5" />
+                                                </div>
+                                                <div className="leading-tight">
+                                                    <div className="text-sm font-semibold text-neutral-900">Desde 2025</div>
+                                                    <div className="text-xs text-neutral-500">Martínez, Buenos Aires</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* mini collage lateral */}
+                                        <div className="hidden sm:flex flex-col gap-3 absolute -right-6 top-6 w-28">
+                                            <div className="rounded-2xl overflow-hidden border border-neutral-200 shadow-sm">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5327.webp"
+                                                    alt="Detalle en barra"
+                                                    className="w-full h-28 object-cover"
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                            <div className="rounded-2xl overflow-hidden border border-neutral-200 shadow-sm">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5284.webp"
+                                                    alt="Plantas y luz"
+                                                    className="w-full h-28 object-cover"
+                                                    loading="lazy"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </motion.div>
+                                </motion.div>
+                            </RevealOnScroll>
                         </div>
                     </div>
                 </SectionSurface>
@@ -362,7 +364,12 @@ export default function AboutPage() {
 
 
                 {/* ===== (NUEVO) VOCES DE LA COMUNIDAD — Testimonios ===== */}
-                <section className="py-16 bg-neutral-50">
+                <RevealOnScroll
+                    as="section"
+                    variant="zoomRotate"
+                    amount={0.22}
+                    className="py-16 bg-neutral-50"
+                >
                     <div className="container max-w-6xl mx-auto px-4">
                         <div className="text-center max-w-3xl mx-auto mb-10">
                             <h2 className="font-sans text-3xl sm:text-4xl font-extrabold text-neutral-900 mb-3">
@@ -411,106 +418,37 @@ export default function AboutPage() {
                             ))}
                         </div>
                     </div>
-                </section>
+                </RevealOnScroll>
 
 
                 {/* ===== 3) EQUIPO ===== */}
                 <SectionSurface className="py-16">
-                    <div className="container mx-auto max-w-6xl px-4">
-                        <div className="text-center">
-                            <h2 className="text-3xl md:text-4xl font-extrabold text-neutral-900">
-                                Nuestro equipo
-                            </h2>
-                            <div className="flex justify-center">
-                                <BrushUnderline className="mt-2" />
-                            </div>
-                        </div>
-
-
-                        <div className="mt-8 relative overflow-visible">
-                            {/* Flechas laterales (afuera del card) */}
-                            <Button
-                                onClick={prev}
-                                variant="outline"
-                                size="icon"
-                                className="hidden md:flex absolute -left-14 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white text-neutral-700 border border-neutral-200 shadow-md hover:bg-neutral-50 z-20"
-                                aria-label="Anterior"
-                            >
-                                <ChevronLeft className="h-5 w-5" />
-                            </Button>
-                            <Button
-                                onClick={next}
-                                variant="outline"
-                                size="icon"
-                                className="hidden md:flex absolute -right-14 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white text-neutral-700 border border-neutral-200 shadow-md hover:bg-neutral-50 z-20"
-                                aria-label="Siguiente"
-                            >
-                                <ChevronRight className="h-5 w-5" />
-                            </Button>
-
-
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={idx}
-                                    initial={{ opacity: 0, y: 8 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -8 }}
-                                    transition={{ duration: 0.28 }}
-                                    whileHover={{ rotate: -0.3 }}
-                                >
-                                    <Card className="rounded-2xl border-neutral-200 overflow-hidden bg-white">
-                                        <CardContent className="p-0">
-                                            <div className="grid grid-cols-12">
-                                                <div className="col-span-12 md:col-span-5 relative h-[260px] md:h-[380px]">
-                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                    <img
-                                                        src={team[idx].image}
-                                                        alt={team[idx].name}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-                                                </div>
-                                                <div className="col-span-12 md:col-span-7 p-6 md:p-10 flex flex-col justify-center">
-                                                    <h3 className="text-2xl md:text-4xl font-extrabold text-neutral-900">
-                                                        {team[idx].name}
-                                                    </h3>
-                                                    <p className="mt-1 md:mt-3 text-emerald-700 font-semibold text-lg md:text-xl">
-                                                        {team[idx].role}
-                                                    </p>
-                                                    <p className="mt-4 text-neutral-700 leading-relaxed text-base md:text-lg">
-                                                        {team[idx].bio}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </motion.div>
-                            </AnimatePresence>
-
-
-                            {/* Dots */}
-                            <div className="mt-4 flex justify-center gap-2">
-                                {team.map((_, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={() => setIdx(i)}
-                                        className={`h-2.5 w-2.5 rounded-full transition ${i === idx
-                                            ? "bg-emerald-600 scale-110"
-                                            : "bg-neutral-300 hover:bg-neutral-400"
-                                            }`}
-                                        aria-label={`Miembro ${i + 1}`}
-                                    />
-                                ))}
+                    <RevealOnScroll
+                        as="div"
+                        variant="zoomRotate"
+                        amount={0.25}
+                        className=""
+                    // si algún elemento se sale a los costados, permite overflow:
+                    // style={{ overflow: "visible", contain: "none" }}
+                    >
+                        <div className="container mx-auto max-w-6xl px-4">
+                            <div className="text-center">
+                                <h2 className="text-3xl md:text-4xl font-extrabold text-neutral-900">
+                                    Nuestro equipo
+                                </h2>
+                                <div className="flex justify-center">
+                                    <BrushUnderline className="mt-2" />
+                                </div>
                             </div>
 
 
-                            {/* Flechas en mobile, debajo */}
-                            <div className="mt-4 flex md:hidden justify-center gap-2">
+                            <div className="mt-8 relative overflow-visible">
+                                {/* Flechas laterales (afuera del card) */}
                                 <Button
                                     onClick={prev}
                                     variant="outline"
                                     size="icon"
-                                    className="rounded-full border-neutral-200"
+                                    className="hidden md:flex absolute -left-14 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white text-neutral-700 border border-neutral-200 shadow-md hover:bg-neutral-50 z-20"
                                     aria-label="Anterior"
                                 >
                                     <ChevronLeft className="h-5 w-5" />
@@ -519,14 +457,92 @@ export default function AboutPage() {
                                     onClick={next}
                                     variant="outline"
                                     size="icon"
-                                    className="rounded-full border-neutral-200"
+                                    className="hidden md:flex absolute -right-14 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white text-neutral-700 border border-neutral-200 shadow-md hover:bg-neutral-50 z-20"
                                     aria-label="Siguiente"
                                 >
                                     <ChevronRight className="h-5 w-5" />
                                 </Button>
+
+
+                                <AnimatePresence mode="wait">
+                                    <motion.div
+                                        key={idx}
+                                        initial={{ opacity: 0, y: 8 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -8 }}
+                                        transition={{ duration: 0.28 }}
+                                        whileHover={{ rotate: -0.3 }}
+                                    >
+                                        <Card className="rounded-2xl border-neutral-200 overflow-hidden bg-white">
+                                            <CardContent className="p-0">
+                                                <div className="grid grid-cols-12">
+                                                    <div className="col-span-12 md:col-span-5 relative h-[260px] md:h-[380px]">
+                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                        <img
+                                                            src={team[idx].image}
+                                                            alt={team[idx].name}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+                                                    </div>
+                                                    <div className="col-span-12 md:col-span-7 p-6 md:p-10 flex flex-col justify-center">
+                                                        <h3 className="text-2xl md:text-4xl font-extrabold text-neutral-900">
+                                                            {team[idx].name}
+                                                        </h3>
+                                                        <p className="mt-1 md:mt-3 text-emerald-700 font-semibold text-lg md:text-xl">
+                                                            {team[idx].role}
+                                                        </p>
+                                                        <p className="mt-4 text-neutral-700 leading-relaxed text-base md:text-lg">
+                                                            {team[idx].bio}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </motion.div>
+                                </AnimatePresence>
+
+
+                                {/* Dots */}
+                                <div className="mt-4 flex justify-center gap-2">
+                                    {team.map((_, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => setIdx(i)}
+                                            className={`h-2.5 w-2.5 rounded-full transition ${i === idx
+                                                ? "bg-emerald-600 scale-110"
+                                                : "bg-neutral-300 hover:bg-neutral-400"
+                                                }`}
+                                            aria-label={`Miembro ${i + 1}`}
+                                        />
+                                    ))}
+                                </div>
+
+
+                                {/* Flechas en mobile, debajo */}
+                                <div className="mt-4 flex md:hidden justify-center gap-2">
+                                    <Button
+                                        onClick={prev}
+                                        variant="outline"
+                                        size="icon"
+                                        className="rounded-full border-neutral-200"
+                                        aria-label="Anterior"
+                                    >
+                                        <ChevronLeft className="h-5 w-5" />
+                                    </Button>
+                                    <Button
+                                        onClick={next}
+                                        variant="outline"
+                                        size="icon"
+                                        className="rounded-full border-neutral-200"
+                                        aria-label="Siguiente"
+                                    >
+                                        <ChevronRight className="h-5 w-5" />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </RevealOnScroll>
                 </SectionSurface>
             </div>
 

@@ -9,6 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+/* =========================================================
+   Tipos
+   ========================================================= */
 type GiftcardDb = {
     id: string;
     name: string;
@@ -22,7 +25,23 @@ type GiftcardDb = {
     updated_at?: string | null;
 };
 
-// ===== Helpers robustos =====
+type Preorder = {
+    id: string;
+    preorder_code: string;
+    gift_id: string | null;
+    gift_name: string;
+    gift_value: number | null;
+    buyer_name: string;
+    buyer_phone: string;
+    buyer_email: string;
+    message: string | null;
+    status: "pending" | "paid" | "sent" | "cancelled";
+    created_at: string;
+};
+
+/* =========================================================
+   Helpers robustos
+   ========================================================= */
 async function withCap<T>(p: Promise<T>, ms = 3000): Promise<T> {
     let t: any;
     const timeout = new Promise<never>((_, rej) => {
@@ -105,7 +124,7 @@ async function ensureFreshAndCachedToken(): Promise<string | null> {
     }
 }
 
-// API call
+// API call (ya existente para upsert de plantillas)
 async function postUpsertGiftcard(body: any) {
     const token = await ensureFreshAndCachedToken();
     if (!token) throw new Error("Necesitás iniciar sesión nuevamente (token no disponible).");
@@ -127,7 +146,9 @@ async function postUpsertGiftcard(body: any) {
     return json;
 }
 
-// ====== Cola persistente (igual que Events) ======
+/* =========================================================
+   Cola persistente (igual que Events)
+   ========================================================= */
 type QueueItem = { request_id: string; payload: any; attempt: number; nextAt: number };
 const QUEUE_KEY = "boa_giftcard_upsert_queue_v1";
 
@@ -168,10 +189,12 @@ function dataURLtoBlob(dataUrl: string): Blob {
     return new Blob([u8arr], { type: mime });
 }
 
+/* =========================================================
+   Vista previa de la giftcard (plantilla)
+   ========================================================= */
 function CardPreview({ gc }: { gc: GiftcardDb }) {
     const benefits = Array.isArray(gc.benefits) ? gc.benefits : [];
 
-    // Mini flor en salvia (verde BOA amigable)
     const flowerURI =
         "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'><g fill='%23308a73'><circle cx='7' cy='3' r='2'/><circle cx='11' cy='7' r='2'/><circle cx='7' cy='11' r='2'/><circle cx='3' cy='7' r='2'/><circle cx='9.8' cy='4.2' r='1.5'/><circle cx='9.8' cy='9.8' r='1.5'/><circle cx='4.2' cy='9.8' r='1.5'/><circle cx='4.2' cy='4.2' r='1.5'/><circle cx='7' cy='7' r='2.2'/></g></svg>\")";
 
@@ -181,24 +204,22 @@ function CardPreview({ gc }: { gc: GiftcardDb }) {
                 width: 680,
                 borderRadius: 0,
                 padding: 18,
-                // Marco crema → salvia suave (conic muy tenue)
-                background: `    
-                conic-gradient(
-        from 160deg at 50% 50%,
-        rgba(164, 216, 195, .95) 0%,
-        rgba(207, 232, 221, .95) 10%,
-        rgba(252, 236, 212, .95) 20%,
-        rgba(255, 218, 199, .95) 30%,
-        rgba(230, 242, 233, .95) 40%,
-        rgba(183, 227, 207, .95) 50%,
-        rgba(244, 239, 226, .95) 60%,
-        rgba(214, 232, 221, .95) 70%,
-        rgba(255, 225, 210, .95) 80%,
-        rgba(240, 247, 241, .95) 90%,
-        rgba(164, 216, 195, .95) 100%
-    )
-    `,
-                // Borde interior sutil para separar el ring del panel blanco
+                background: `
+          conic-gradient(
+            from 160deg at 50% 50%,
+            rgba(164, 216, 195, .95) 0%,
+            rgba(207, 232, 221, .95) 10%,
+            rgba(252, 236, 212, .95) 20%,
+            rgba(255, 218, 199, .95) 30%,
+            rgba(230, 242, 233, .95) 40%,
+            rgba(183, 227, 207, .95) 50%,
+            rgba(244, 239, 226, .95) 60%,
+            rgba(214, 232, 221, .95) 70%,
+            rgba(255, 225, 210, .95) 80%,
+            rgba(240, 247, 241, .95) 90%,
+            rgba(164, 216, 195, .95) 100%
+          )
+        `,
                 boxShadow: "inset 0 0 0 3px rgba(255,255,255,.65), 0 18px 42px rgba(41,51,45,.14)",
             }}
         >
@@ -208,12 +229,11 @@ function CardPreview({ gc }: { gc: GiftcardDb }) {
                     borderRadius: 26,
                     padding: 30,
                     overflow: "hidden",
-                    // Papel crema cálido
                     background: "linear-gradient(180deg, #FFFBF4 0%, #FFF7EB 100%)",
                     boxShadow: "inset 0 0 0 1px rgba(92, 74, 56, .07)",
                 }}
             >
-                {/* Watermark centrado (igual que antes) */}
+                {/* Watermark */}
                 <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
                     <div
                         style={{
@@ -227,7 +247,6 @@ function CardPreview({ gc }: { gc: GiftcardDb }) {
                             opacity: 0.14,
                         }}
                     />
-                    {/* Tie-dye cálido en salvia/crema */}
                     <div
                         style={{
                             position: "absolute",
@@ -240,7 +259,6 @@ function CardPreview({ gc }: { gc: GiftcardDb }) {
                             mixBlendMode: "multiply",
                         }}
                     />
-                    {/* Vignette orgánica leve (oliva suave) */}
                     <div
                         style={{
                             position: "absolute",
@@ -251,7 +269,7 @@ function CardPreview({ gc }: { gc: GiftcardDb }) {
                     />
                 </div>
 
-                {/* Textura de papel en tono lino */}
+                {/* Textura */}
                 <div
                     aria-hidden
                     style={{
@@ -266,7 +284,7 @@ function CardPreview({ gc }: { gc: GiftcardDb }) {
                     }}
                 />
 
-                {/* Halos hippie en salvia/crema */}
+                {/* Halos */}
                 <div
                     aria-hidden
                     style={{
@@ -294,14 +312,14 @@ function CardPreview({ gc }: { gc: GiftcardDb }) {
                     }}
                 />
 
-                {/* Contenido (posiciones intactas) */}
+                {/* Contenido */}
                 <div style={{ position: "relative", zIndex: 1 }}>
                     <h3
                         style={{
                             fontSize: 32,
                             lineHeight: "36px",
                             fontWeight: 800,
-                            color: "#1b2a22", // profundo pero cálido
+                            color: "#1b2a22",
                             marginBottom: 8,
                         }}
                     >
@@ -319,7 +337,7 @@ function CardPreview({ gc }: { gc: GiftcardDb }) {
                         {gc.description || ""}
                     </p>
 
-                    {/* Precio con subrayado orgánico en oliva suave */}
+                    {/* Precio */}
                     <div
                         style={{
                             fontSize: 44,
@@ -383,13 +401,12 @@ function CardPreview({ gc }: { gc: GiftcardDb }) {
                         </ul>
                     )}
 
-                    {/* Separador tibio */}
+                    {/* Separador */}
                     <div
                         style={{
                             height: 1,
                             margin: "8px 0 12px",
-                            background:
-                                "linear-gradient(90deg, rgba(43,58,50,.06), rgba(43,58,50,.12), rgba(43,58,50,.06))",
+                            background: "linear-gradient(90deg, rgba(43,58,50,.06), rgba(43,58,50,.12), rgba(43,58,50,.06))",
                         }}
                     />
 
@@ -405,18 +422,25 @@ function CardPreview({ gc }: { gc: GiftcardDb }) {
                     </p>
                 </div>
             </div>
-        </div >
+        </div>
     );
 }
 
-
-
-// ===== Componente =====
+/* =========================================================
+   Componente principal
+   ========================================================= */
 export default function AdminGiftcards() {
     const { user } = useAuth();
     const { toast } = useToast();
 
     const [isAdmin, setIsAdmin] = React.useState<boolean | null>(null);
+
+    // ---- Preorders (Órdenes) ----
+    const [poLoading, setPoLoading] = React.useState(true);
+    const [poRows, setPoRows] = React.useState<Preorder[]>([]);
+    const [issuing, setIssuing] = React.useState<string | null>(null);
+
+    // ---- Plantillas (giftcards) ----
     const [rows, setRows] = React.useState<GiftcardDb[]>([]);
     const [loading, setLoading] = React.useState(true);
 
@@ -439,7 +463,6 @@ export default function AdminGiftcards() {
 
     const renderRef = React.useRef<HTMLDivElement | null>(null);
 
-
     // lock scroll when modal open
     React.useEffect(() => {
         if (!open) return;
@@ -460,7 +483,96 @@ export default function AdminGiftcards() {
         };
     }, []);
 
-    // load list
+    /* =========================
+       Carga de PREORDERS (órdenes)
+       ========================= */
+    const authHeader = React.useCallback(async () => {
+        const t = await ensureFreshAndCachedToken();
+        return t ? { Authorization: `Bearer ${t}` } : {};
+    }, []);
+
+    const loadPreorders = React.useCallback(async () => {
+        setPoLoading(true);
+        try {
+            const headers = await authHeader();
+            const r = await fetch("/api/admin/preorders/list", { headers });
+            const j = await r.json();
+            if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`);
+            setPoRows(j.data || []);
+        } catch (e: any) {
+            toast({ title: "No pude cargar órdenes", description: e?.message, variant: "destructive" });
+        } finally {
+            setPoLoading(false);
+        }
+    }, [authHeader, toast]);
+
+    const markPaid = React.useCallback(
+        async (preorder_id: string) => {
+            try {
+                const headers = { ...(await authHeader()), "Content-Type": "application/json" };
+                const r = await fetch("/api/admin/preorders/mark-paid", {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({ preorder_id }),
+                });
+                const j = await r.json();
+                if (!r.ok || !j.ok) throw new Error(j?.error || `HTTP ${r.status}`);
+                toast({ title: "Orden marcada como pagada" });
+                await loadPreorders();
+            } catch (e: any) {
+                toast({ title: "No se pudo marcar como pagada", description: e?.message, variant: "destructive" });
+            }
+        },
+        [authHeader, loadPreorders, toast]
+    );
+
+    const issue = React.useCallback(
+        async (po: Preorder) => {
+            if (!po.gift_id) return toast({ title: "La orden no tiene gift_id", variant: "destructive" });
+            setIssuing(po.id);
+            try {
+                const headers = { ...(await authHeader()), "Content-Type": "application/json" };
+                const body = JSON.stringify({
+                    preorder_id: po.id,
+                    template_gift_id: po.gift_id,
+                    gift_name: po.gift_name,
+                    gift_value: po.gift_value,
+                    recipient_name: po.buyer_name,
+                    recipient_email: po.buyer_email,
+                    recipient_phone: po.buyer_phone,
+                    // expires_at: new Date(Date.now()+31536000000).toISOString(), // opcional: +12 meses
+                });
+                const r = await fetch("/api/admin/giftcards/issue", { method: "POST", headers, body });
+                const j = await r.json();
+                if (!r.ok || !j?.ok) throw new Error(j?.error || `HTTP ${r.status}`);
+
+                const verifyUrl = j?.data?.verifyUrl as string;
+                const code = j?.data?.code as string;
+                const text =
+                    `¡Gracias por tu compra! Tu Gift Card ${po.gift_name}\n` +
+                    `Código: ${code}\n` +
+                    `Verificación/canje: ${verifyUrl}`;
+
+                try {
+                    await navigator.clipboard.writeText(text);
+                    toast({ title: "Emitida", description: "Copié el mensaje con el link al portapapeles." });
+                } catch {
+                    toast({ title: "Emitida", description: verifyUrl });
+                }
+
+                await loadPreorders();
+            } catch (e: any) {
+                toast({ title: "No se pudo emitir", description: e?.message, variant: "destructive" });
+            } finally {
+                setIssuing(null);
+            }
+        },
+        [authHeader, loadPreorders, toast]
+    );
+
+    /* =========================
+       Carga de PLANTILLAS (giftcards)
+       ========================= */
     const loadList = React.useCallback(async () => {
         setLoading(true);
         const { data, error } = await supabase.from("giftcards").select("*").order("created_at", { ascending: false });
@@ -489,14 +601,16 @@ export default function AdminGiftcards() {
             }
             const ok = Boolean(data?.is_admin);
             setIsAdmin(ok);
-            if (ok) await loadList();
+            if (ok) {
+                await Promise.all([loadList(), loadPreorders()]);
+            }
         })();
         return () => {
             alive = false;
         };
-    }, [user, loadList]);
+    }, [user, loadList, loadPreorders]);
 
-    // realtime one-time
+    // realtime one-time para plantillas
     React.useEffect(() => {
         if (!isAdmin || subscribedRef.current) return;
         subscribedRef.current = true;
@@ -617,7 +731,7 @@ export default function AdminGiftcards() {
         return () => clearInterval(t);
     }, [drainQueue]);
 
-    // form helpers
+    // form helpers (plantillas)
     function resetForm() {
         setEditingId(null);
         setName("");
@@ -644,11 +758,9 @@ export default function AdminGiftcards() {
 
     // genera (si hace falta) y devuelve una URL pública y también el dataURL en memoria
     async function ensureGiftcardImage(gc: GiftcardDb): Promise<{ publicUrl: string; dataUrl: string }> {
-        // si ya tenemos url pública, solo necesitamos un dataUrl para el Web Share
         let publicUrl = gc.image_url || "";
         let dataUrl = "";
 
-        // si no hay image_url, la generamos y subimos (reutiliza tu generateAndUploadImage)
         if (!publicUrl) {
             publicUrl = await generateAndUploadImage(gc);
             const { error } = await supabase
@@ -659,34 +771,28 @@ export default function AdminGiftcards() {
             await loadList();
         }
 
-        // siempre generamos un dataUrl local (para Web Share con archivo)
-        {
-            // render local rápido (mismo CardPreview)
-            if (!renderRef.current) throw new Error("renderRef missing");
-            const { createRoot } = await import("react-dom/client");
-            const container = document.createElement("div");
-            container.style.position = "fixed";
-            container.style.left = "-99999px";
-            container.style.top = "-99999px";
-            renderRef.current.appendChild(container);
-            const tmp = document.createElement("div");
-            container.appendChild(tmp);
-            const root = createRoot(tmp);
-            root.render(<CardPreview gc={gc} />);
-            await new Promise((r) => setTimeout(r, 50));
-            dataUrl = await htmlToImage.toPng(tmp, { pixelRatio: 2, backgroundColor: "#FAF8F2", cacheBust: true });
-            root.unmount();
-            container.remove();
-        }
+        if (!renderRef.current) throw new Error("renderRef missing");
+        const { createRoot } = await import("react-dom/client");
+        const container = document.createElement("div");
+        container.style.position = "fixed";
+        container.style.left = "-99999px";
+        container.style.top = "-99999px";
+        renderRef.current.appendChild(container);
+        const tmp = document.createElement("div");
+        container.appendChild(tmp);
+        const root = createRoot(tmp);
+        root.render(<CardPreview gc={gc} />);
+        await new Promise((r) => setTimeout(r, 50));
+        dataUrl = await htmlToImage.toPng(tmp, { pixelRatio: 2, backgroundColor: "#FAF8F2", cacheBust: true });
+        root.unmount();
+        container.remove();
 
         return { publicUrl, dataUrl };
     }
 
     async function shareWhatsApp(gc: GiftcardDb) {
         try {
-            // si falta la imagen, la generamos y persistimos (también nos asegura que renderRef está OK)
             await ensureGiftcardImage(gc);
-
             const benefits = Array.isArray(gc.benefits) ? gc.benefits : [];
             const includes = benefits.length ? `Incluye: ${benefits.slice(0, 5).join(" • ")}` : "";
 
@@ -707,9 +813,6 @@ export default function AdminGiftcards() {
         }
     }
 
-
-
-    // Copia la imagen renderizada de la giftcard al portapapeles (desktop)
     async function copyGiftcardImage(gc: GiftcardDb) {
         try {
             const { dataUrl } = await ensureGiftcardImage(gc);
@@ -723,7 +826,6 @@ export default function AdminGiftcards() {
                 return;
             }
 
-            // Fallback: descarga si el navegador no soporta copiar
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
@@ -741,7 +843,6 @@ export default function AdminGiftcards() {
         }
     }
 
-    // Descarga explícitamente el PNG (plan B/flujo manual)
     async function downloadGiftcardImage(gc: GiftcardDb) {
         try {
             const { dataUrl } = await ensureGiftcardImage(gc);
@@ -767,14 +868,12 @@ export default function AdminGiftcards() {
     async function generateAndUploadImage(gc: GiftcardDb): Promise<string> {
         if (!renderRef.current) throw new Error("renderRef missing");
 
-        // 1) montar un contenedor fuera de pantalla
         const container = document.createElement("div");
         container.style.position = "fixed";
         container.style.left = "-99999px";
         container.style.top = "-99999px";
         renderRef.current.appendChild(container);
 
-        // 2) renderizar CardPreview y convertir a PNG (dataURL)
         const { createRoot } = await import("react-dom/client");
         const tmp = document.createElement("div");
         container.appendChild(tmp);
@@ -789,7 +888,6 @@ export default function AdminGiftcards() {
         root.unmount();
         container.remove();
 
-        // 3) subir al servidor (service-role)
         const token = (await supabase.auth.getSession()).data.session?.access_token;
         if (!token) throw new Error("Necesitás iniciar sesión nuevamente (token no disponible).");
 
@@ -804,12 +902,10 @@ export default function AdminGiftcards() {
         return json.url as string;
     }
 
-
-    // save (encola y drena)
+    // save (plantilla) — encola y drena
     async function save() {
         if (!name) {
             toast({ title: "Campos requeridos", description: "El nombre es obligatorio.", variant: "destructive" });
-            return;
         }
         if (!value) {
             toast({ title: "Campos requeridos", description: "El valor es obligatorio.", variant: "destructive" });
@@ -842,7 +938,7 @@ export default function AdminGiftcards() {
         setSaving(false);
     }
 
-    // delete
+    // delete (plantilla)
     async function removeOne(id: string) {
         if (!confirm("¿Eliminar esta giftcard?")) return;
         const { error } = await supabase.from("giftcards").delete().eq("id", id);
@@ -866,7 +962,9 @@ export default function AdminGiftcards() {
         );
     }
 
-    // ===== UI =====
+    /* =========================================================
+       UI
+       ========================================================= */
     return (
         <main className="container mx-auto max-w-6xl px-4 py-10">
             <div className="flex items-center justify-between">
@@ -874,7 +972,80 @@ export default function AdminGiftcards() {
                 <Button onClick={openCreate}>+ Nueva giftcard</Button>
             </div>
 
-            <div className="mt-6 overflow-x-auto rounded-xl border">
+            {/* ===================== ÓRDENES / PREORDERS ===================== */}
+            <section className="mt-8">
+                <h2 className="text-lg font-semibold">Órdenes</h2>
+                <p className="text-xs text-neutral-500 mb-3">
+                    Marcar pago y emitir código/QR para verificación y canje.
+                </p>
+
+                <div className="overflow-x-auto rounded-xl border">
+                    <table className="min-w-[860px] w-full text-sm">
+                        <thead className="bg-neutral-50 text-left">
+                            <tr>
+                                <th className="py-2 px-3">Fecha</th>
+                                <th className="py-2 px-3">Comprador</th>
+                                <th className="py-2 px-3">Gift</th>
+                                <th className="py-2 px-3">Estado</th>
+                                <th className="py-2 px-3 text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {poLoading ? (
+                                <tr>
+                                    <td className="py-6 px-3 text-neutral-500" colSpan={5}>
+                                        Cargando…
+                                    </td>
+                                </tr>
+                            ) : poRows.length === 0 ? (
+                                <tr>
+                                    <td className="py-6 px-3 text-neutral-500" colSpan={5}>
+                                        Sin órdenes por ahora.
+                                    </td>
+                                </tr>
+                            ) : (
+                                poRows.map((po) => (
+                                    <tr key={po.id} className="border-t">
+                                        <td className="py-2 px-3">{new Date(po.created_at).toLocaleString()}</td>
+                                        <td className="py-2 px-3">
+                                            <div className="font-semibold">{po.buyer_name}</div>
+                                            <div className="text-xs text-gray-500">
+                                                {po.buyer_email} · {po.buyer_phone}
+                                            </div>
+                                        </td>
+                                        <td className="py-2 px-3">
+                                            <div className="font-semibold">{po.gift_name}</div>
+                                            <div className="text-xs text-gray-500">
+                                                ${Number(po.gift_value || 0).toLocaleString("es-AR")}
+                                            </div>
+                                        </td>
+                                        <td className="py-2 px-3">
+                                            <span className="rounded-full bg-gray-100 px-2 py-1 text-xs">{po.status}</span>
+                                        </td>
+                                        <td className="py-2 px-3 text-right space-x-2">
+                                            {po.status === "pending" && (
+                                                <Button variant="outline" onClick={() => markPaid(po.id)}>
+                                                    Marcar pagada
+                                                </Button>
+                                            )}
+                                            <Button
+                                                className="bg-boa-green text-white"
+                                                onClick={() => issue(po)}
+                                                disabled={issuing === po.id || po.status === "cancelled"}
+                                            >
+                                                {issuing === po.id ? "Emitiendo..." : "Emitir código/QR"}
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            {/* ===================== PLANTILLAS / GIFT CARDS ===================== */}
+            <div className="mt-10 overflow-x-auto rounded-xl border">
                 <table className="min-w-[720px] w-full text-sm">
                     <thead className="bg-neutral-50 text-left">
                         <tr>
@@ -887,22 +1058,42 @@ export default function AdminGiftcards() {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td className="py-6 px-3 text-neutral-500" colSpan={5}>Cargando…</td></tr>
+                            <tr>
+                                <td className="py-6 px-3 text-neutral-500" colSpan={5}>
+                                    Cargando…
+                                </td>
+                            </tr>
                         ) : rows.length === 0 ? (
-                            <tr><td className="py-6 px-3 text-neutral-500" colSpan={5}>Sin giftcards.</td></tr>
+                            <tr>
+                                <td className="py-6 px-3 text-neutral-500" colSpan={5}>
+                                    Sin giftcards.
+                                </td>
+                            </tr>
                         ) : (
                             rows.map((r) => (
                                 <tr key={r.id} className="border-t">
                                     <td className="py-2 px-3">{r.name}</td>
                                     <td className="py-2 px-3">${Number(r.value ?? 0).toLocaleString("es-AR")}</td>
                                     <td className="py-2 px-3">{r.is_active ? "Sí" : "No"}</td>
-                                    <td className="py-2 px-3">{r.updated_at ? new Date(r.updated_at).toLocaleString("es-AR") : "-"}</td>
+                                    <td className="py-2 px-3">
+                                        {r.updated_at ? new Date(r.updated_at).toLocaleString("es-AR") : "-"}
+                                    </td>
                                     <td className="py-2 px-3 flex flex-wrap gap-2">
-                                        <Button variant="outline" onClick={() => openEdit(r)}>Editar</Button>
-                                        <Button variant="secondary" onClick={() => shareWhatsApp(r)}>Enviar por WhatsApp</Button>
-                                        <Button variant="outline" onClick={() => copyGiftcardImage(r)}>Copiar imagen</Button>
-                                        <Button variant="outline" onClick={() => downloadGiftcardImage(r)}>Descargar PNG</Button>
-                                        <Button variant="destructive" onClick={() => removeOne(r.id)}>Eliminar</Button>
+                                        <Button variant="outline" onClick={() => openEdit(r)}>
+                                            Editar
+                                        </Button>
+                                        <Button variant="secondary" onClick={() => shareWhatsApp(r)}>
+                                            Enviar por WhatsApp
+                                        </Button>
+                                        <Button variant="outline" onClick={() => copyGiftcardImage(r)}>
+                                            Copiar imagen
+                                        </Button>
+                                        <Button variant="outline" onClick={() => downloadGiftcardImage(r)}>
+                                            Descargar PNG
+                                        </Button>
+                                        <Button variant="destructive" onClick={() => removeOne(r.id)}>
+                                            Eliminar
+                                        </Button>
                                     </td>
                                 </tr>
                             ))
@@ -911,13 +1102,21 @@ export default function AdminGiftcards() {
                 </table>
             </div>
 
-            {/* Modal crear/editar */}
+            {/* Modal crear/editar plantilla */}
             {open && (
                 <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 overflow-y-auto overscroll-contain">
                     <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl overflow-y-auto max-h-[90vh] overscroll-contain">
                         <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b bg-white">
-                            <h3 className="text-lg font-semibold">{editingId ? "Editar giftcard" : "Nueva giftcard"}</h3>
-                            <button className="text-sm text-neutral-500 hover:text-black" onClick={() => { setOpen(false); resetForm(); }}>
+                            <h3 className="text-lg font-semibold">
+                                {editingId ? "Editar giftcard" : "Nueva giftcard"}
+                            </h3>
+                            <button
+                                className="text-sm text-neutral-500 hover:text-black"
+                                onClick={() => {
+                                    setOpen(false);
+                                    resetForm();
+                                }}
+                            >
                                 Cerrar
                             </button>
                         </div>
@@ -931,28 +1130,55 @@ export default function AdminGiftcards() {
 
                                 <div className="grid gap-1">
                                     <label className="text-sm">Valor *</label>
-                                    <Input type="number" step="0.01" value={value} onChange={(e) => setValue(e.target.value)} />
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={value}
+                                        onChange={(e) => setValue(e.target.value)}
+                                    />
                                 </div>
 
                                 <div className="sm:col-span-2 grid gap-1">
                                     <label className="text-sm">Descripción</label>
-                                    <textarea className="border rounded px-3 py-2" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+                                    <textarea
+                                        className="border rounded px-3 py-2"
+                                        rows={3}
+                                        value={description}
+                                        onChange={(e) => setDescription(e.target.value)}
+                                    />
                                 </div>
 
                                 <div className="sm:col-span-2 grid gap-1">
                                     <label className="text-sm">Beneficios (separados por coma)</label>
-                                    <Input value={benefits} onChange={(e) => setBenefits(e.target.value)} placeholder="Ej: 3 cafés, 1 taller, descuento en granos" />
+                                    <Input
+                                        value={benefits}
+                                        onChange={(e) => setBenefits(e.target.value)}
+                                        placeholder="Ej: 3 cafés, 1 taller, descuento en granos"
+                                    />
                                 </div>
 
                                 <div className="sm:col-span-2 grid gap-1">
-                                    <label className="text-sm">Imagen / Diseño (URL pública) <span className="text-red-500 font-semibold">NO TOCAR</span></label>
-                                    <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." />
-                                    <p className="text-xs text-neutral-500">Tip: subí tu diseño a Supabase Storage o Cloudinary y pegá la URL (WhatsApp mostrará el preview).</p>
+                                    <label className="text-sm">
+                                        Imagen / Diseño (URL pública) <span className="text-red-500 font-semibold">NO TOCAR</span>
+                                    </label>
+                                    <Input
+                                        value={imageUrl}
+                                        onChange={(e) => setImageUrl(e.target.value)}
+                                        placeholder="https://..."
+                                    />
+                                    <p className="text-xs text-neutral-500">
+                                        Tip: subí tu diseño a Supabase Storage o Cloudinary y pegá la URL (WhatsApp
+                                        mostrará el preview).
+                                    </p>
                                 </div>
 
                                 <div className="flex items-center gap-4">
                                     <label className="inline-flex items-center gap-2 text-sm">
-                                        <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
+                                        <input
+                                            type="checkbox"
+                                            checked={isActive}
+                                            onChange={(e) => setIsActive(e.target.checked)}
+                                        />
                                         Activa
                                     </label>
                                 </div>
@@ -961,7 +1187,15 @@ export default function AdminGiftcards() {
 
                         <div className="sticky bottom-0 z-10 px-5 py-4 border-t bg-white/95 backdrop-blur">
                             <div className="flex justify-end gap-2">
-                                <Button variant="outline" onClick={() => { setOpen(false); resetForm(); }}>Cancelar</Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        setOpen(false);
+                                        resetForm();
+                                    }}
+                                >
+                                    Cancelar
+                                </Button>
                                 <Button onClick={save} disabled={saving || !name || !value}>
                                     {saving ? "Guardando…" : "Guardar"}
                                 </Button>

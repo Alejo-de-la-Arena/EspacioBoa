@@ -1,16 +1,17 @@
 // pages/giftcards/index.tsx
-import { useApp } from "@/contexts/AppContext";
-import { RevealOnScroll, REVEAL_PRESET_CYCLE } from "@/components/RevealOnScroll";
-import Link from "next/link";
+import { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useApp } from "@/contexts/AppContext";
 import { GiftCardCard } from "@/components/GiftCardCard";
-import { ArrowRight } from "lucide-react";
-
+import GiftCardBuyModal from "@/components/GiftCardBuyModal";
 
 export default function GiftCardsPage() {
     const { giftCards = [] } = useApp();
 
+    // Modal state
+    const [open, setOpen] = useState(false);
+    const [selected, setSelected] = useState<any>(null);
 
     // Animations
     const container = {
@@ -22,12 +23,11 @@ export default function GiftCardsPage() {
         visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.45, ease: "easeOut" } },
     };
 
-
     // 🔁 Reemplazá esta URL cuando tengas la imagen final de nanobanana
     const DECOR_BG =
-        "https://res.cloudinary.com/dfrhrnwwi/image/upload/v1756867726/nano-banana-no-bg-2025-09-03T02-47-52_1_jb6zay.jpg"
-    const list = giftCards.length ? giftCards.slice(0, 3) : fallbackGC;
+        "https://res.cloudinary.com/dfrhrnwwi/image/upload/v1756867726/nano-banana-no-bg-2025-09-03T02-47-52_1_jb6zay.jpg";
 
+    const list = giftCards.length ? giftCards.slice(0, 3) : fallbackGC;
 
     return (
         <section>
@@ -39,13 +39,8 @@ export default function GiftCardsPage() {
                 variants={container}
                 className="relative py-16 sm:py-20 font-sans overflow-hidden"
             >
-                {/* Fondo crema base */}
-
-
-
                 {/* Capa: imagen decorativa detrás (sutil) */}
                 <div className="absolute inset-0 -z-10">
-                    {/* Imagen con baja opacidad y blur leve para no competir */}
                     <div className="absolute inset-0 opacity-15 [mask-image:linear-gradient(to bottom,rgba(0,0,0,.7),rgba(0,0,0,.4),rgba(0,0,0,.1))]">
                         <Image
                             src={DECOR_BG}
@@ -56,14 +51,12 @@ export default function GiftCardsPage() {
                             className="object-cover"
                         />
                     </div>
-                    {/* Halos BOA suaves */}
                     <div aria-hidden className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full bg-emerald-300/10 blur-3xl" />
                     <div aria-hidden className="pointer-events-none absolute -bottom-10 -right-10 h-72 w-72 rounded-full bg-amber-300/10 blur-3xl" />
                 </div>
 
-
                 <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    {/* Encabezado minimal */}
+                    {/* Encabezado */}
                     <div className="text-center mb-10 sm:mb-14">
                         <h1 className="text-[32px] sm:text-5xl font-extrabold tracking-tight text-boa-ink">
                             Gift <span className="text-boa-green">Cards</span>
@@ -73,18 +66,28 @@ export default function GiftCardsPage() {
                         </p>
                     </div>
 
-
-                    {/* Grid de tarjetas (formato del Home) */}
+                    {/* Grid de tarjetas */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
                         {list.map((gc: any, i: number) => (
                             <motion.div key={`${gc.id ?? gc.name}-${i}`} variants={item} whileHover={{ y: -6 }}>
                                 <GiftCardCard gc={gc} />
+                                {/* Botón de compra */}
+                                <div className="mt-3 flex">
+                                    <button
+                                        onClick={() => {
+                                            setSelected(gc);
+                                            setOpen(true);
+                                        }}
+                                        className="mx-auto rounded-full bg-boa-green px-5 py-2 text-sm font-bold text-white shadow hover:opacity-90"
+                                    >
+                                        Comprar una giftcard
+                                    </button>
+                                </div>
                             </motion.div>
                         ))}
                     </div>
 
-
-                    {/* Remate identitario */}
+                    {/* Remate */}
                     <div className="mt-12 text-center">
                         <p className="text-sm">
                             <span className="inline-block bg-gradient-to-r from-boa-ink/70 via-boa-ink/70 to-boa-green bg-clip-text text-transparent">
@@ -94,20 +97,26 @@ export default function GiftCardsPage() {
                     </div>
                 </div>
             </motion.section>
+
+            {/* Modal */}
+            {selected && (
+                <GiftCardBuyModal
+                    open={open}
+                    onClose={() => setOpen(false)}
+                    gift={{ id: selected.id, name: selected.name, value: selected.value }}
+                />
+            )}
         </section>
     );
 }
-
 
 function GiftCardShell({ children }: { children: React.ReactNode }) {
     return (
         <div
             className="relative rounded-[28px] p-[18px] shadow-xl"
             style={{
-                background:
-                    "linear-gradient(135deg, rgba(30,122,102,.16), rgba(213,149,121,.16))",
-                boxShadow:
-                    "inset 0 0 0 2px rgba(255,255,255,.28), 0 18px 40px rgba(0,0,0,.18)",
+                background: "linear-gradient(135deg, rgba(30,122,102,.16), rgba(213,149,121,.16))",
+                boxShadow: "inset 0 0 0 2px rgba(255,255,255,.28), 0 18px 40px rgba(0,0,0,.18)",
             }}
         >
             <div className="relative rounded-[22px] overflow-hidden bg-[#FAF8F2] ring-1 ring-black/10">
@@ -120,7 +129,7 @@ function GiftCardShell({ children }: { children: React.ReactNode }) {
                         backgroundSize: "260px 260px",
                     }}
                 />
-                {/* watermark logo BOA (ajustá la ruta si hace falta) */}
+                {/* watermark logo BOA */}
                 <div
                     aria-hidden
                     className="absolute inset-0 pointer-events-none"
@@ -134,9 +143,6 @@ function GiftCardShell({ children }: { children: React.ReactNode }) {
         </div>
     );
 }
-
-
-
 
 /** Fallback por si el contexto aún no cargó giftCards */
 const fallbackGC = [
@@ -162,6 +168,3 @@ const fallbackGC = [
         benefits: ["2 sesiones", "1 taller de introducción", "Descuentos en actividades"],
     },
 ];
-
-
-

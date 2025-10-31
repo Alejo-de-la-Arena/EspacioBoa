@@ -412,7 +412,7 @@ export default function ContactPage() {
                         {/* MAPA */}
                         <Card className="border-0 shadow-lg bg-white">
                             <CardContent className="p-8">
-                                <div className="flex items-start gap-4 mb-6">
+                                <div className="flex flex-col sm:flex-row items-start gap-4 mb-6">
                                     <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-700 shrink-0">
                                         <MapPin className="h-6 w-6" />
                                     </div>
@@ -426,7 +426,7 @@ export default function ContactPage() {
                                     </div>
                                 </div>
 
-                                <div className="w-full rounded-xl overflow-hidden border border-neutral-200">
+                                <div className="w-full h-full rounded-xl overflow-hidden border border-neutral-200">
                                     <iframe
                                         title="Mapa BOA - Juncal 399, Martínez"
                                         src="https://www.google.com/maps?q=Juncal+399,+Mart%C3%ADnez,+Provincia+de+Buenos+Aires&z=16&output=embed"

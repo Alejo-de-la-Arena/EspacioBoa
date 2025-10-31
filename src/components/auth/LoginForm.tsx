@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { supabase } from "@/lib/supabaseClient";
 import {
     Mail,
     Lock,
@@ -78,21 +79,19 @@ export default function LoginForm() {
 
 
     const csrfToken = "";
+    // Reemplazá TODO el onSubmit por esto:
     async function onSubmit(values: LoginValues) {
         setServerError(null);
         try {
-            const res = await loginUser({
+            const { data, error } = await supabase.auth.signInWithPassword({
                 email: values.email,
                 password: values.password,
-                remember: !!values.remember,
-                csrfToken,
             });
-            if (!res.ok) {
-                setServerError(res.message || "No pudimos iniciar sesión. Revisá tus datos.");
+            if (error) {
+                setServerError(error.message || "No pudimos iniciar sesión. Revisá tus datos.");
                 return;
             }
-            // redirigir a dashboard si querés
-            // router.push("/dashboard")
+            // Si querés: router.push("/") o a donde corresponda
         } catch {
             setServerError("Error inesperado. Intentá nuevamente.");
         }

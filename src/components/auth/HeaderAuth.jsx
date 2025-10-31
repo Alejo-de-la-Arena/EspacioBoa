@@ -25,7 +25,7 @@ export default function HeaderAuth() {
           inline-flex justify-center items-center
           w-full md:w-auto
           px-3 py-2.5 md:py-2 rounded-md border
-          text-sm font-medium font-sans hover:bg-boa-green hover:border hover:border-white hover:text-white hover:font-semibold
+          text-sm font-medium font-sans 
         "
             >
                 Iniciar sesión
@@ -37,7 +37,7 @@ export default function HeaderAuth() {
           inline-flex justify-center items-center
           w-full md:w-auto
           px-3 py-2.5 md:py-2 rounded-md bg-boa-green text-white
-          text-sm font-medium font-sans hover:bg-white hover:border hover:border-boa-green hover:text-boa-green hover:font-semibold
+          text-sm font-medium font-sans 
         "
             >
                 Crear cuenta
