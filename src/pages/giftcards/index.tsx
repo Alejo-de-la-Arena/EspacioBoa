@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useApp } from "@/contexts/AppContext";
 import { GiftCardCard } from "@/components/GiftCardCard";
 import GiftCardBuyModal from "@/components/GiftCardBuyModal";
+import { RevealOnScroll } from "@/components/RevealOnScroll";
 
 export default function GiftCardsPage() {
     const { giftCards = [] } = useApp();
@@ -31,12 +32,8 @@ export default function GiftCardsPage() {
 
     return (
         <section>
-            {/* ================= SECTION — GIFTCARDS (arriba + fondo decorativo detrás) ================= */}
-            <motion.section
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.2 }}
-                variants={container}
+            <section
+                
                 className="relative py-16 sm:py-20 font-sans overflow-hidden"
             >
                 {/* Capa: imagen decorativa detrás (sutil) */}
@@ -55,7 +52,7 @@ export default function GiftCardsPage() {
                     <div aria-hidden className="pointer-events-none absolute -bottom-10 -right-10 h-72 w-72 rounded-full bg-amber-300/10 blur-3xl" />
                 </div>
 
-                <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <RevealOnScroll variant="blurRise" amount={0.3} className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Encabezado */}
                     <div className="text-center mb-10 sm:mb-14">
                         <h1 className="text-[32px] sm:text-5xl font-extrabold tracking-tight text-boa-ink">
@@ -70,19 +67,12 @@ export default function GiftCardsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
                         {list.map((gc: any, i: number) => (
                             <motion.div key={`${gc.id ?? gc.name}-${i}`} variants={item} whileHover={{ y: -6 }}>
-                                <GiftCardCard gc={gc} />
-                                {/* Botón de compra */}
-                                <div className="mt-3 flex">
-                                    <button
-                                        onClick={() => {
-                                            setSelected(gc);
-                                            setOpen(true);
-                                        }}
-                                        className="mx-auto rounded-full bg-boa-green px-5 py-2 text-sm font-bold text-white shadow hover:opacity-90"
-                                    >
-                                        Comprar una giftcard
-                                    </button>
-                                </div>
+                                <GiftCardCard gc={gc}
+                                    showBuyButton
+                                    onBuy={() => {
+                                        setSelected(gc);
+                                        setOpen(true);
+                                    }} />
                             </motion.div>
                         ))}
                     </div>
@@ -95,8 +85,8 @@ export default function GiftCardsPage() {
                             </span>
                         </p>
                     </div>
-                </div>
-            </motion.section>
+                </RevealOnScroll>
+            </section>
 
             {/* Modal */}
             {selected && (
@@ -107,40 +97,6 @@ export default function GiftCardsPage() {
                 />
             )}
         </section>
-    );
-}
-
-function GiftCardShell({ children }: { children: React.ReactNode }) {
-    return (
-        <div
-            className="relative rounded-[28px] p-[18px] shadow-xl"
-            style={{
-                background: "linear-gradient(135deg, rgba(30,122,102,.16), rgba(213,149,121,.16))",
-                boxShadow: "inset 0 0 0 2px rgba(255,255,255,.28), 0 18px 40px rgba(0,0,0,.18)",
-            }}
-        >
-            <div className="relative rounded-[22px] overflow-hidden bg-[#FAF8F2] ring-1 ring-black/10">
-                {/* textura papel */}
-                <div
-                    className="absolute inset-0 opacity-[0.07] pointer-events-none"
-                    style={{
-                        backgroundImage:
-                            "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>\")",
-                        backgroundSize: "260px 260px",
-                    }}
-                />
-                {/* watermark logo BOA */}
-                <div
-                    aria-hidden
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                        opacity: 0.06,
-                        background: "url('/boa-logo-mark.svg') right -10% bottom -6% / 320px 320px no-repeat",
-                    }}
-                />
-                <div className="relative z-10">{children}</div>
-            </div>
-        </div>
     );
 }
 

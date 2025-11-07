@@ -3,8 +3,9 @@
 import * as React from "react";
 import type { GiftCard } from "@/types";
 
-export function GiftCardCard({ gc }: { gc: GiftCard }) {
+export function GiftCardCard({ gc, showBuyButton = false, onBuy }: { gc: GiftCard; showBuyButton?: boolean; onBuy?: () => void }) {
     const benefits = Array.isArray(gc.benefits) ? gc.benefits : [];
+
 
     // Mini flor en salvia (verde BOA amigable)
     const flowerURI =
@@ -13,26 +14,24 @@ export function GiftCardCard({ gc }: { gc: GiftCard }) {
     return (
         <div
             style={{
-                width: "100%",            // <— fluido para el grid
-                maxWidth: 680,            // <— respeta el ancho original como tope
+                width: "100%",
+                maxWidth: 680,
                 borderRadius: 0,
                 padding: 18,
-                background: `
-          conic-gradient(
-            from 160deg at 50% 50%,
-            rgba(164, 216, 195, .95) 0%,
-            rgba(207, 232, 221, .95) 10%,
-            rgba(252, 236, 212, .95) 20%,
-            rgba(255, 218, 199, .95) 30%,
-            rgba(230, 242, 233, .95) 40%,
-            rgba(183, 227, 207, .95) 50%,
-            rgba(244, 239, 226, .95) 60%,
-            rgba(214, 232, 221, .95) 70%,
-            rgba(255, 225, 210, .95) 80%,
-            rgba(240, 247, 241, .95) 90%,
-            rgba(164, 216, 195, .95) 100%
-          )
-        `,
+                background: `conic-gradient(
+          from 160deg at 50% 50%,
+          rgba(164, 216, 195, .95) 0%,
+          rgba(207, 232, 221, .95) 10%,
+          rgba(252, 236, 212, .95) 20%,
+          rgba(255, 218, 199, .95) 30%,
+          rgba(230, 242, 233, .95) 40%,
+          rgba(183, 227, 207, .95) 50%,
+          rgba(244, 239, 226, .95) 60%,
+          rgba(214, 232, 221, .95) 70%,
+          rgba(255, 225, 210, .95) 80%,
+          rgba(240, 247, 241, .95) 90%,
+          rgba(164, 216, 195, .95) 100%
+        )`,
                 boxShadow: "inset 0 0 0 3px rgba(255,255,255,.65), 0 18px 42px rgba(41,51,45,.14)",
             }}
         >
@@ -225,17 +224,36 @@ export function GiftCardCard({ gc }: { gc: GiftCard }) {
                                 "linear-gradient(90deg, rgba(43,58,50,.06), rgba(43,58,50,.12), rgba(43,58,50,.06))",
                         }}
                     />
-
-                    <p
-                        style={{
-                            color: "#2f3d36",
-                            fontSize: 14,
-                            lineHeight: "20px",
-                            margin: 0,
-                        }}
-                    >
-                        <strong>¿Cómo usarla?</strong> Mostrá esta gift card en <strong>BOA</strong> al momento de pagar.
-                    </p>
+                    {showBuyButton ? (
+                        <button
+                            onClick={onBuy}
+                            style={{
+                                display: "block",
+                                margin: "12px auto 0",
+                                backgroundColor: "#1f7a63",
+                                color: "#fff",
+                                fontWeight: 700,
+                                padding: "8px 20px",
+                                borderRadius: 999,
+                                border: "none",
+                                cursor: "pointer",
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                            }}
+                        >
+                            Comprar una giftcard
+                        </button>
+                    ) : (
+                        <p
+                            style={{
+                                color: "#2f3d36",
+                                fontSize: 14,
+                                lineHeight: "20px",
+                                margin: 0,
+                            }}
+                        >
+                            <strong>¿Cómo usarla?</strong> Mostrá esta gift card en <strong>BOA</strong> al momento de pagar.
+                        </p>
+                    )}
                 </div>
             </div>
         </div>

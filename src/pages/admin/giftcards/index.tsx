@@ -35,7 +35,7 @@ type Preorder = {
     buyer_phone: string;
     buyer_email: string;
     message: string | null;
-    status: "pending" | "paid" | "sent" | "cancelled";
+    status: "pending" | "paid" | "sent" | "cancelled" | "used";
     created_at: string;
 };
 
@@ -526,6 +526,116 @@ export default function AdminGiftcards() {
         [authHeader, loadPreorders, toast]
     );
 
+    const deletePreorder = React.useCallback(
+        async (preorder_id: string) => {
+            if (!confirm("¿Eliminar esta pre-orden? (también cancelará códigos activos)")) return;
+            try {
+                const headers = { ...(await authHeader()), "Content-Type": "application/json" };
+                const r = await fetch("/api/admin/preorders/delete", {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify({ preorder_id }),
+                });
+                const j = await r.json();
+                if (!r.ok || !j.ok) throw new Error(j?.error || `HTTP ${r.status}`);
+                toast({ title: "Pre-orden eliminada" });
+                await loadPreorders();
+            } catch (e: any) {
+                toast({ title: "No se pudo eliminar", description: e?.message, variant: "destructive" });
+            }
+        },
+        [authHeader, loadPreorders, toast]
+    );
+
+
+    type IssuedLite = {
+        id: string;
+        preorder_id: string;
+        code: string;
+        status: "active" | "redeemed" | "cancelled" | "expired";
+        redeemed_at: string | null;
+    };
+
+    const [issuedByPreorder, setIssuedByPreorder] = React.useState<Record<string, IssuedLite>>({});
+
+    const loadIssuedMap = React.useCallback(async () => {
+
+        const { data, error } = await supabase
+            .from("giftcards_issued")
+            .select("id, preorder_id, code, status, redeemed_at")
+            .order("created_at", { ascending: false });
+
+        if (error) {
+            console.warn("loadIssuedMap:", error);
+            return;
+        }
+
+        const map: Record<string, IssuedLite> = {};
+        (data || []).forEach((row: any) => {
+            // me quedo con la última fila por preorder
+            if (!map[row.preorder_id]) map[row.preorder_id] = row as IssuedLite;
+        });
+        setIssuedByPreorder(map);
+    }, []);
+
+    React.useEffect(() => {
+        if (isAdmin) {
+            loadPreorders?.();
+            loadIssuedMap();
+        }
+    }, [isAdmin, loadPreorders, loadIssuedMap]);
+
+    React.useEffect(() => {
+        if (!isAdmin) return;
+
+        const ch = supabase
+            .channel("rt-gc-issued-admin")
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "giftcards_issued" },
+                (payload) => {
+                    setIssuedByPreorder((prev) => {
+                        const row = (payload.new || payload.old) as any;
+                        if (!row?.preorder_id) return prev;
+                        const next = { ...prev };
+
+                        if (payload.eventType === "DELETE") {
+                            if (next[row.preorder_id]?.id === row.id) delete next[row.preorder_id];
+                            return next;
+                        }
+
+                        // INSERT / UPDATE → me quedo con la última conocida
+                        const curr = next[row.preorder_id];
+                        const currTs = curr ? new Date(curr.redeemed_at || 0).getTime() : -1;
+                        const newTs = row.redeemed_at
+                            ? new Date(row.redeemed_at).getTime()
+                            : Date.now();
+
+                        if (!curr || newTs >= currTs) next[row.preorder_id] = row;
+                        return next;
+                    });
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(ch);
+        };
+    }, [isAdmin]);
+
+    React.useEffect(() => {
+        if (!isAdmin) return;
+        const ch = supabase
+            .channel("rt-preorders-admin")
+            .on("postgres_changes",
+                { event: "*", schema: "public", table: "preorders" },
+                () => loadPreorders()
+            )
+            .subscribe();
+        return () => { supabase.removeChannel(ch); };
+    }, [isAdmin, loadPreorders]);
+
+
     const issue = React.useCallback(
         async (po: Preorder) => {
             if (!po.gift_id) return toast({ title: "La orden no tiene gift_id", variant: "destructive" });
@@ -558,6 +668,11 @@ export default function AdminGiftcards() {
                     toast({ title: "Emitida", description: "Copié el mensaje con el link al portapapeles." });
                 } catch {
                     toast({ title: "Emitida", description: verifyUrl });
+                }
+
+                const issuedRow = j?.data;
+                if (issuedRow?.preorder_id) {
+                    setIssuedByPreorder((prev) => ({ ...prev, [issuedRow.preorder_id]: issuedRow }));
                 }
 
                 await loadPreorders();
@@ -1004,42 +1119,101 @@ export default function AdminGiftcards() {
                                     </td>
                                 </tr>
                             ) : (
-                                poRows.map((po) => (
-                                    <tr key={po.id} className="border-t">
-                                        <td className="py-2 px-3">{new Date(po.created_at).toLocaleString()}</td>
-                                        <td className="py-2 px-3">
-                                            <div className="font-semibold">{po.buyer_name}</div>
-                                            <div className="text-xs text-gray-500">
-                                                {po.buyer_email} · {po.buyer_phone}
-                                            </div>
-                                        </td>
-                                        <td className="py-2 px-3">
-                                            <div className="font-semibold">{po.gift_name}</div>
-                                            <div className="text-xs text-gray-500">
-                                                ${Number(po.gift_value || 0).toLocaleString("es-AR")}
-                                            </div>
-                                        </td>
-                                        <td className="py-2 px-3">
-                                            <span className="rounded-full bg-gray-100 px-2 py-1 text-xs">{po.status}</span>
-                                        </td>
-                                        <td className="py-2 px-3 text-right space-x-2">
-                                            {po.status === "pending" && (
-                                                <Button variant="outline" onClick={() => markPaid(po.id)}>
-                                                    Marcar pagada
+
+                                poRows.map((po) => {
+                                    // 👇 tomado del map local en memoria cargado de giftcards_issued
+                                    const issued = issuedByPreorder[po.id]; // puede no existir
+                                    const isRedeemed = issued?.status === "redeemed";
+                                    const isActiveIssued = issued?.status === "active";
+
+                                    return (
+                                        <tr key={po.id} className="border-t">
+                                            <td className="py-2 px-3">
+                                                {new Date(po.created_at).toLocaleString()}
+                                            </td>
+
+                                            <td className="py-2 px-3">
+                                                <div className="font-semibold">{po.buyer_name}</div>
+                                                <div className="text-xs text-gray-500">
+                                                    {po.buyer_email} · {po.buyer_phone}
+                                                </div>
+                                            </td>
+
+                                            <td className="py-2 px-3">
+                                                <div className="font-semibold">{po.gift_name}</div>
+                                                <div className="text-xs text-gray-500">
+                                                    ${Number(po.gift_value || 0).toLocaleString("es-AR")}
+                                                </div>
+                                            </td>
+
+
+
+                                            {/* ======== ESTADO ======== */}
+                                            <td className="py-2 px-3">
+                                                {(() => {
+                                                    // preferí el estado calculado por el server
+                                                    const st = (po as any).computed_status ?? po.status;
+
+                                                    if (st === "used") {
+                                                        return (
+                                                            <span className="rounded-full bg-emerald-50 text-emerald-700 px-2 py-1 text-xs">
+                                                                usada
+                                                            </span>
+                                                        );
+                                                    }
+                                                    if (st === "active") {
+                                                        return (
+                                                            <span className="rounded-full bg-sky-50 text-sky-700 px-2 py-1 text-xs">
+                                                                código activo
+                                                            </span>
+                                                        );
+                                                    }
+                                                    // fallback para pending/paid/sent/cancelled
+                                                    return (
+                                                        <span className="rounded-full bg-gray-100 px-2 py-1 text-xs">
+                                                            {st}
+                                                        </span>
+                                                    );
+                                                })()}
+                                            </td>
+
+
+
+                                            {/* ======== ACCIONES ======== */}
+                                            <td className="py-2 px-3 text-right space-x-2">
+                                                {/* Eliminar preorden */}
+                                                <Button
+                                                    variant="outline"
+                                                    className="mr-2"
+                                                    onClick={() => deletePreorder(po.id)}
+                                                >
+                                                    Eliminar
                                                 </Button>
-                                            )}
-                                            <Button
-                                                className="bg-boa-green text-white"
-                                                onClick={() => issue(po)}
-                                                disabled={issuing === po.id || po.status === "cancelled"}
-                                            >
-                                                {issuing === po.id ? "Emitiendo..." : "Emitir código/QR"}
-                                            </Button>
-                                        </td>
-                                    </tr>
-                                ))
+
+                                                {/* Marcar pagada si sigue pending */}
+                                                {po.status === "pending" && !isRedeemed && (
+                                                    <Button variant="outline" onClick={() => markPaid(po.id)}>
+                                                        Marcar pagada
+                                                    </Button>
+                                                )}
+
+                                                {/* Emitir código solo si NO está canjeada */}
+                                                <Button
+                                                    className="bg-boa-green text-white"
+                                                    onClick={() => issue(po)}
+                                                    disabled={issuing === po.id || isRedeemed}
+                                                >
+                                                    {isRedeemed ? "Ya canjeada" : issuing === po.id ? "Emitiendo..." : (isActiveIssued ? "Re-emitir código" : "Emitir código")}
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+
+
                             )}
                         </tbody>
+
                     </table>
                 </div>
             </section>
