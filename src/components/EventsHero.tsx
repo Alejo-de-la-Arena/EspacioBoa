@@ -156,22 +156,46 @@ export default function EventsHero({ events }: { events: any[] }) {
         my.set(Math.max(-1, Math.min(1, y)));
     };
 
-    // Parallax sutil (px) para cada blob
-    const b1x = useTransform(mx, v => v * 10);
-    const b1y = useTransform(my, v => v * 10);
-    const b2x = useTransform(mx, v => v * -14);
-    const b2y = useTransform(my, v => v * -10);
-    const b3x = useTransform(mx, v => v * 8);
-    const b3y = useTransform(my, v => v * -6);
+    const normalizeDate = (ev: any) =>
+        ev?.date ?? ev?.start_at ?? ev?.startAt ?? ev?.start_date ?? null;
+
+    const normalized = (events ?? []).map((ev) => ({
+        ...ev,
+        featured: !!ev?.featured,
+        is_published: ev?.is_published ?? ev?.published ?? true,
+        date: normalizeDate(ev),
+    }));
+
+    const featuredEvents = normalized
+        .filter((e) => e.featured && e.is_published && e.date)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     const now = new Date();
 
+    const upcomingCount = normalized.filter((e) => {
+        const d = e.date ? new Date(e.date).getTime() : 0;
+        return d >= now.getTime();
+    }).length;
+
+    const thisMonthCount = (() => {
+        const m = now.getMonth();
+        const y = now.getFullYear();
+        return normalized.filter((e) => {
+            if (!e.date) return false;
+            const d = new Date(e.date);
+            return d.getFullYear() === y && d.getMonth() === m && d.getTime() >= now.getTime();
+        }).length;
+    })();
+
+    const freeSeats = (() => {
+        const t = now.getTime();
+        return normalized
+            .filter((e) => (e.date ? new Date(e.date).getTime() >= t : false))
+            .reduce((acc, e) => acc + Math.max((e.capacity ?? 0) - (e.enrolled ?? 0), 0), 0);
+    })();
+
     return (
-        <section
-            id="events-hero"
-            className="relative overflow-hidden font-sans"
-            onMouseMove={handleMouseMove}
-        >
+        <section id="events-hero" className="relative overflow-hidden font-sans" onMouseMove={handleMouseMove}>
             <AmbientArtBackground mx={mx} my={my} />
 
             {/* ===== Contenido ===== */}
@@ -209,63 +233,20 @@ export default function EventsHero({ events }: { events: any[] }) {
                         </motion.p>
 
                         {/* Stats */}
-                        <motion.div
-                            variants={itemUp}
-                            className="mt-6 flex flex-wrap items-center gap-4 text-sm"
-                        >
-                            <motion.div
-                                variants={itemUp}
-                                className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1.5 text-neutral-700 backdrop-blur ring-1 ring-neutral-200"
-                            >
+                        <motion.div variants={itemUp} className="mt-6 flex flex-wrap items-center gap-4 text-sm">
+                            <motion.div variants={itemUp} className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1.5 text-neutral-700 backdrop-blur ring-1 ring-neutral-200">
                                 <Sparkles className="h-4 w-4 text-boa-green" />
-                                Próximos:{" "}
-                                <strong className="ml-1 text-neutral-900 font-sans">
-                                    {events.filter(
-                                        (e) => new Date(e.date).getTime() >= now.getTime()
-                                    ).length}
-                                </strong>
+                                Próximos: <strong className="ml-1 text-neutral-900 font-sans">{upcomingCount}</strong>
                             </motion.div>
 
-                            <motion.div
-                                variants={itemUp}
-                                className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1.5 text-neutral-700 backdrop-blur ring-1 ring-neutral-200"
-                            >
+                            <motion.div variants={itemUp} className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1.5 text-neutral-700 backdrop-blur ring-1 ring-neutral-200">
                                 <Calendar className="h-4 w-4 text-boa-green" />
-                                Este mes:{" "}
-                                <strong className="ml-1 text-neutral-900 font-sans">
-                                    {(() => {
-                                        const m = now.getMonth();
-                                        const y = now.getFullYear();
-                                        return events.filter((ev) => {
-                                            const d = new Date(ev.date);
-                                            return (
-                                                d.getFullYear() === y &&
-                                                d.getMonth() === m &&
-                                                d.getTime() >= now.getTime()
-                                            );
-                                        }).length;
-                                    })()}
-                                </strong>
+                                Este mes: <strong className="ml-1 text-neutral-900 font-sans">{thisMonthCount}</strong>
                             </motion.div>
 
-                            <motion.div
-                                variants={itemUp}
-                                className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1.5 text-neutral-700 backdrop-blur ring-1 ring-neutral-200"
-                            >
+                            <motion.div variants={itemUp} className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1.5 text-neutral-700 backdrop-blur ring-1 ring-neutral-200">
                                 <Users className="h-4 w-4 text-boa-green" />
-                                Cupos libres:{" "}
-                                <strong className="ml-1 text-neutral-900 font-sans">
-                                    {(() => {
-                                        const t = now.getTime();
-                                        return events
-                                            .filter((e) => new Date(e.date).getTime() >= t)
-                                            .reduce(
-                                                (acc, e) =>
-                                                    acc + Math.max((e.capacity ?? 0) - (e.enrolled ?? 0), 0),
-                                                0
-                                            );
-                                    })()}
-                                </strong>
+                                Cupos libres: <strong className="ml-1 text-neutral-900 font-sans">{freeSeats}</strong>
                             </motion.div>
                         </motion.div>
 
@@ -284,10 +265,10 @@ export default function EventsHero({ events }: { events: any[] }) {
 
                     {/* Columna derecha: Flyer / Slider */}
                     <motion.div variants={itemUp} className="relative will-change-transform">
-                        <VerticalFlyerSlider events={events as any} maxSlides={3} autoPlayMs={10000} />
+                        <VerticalFlyerSlider events={featuredEvents as any} maxSlides={3} autoPlayMs={10000} />
                     </motion.div>
                 </motion.div>
-            </div>
-        </section>
+            </div >
+        </section >
     );
 }

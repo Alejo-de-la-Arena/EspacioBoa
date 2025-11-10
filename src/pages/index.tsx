@@ -5,6 +5,7 @@ import { useActivitiesLive } from "@/hooks/useActivitiesLive";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import GiftCardBuyModal from "@/components/GiftCardBuyModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { GiftCardCard } from "@/components/GiftCardCard";
 import { Badge } from "@/components/ui/badge";
@@ -107,8 +108,6 @@ function RevealOnScroll({
     );
 }
 
-
-
 function HeroTitle() {
     const STEP = 0.08; // delay entre palabras
 
@@ -205,9 +204,6 @@ mx-auto"
         </h1>
     );
 }
-
-
-
 
 export default function HomePage() {
     const { events, menuItems, giftCards, loading: appLoading } = useApp();
@@ -308,6 +304,10 @@ export default function HomePage() {
         hidden: { opacity: 0 },
         visible: { opacity: 1, transition: { staggerChildren: 0.12, delayChildren: 0.08 } },
     };
+
+    // Modal de compra Gift Card (misma lógica que /giftcards)
+    const [open, setOpen] = useState(false);
+    const [selected, setSelected] = useState<any>(null);
 
 
     const isLoading = appLoading || actsLoading;
@@ -779,13 +779,14 @@ export default function HomePage() {
             </RevealOnScroll >
 
             {/* Gift Cards Section */}
-            < RevealOnScroll
+            {/* Gift Cards Section */}
+            <RevealOnScroll
                 variant="pop"
                 amount={0.25}
                 className="relative font-sans"
             >
                 {/* Fondo cálido + patrón sutil “wrapping” */}
-                < div className="absolute inset-0 z-0 bg-[linear-gradient(180deg,#FEFCF7_0%,#FFFFFF_85%)]" />
+                <div className="absolute inset-0 z-0 bg-[linear-gradient(180deg,#FEFCF7_0%,#FFFFFF_85%)]" />
                 <div
                     className="absolute inset-0 z-0 opacity-[0.06] pointer-events-none"
                     style={{
@@ -810,7 +811,7 @@ export default function HomePage() {
                         </p>
                     </div>
 
-                    {/* Tarjetas */}
+                    {/* Tarjetas con botón de compra y mismo flujo que /giftcards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
                         {giftCards.slice(0, 3).map((gc) => (
                             <motion.div
@@ -819,12 +820,19 @@ export default function HomePage() {
                                 transition={{ type: "spring", stiffness: 260, damping: 26 }}
                                 className="relative group"
                             >
-                                <GiftCardCard gc={gc} />
+                                <GiftCardCard
+                                    gc={gc}
+                                    showBuyButton
+                                    onBuy={() => {
+                                        setSelected(gc);
+                                        setOpen(true);
+                                    }}
+                                />
                             </motion.div>
                         ))}
                     </div>
 
-                    {/* CTA final con animación de “relleno” verde */}
+                    {/* CTA final con animación */}
                     <div className="mt-12 text-center">
                         <p className="font-sans text-sm">
                             <span className="boa-fill-text">
@@ -855,7 +863,17 @@ export default function HomePage() {
       100% { background-position: 100% 50%; }
     }
   `}</style>
-            </RevealOnScroll >
+            </RevealOnScroll>
+
+            {/* Modal de compra (idéntico a /giftcards) */}
+            {selected && (
+                <GiftCardBuyModal
+                    open={open}
+                    onClose={() => setOpen(false)}
+                    gift={{ id: selected.id, name: selected.name, value: selected.value }}
+                />
+            )}
+
 
             {/* About BOA Preview */}
             <RevealOnScroll

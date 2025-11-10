@@ -375,7 +375,7 @@ export default function BlogPage() {
                 </RevealOnScroll>
 
                 {/* ======================= CTA NEWSLETTER ======================= */}
-                <RevealOnScroll variant="tiltUp" className="relative py-24 overflow-hidden">
+                <RevealOnScroll variant="tiltUp" className="relative pt-24 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-neutral-900 to-emerald-800" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(16,185,129,0.1)_0%,transparent_50%)]" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(34,197,94,0.08)_0%,transparent_50%)]" />
