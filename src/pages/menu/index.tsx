@@ -320,7 +320,6 @@ function ProductModal({
                         {/* X */}
                         <button
                             className="absolute right-3 top-3 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 ring-1 text-neutral-700 hover:text-neutral-900"
-                            style={{ ringColor: t.ring as any }}
                             onClick={onClose}
                             aria-label="Cerrar"
                         >

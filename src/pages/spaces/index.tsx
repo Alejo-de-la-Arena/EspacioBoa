@@ -137,12 +137,26 @@ function CinematicSlider({
         if (startX.current == null) return;
         const dx = e.clientX - startX.current;
         startX.current = null;
-        if (Math.abs(dx) > 40) (dx < 0 ? next() : prev());
+
+        if (Math.abs(dx) > 40) {
+            if (dx < 0) {
+                next();
+            } else {
+                prev();
+            }
+        }
     };
     const onTouchStart = (e: React.TouchEvent) => (tX.current = e.changedTouches[0].clientX);
     const onTouchEnd = (e: React.TouchEvent) => {
         const dx = e.changedTouches[0].clientX - tX.current;
-        if (Math.abs(dx) > 40) (dx < 0 ? next() : prev());
+
+        if (Math.abs(dx) > 40) {
+            if (dx < 0) {
+                next();
+            } else {
+                prev();
+            }
+        }
     };
 
     if (total === 0) {

@@ -68,22 +68,34 @@ export default function UserMenu() {
         }
 
         // Consulta a profiles.is_admin (RLS: debe existir policy de "own row")
-        supabase
-            .from("profiles")
-            .select("is_admin")
-            .eq("id", user.id)
-            .single()
-            .then(({ data }) => {
-                if (!cancelled) setIsAdmin(Boolean(data?.is_admin));
-            })
-            .catch(() => {
+        const checkAdminFromProfile = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from("profiles")
+                    .select("is_admin")
+                    .eq("id", user.id)
+                    .single();
+
+                if (cancelled) return;
+
+                if (error) {
+                    setIsAdmin(false);
+                    return;
+                }
+
+                setIsAdmin(Boolean(data?.is_admin));
+            } catch {
                 if (!cancelled) setIsAdmin(false);
-            });
+            }
+        };
+
+        checkAdminFromProfile();
 
         return () => {
             cancelled = true;
         };
     }, [user?.id]);
+
 
     const avatarUrl =
         user?.user_metadata?.avatar_url ||
