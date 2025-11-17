@@ -109,7 +109,7 @@ function RevealOnScroll({
 }
 
 function HeroTitle() {
-    const STEP = 0.08; // delay entre palabras
+    const STEP = 0.08;
 
     const prefix = "Donde lo rico y lo que hace bien";
     const seWord = "se";
@@ -137,11 +137,7 @@ function HeroTitle() {
 
     return (
         <h1
-            className="font-sans text-white drop-shadow-[0_10px_30px_rgba(0,0,0,.45)]
-text-3xl sm:text-2xl md:text-5xl font-extrabold tracking-tight
-leading-[1.08] sm:leading-[1.06] break-normal whitespace-normal hyphens-auto text-balance
-mx-auto"
-
+            className="font-sans text-white drop-shadow-[0_10px_30px_rgba(0,0,0,.45)] text-3xl sm:text-2xl md:text-5xl font-extrabold tracking-tight leading-[1.08] sm:leading-[1.06] break-normal whitespace-normal hyphens-auto text-balance mx-auto"
             style={{ textWrap: "balance" as any }}
         >
             {/* Línea 1 */}
@@ -310,18 +306,18 @@ export default function HomePage() {
     const [selected, setSelected] = useState<any>(null);
 
 
-    const isLoading = appLoading || actsLoading;
-    if (isLoading) {
-        return (
-            <section>
-                <div className="min-h-screen flex items-center justify-center">
-                    <div className="animate-pulse text-emerald-600">
-                        <Coffee className="h-12 w-12" />
-                    </div>
-                </div>
-            </section>
-        );
-    }
+    // const isLoading = appLoading || actsLoading;
+    // if (isLoading) {
+    //     return (
+    //         <section>
+    //             <div className="min-h-screen flex items-center justify-center">
+    //                 <div className="animate-pulse text-emerald-600">
+    //                     <Coffee className="h-12 w-12" />
+    //                 </div>
+    //             </div>
+    //         </section>
+    //     );
+    // }
 
 
     return (
@@ -331,10 +327,7 @@ export default function HomePage() {
             {(() => {
 
                 return (
-                    <motion.section
-                        initial="hidden"
-                        animate="visible"
-                        variants={container}
+                    <section
                         className="relative isolate min-h-[95vh] flex items-end overflow-hidden"
                     >
                         <Image
@@ -368,7 +361,7 @@ export default function HomePage() {
 
                                 {/* Pill animada */}
                                 <div className="mt-4 flex justify-center">
-                                    <div className="boa-pill flex items-center gap-2 rounded-full bg-white/18 border border-white/30 px-3 py-1.5 backdrop-blur-sm max-w-[88%] lg:mt-2 text-white/95 drop-shadow-[0_6px_18px_rgba(0,0,0,.35)]">
+                                    <div className="boa-pill flex items-center gap-1 rounded-full bg-white/18 border border-white/30 px-2.5 sm:px-3 py-1 sm:py-1.5 backdrop-blur-sm max-w-[95%] lg:mt-2 text-white/95 text-[0.50rem] sm:text-[0.7rem] md:text-xs drop-shadow-[0_6px_18px_rgba(0,0,0,.35)]">
                                         <Coffee className="h-3.5 w-3.5" />
                                         <span className="uppercase tracking-wide text-xs">café</span>
                                         <span className="opacity-60">·</span>
@@ -432,7 +425,7 @@ export default function HomePage() {
         @keyframes boaShimmer { 0% { transform: translateX(-120%); } 60%,100% { transform: translateX(120%); } }
         @keyframes boaPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.18); } 50% { box-shadow: 0 0 0 6px rgba(255,255,255,0.08); } }
       `}</style>
-                    </motion.section>
+                    </section>
                 );
             })()}
 
@@ -441,7 +434,7 @@ export default function HomePage() {
             <RevealOnScroll
                 variant="tiltUp"
                 amount={0.22}
-                className="relative "
+                className="relative"
             >
                 {/* Fondo */}
                 <div className="absolute inset-0 z-0 bg-gradient-to-b from-emerald-50/50 via-amber-50/40 to-white" />
@@ -464,12 +457,7 @@ export default function HomePage() {
                             role="region"
                             aria-roledescription="carousel"
                             aria-label="Departamentos BOA"
-                            className="
-          flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth
-          [scrollbar-width:none] [-ms-overflow-style:none]
-          [&::-webkit-scrollbar]:hidden
-          py-1
-        "
+                            className="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-1"
                         >
                             {/* ACTIVIDADES */}
                             <Link
@@ -567,9 +555,7 @@ export default function HomePage() {
                                 aria-label="Conocer Espacios"
                                 className="snap-center shrink-0 w-[86%]"
                             >
-                                <div className="group relative block h-[350] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]
-            [background:linear-gradient(135deg,rgba(30,122,102,.18),rgba(213,149,121,.18))]
-            hover:[background:linear-gradient(135deg,rgba(30,122,102,.32),rgba(213,149,121,.28))]">
+                                <div className="group relative block h-[350px] rounded-[32px] overflow-hidden transition-all duration-500 p-[2px]">
                                     <div className="h-full w-full rounded-[30px] overflow-hidden ring-1 ring-boa-ink/5 bg-black shadow-[0_12px_28px_rgba(2,6,23,.10)] hover:shadow-[0_18px_40px_rgba(2,6,23,.15)] transition-shadow duration-500">
                                         <Image
                                             src={mediaUrl("1200/img-5210.webp")}
@@ -740,15 +726,15 @@ export default function HomePage() {
                     </div>
 
 
-                </div>
-            </RevealOnScroll>
+                </div >
+            </RevealOnScroll >
 
 
             {/* ===================== SLIDER EXPERIENCIAS — BOA ===================== */}
             < RevealOnScroll
                 variant="slideLeft"
                 amount={0.25}
-                className="relative  font-sans"
+                className="relative font-sans"
             >
                 {/* Fondo cálido y sutil */}
                 < div className="absolute inset-0 z-0 bg-[linear-gradient(180deg,#FEFCF7_0%,#FFFFFF_78%)]" />
@@ -866,13 +852,15 @@ export default function HomePage() {
             </RevealOnScroll>
 
             {/* Modal de compra (idéntico a /giftcards) */}
-            {selected && (
-                <GiftCardBuyModal
-                    open={open}
-                    onClose={() => setOpen(false)}
-                    gift={{ id: selected.id, name: selected.name, value: selected.value }}
-                />
-            )}
+            {
+                selected && (
+                    <GiftCardBuyModal
+                        open={open}
+                        onClose={() => setOpen(false)}
+                        gift={{ id: selected.id, name: selected.name, value: selected.value }}
+                    />
+                )
+            }
 
 
             {/* About BOA Preview */}
@@ -885,13 +873,13 @@ export default function HomePage() {
                 < div className="absolute inset-0 z-0 bg-[linear-gradient(180deg,#FAF8F2_0%,#FFFFFF_85%)]" />
 
                 <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center text-center lg:text-left">
                         {/* Texto breve */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.6, ease: "easeOut" }}
-                            className="space-y-6"
+                            className="space-y-6 flex flex-col items-center lg:items-start text-center lg:text-left"
                         >
                             <h2 className="text-4xl sm:text-5xl font-extrabold text-neutral-900 leading-tight">
                                 BOA es comunidad.
@@ -905,7 +893,7 @@ export default function HomePage() {
 
                             <Link
                                 href="/about"
-                                className="inline-flex items-center gap-2 rounded-full bg-emerald-700 text-white px-6 py-3 text-sm font-semibold shadow hover:bg-emerald-800 transition"
+                                className="inline-flex items-center justify-center lg:justify-start gap-2 rounded-full bg-emerald-700 text-white px-6 py-3 text-sm font-semibold shadow hover:bg-emerald-800 transition"
                             >
                                 Conocer más
                                 <ArrowRight className="h-4 w-4" />
@@ -995,10 +983,7 @@ function ExperiencesSlider({ items }: { items: ExpItem[] }) {
                 aria-roledescription="carousel"
                 aria-label="Slider de actividades y experiencias"
                 tabIndex={0}
-                className="
-          w-full overflow-x-auto snap-x snap-mandatory scroll-smooth
-          flex touch-pan-x gap-6 [scrollbar-width:none] [-ms-overflow-style:none]
-        "
+                className="w-full overflow-x-auto snap-x snap-mandatory scroll-smooth flex gap-6 [scrollbar-width:none] [-ms-overflow-style:none]"
                 style={{ scrollSnapType: "x mandatory" }}
             >
                 {items.map((item, i) => {
@@ -1081,7 +1066,10 @@ function ExperiencesSlider({ items }: { items: ExpItem[] }) {
                                             </div>
                                             {/* CTA */}
                                             <div className="mt-5">
-                                                <Link href={href} className="inline-flex items-center gap-2 ...">
+                                                <Link
+                                                    href={href}
+                                                    className="inline-flex items-center gap-2 text-boa-green hover:text-boa-terra transition"
+                                                >
                                                     {isEvent ? "Ver detalles" : "Ver detalles"}
                                                     <ArrowRight className="h-4 w-4" />
                                                 </Link>
