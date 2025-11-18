@@ -206,7 +206,7 @@ export default function Header() {
                                                             ].join(" ")}
                                                         >
                                                             <Icon className="h-5 w-5" />
-                                                            <span className="flex-1">{item.name}</span>
+                                                            <span className="flex-1 font-sans font-medium">{item.name}</span>
                                                             <ChevronRight className="h-4 w-4 opacity-60" />
                                                         </Link>
                                                     </motion.div>

@@ -82,7 +82,7 @@ const config: Config = {
 
             /* 👇 ESTA PARTE VA AQUÍ, NO DENTRO DE "colors" */
             fontFamily: {
-                sans: ["var(--font-sans)", "Inter", "system-ui", "sans-serif"],
+                sans: ["Montserrat", "sans-serif"],
                 serif: ["Playfair Display", "serif"],
                 script: ["var(--font-script)", "cursive"],
                 display: ["Playfair Display", "serif"],
