@@ -168,14 +168,14 @@ function HeroTitle() {
     };
 
     return (
-        <h1 className="font-sans text-white drop-shadow-[0_10px_30px_rgba(0,0,0,.45)] text-[1.4rem] sm:text-2xl md:text-5xl font-extrabold tracking-normal md:tracking-tight leading-[1.15] sm:leading-[1.06] mx-auto text-center">
-
-            {/* Línea 1: Donde lo rico y lo que hace bien */}
+        <h1
+            className="boa-hero-title font-sans text-white drop-shadow-[0_10px_30px_rgba(0,0,0,.45)] text-[1.25rem] sm:text-2xl md:text-5xl font-extrabold tracking-normal md:tracking-tight leading-[1.15] sm:leading-[1.06] mx-auto text-center"
+        >
+            {/* Línea 1 */}
             <span className="block whitespace-nowrap">
                 {words.slice(0, breakIndex + 1).map((w, i) => renderWord(w, i, words.length))}
             </span>
-
-            {/* Línea 2: se encuentran */}
+            {/* Línea 2 */}
             <span className="block whitespace-nowrap">
                 {words.slice(breakIndex + 1).map((w, idx) => {
                     const index = breakIndex + 1 + idx;
@@ -389,6 +389,23 @@ export default function HomePage() {
               box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.08);
             }
           }
+
+  /* --- Ajustes de pill para mobile chico --- */
+  @media (max-width: 389px) {
+    .boa-pill {
+      flex-wrap: nowrap;   
+      max-width: none;    
+      font-size: 0.55rem;    
+      gap: 0.25rem;           
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+
+    .boa-pill svg {
+      width: 0.65rem;
+      height: 0.65rem;       
+    }
+  }
         `}</style>
             </section>
 

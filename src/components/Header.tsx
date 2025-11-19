@@ -157,31 +157,45 @@ export default function Header() {
                                     aria-label="Abrir menú"
                                     aria-expanded={isOpen}
                                 >
-                                    <Menu className="h-7 w-7 transition-transform duration-150 group-data-[state=open]:rotate-90" />
+
+                                    <Menu className="h-10 w-10 transition-transform duration-150 group-data-[state=open]:rotate-90" />
                                 </Button>
                             </SheetTrigger>
 
+
                             <SheetContent
                                 side="right"
-                                className="w-80 bg-white border-l border-neutral-200/60 p-0 overflow-hidden [&>button.absolute.right-4.top-4]:hidden"
+                                className="w-80 bg-white border-l border-neutral-200/60 p-0 overflow-x-hidden [&>button.absolute.right-4.top-4]:hidden"
                             >
-                                {/* Encabezado simple (sin auth arriba) */}
+
                                 <div className="relative px-5 pt-5 pb-4 border-b border-neutral-200/60 bg-gradient-to-br from-emerald-50/70 to-white">
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm font-medium text-neutral-700">Menú</span>
-                                        <SheetClose asChild>
-                                            <button
-                                                aria-label="Cerrar menú"
-                                                className="inline-flex items-center justify-center rounded-full h-10 w-10 text-neutral-700/80 hover:text-neutral-900 hover:bg-neutral-100/80 transition-opacity"
-                                            >
-                                                <X className="h-6 w-6" />
-                                            </button>
-                                        </SheetClose>
+
+                                        <div className="flex items-center gap-2">
+                                            {/* UserMenu arriba, solo si hay usuario logueado */}
+                                            {user && (
+                                                <div className="flex items-center">
+                                                    <HeaderAuth />
+                                                </div>
+                                            )}
+
+                                            <SheetClose asChild>
+                                                <button
+                                                    aria-label="Cerrar menú"
+                                                    className="inline-flex items-center justify-center rounded-full h-10 w-10 text-neutral-700/80 hover:text-neutral-900 hover:bg-neutral-100/80 transition-opacity"
+                                                >
+                                                    <X className="h-6 w-6" />
+                                                </button>
+                                            </SheetClose>
+                                        </div>
                                     </div>
                                 </div>
 
+
+
                                 {/* Navegación móvil */}
-                                <div className="p-5">
+                                <div className="p-5 overflow-y-auto max-h-[calc(100vh-64px)]">
                                     <AnimatePresence mode="popLayout">
                                         <nav className="flex flex-col space-y-2">
                                             {navigation.map((item, i) => {
@@ -241,9 +255,27 @@ export default function Header() {
                                     </AnimatePresence>
 
                                     {/* Auth al final para mejor clickeo */}
+                                    {/* Botones de auth simples al final */}
                                     <div className="mt-5 pt-4 border-t border-neutral-200/70">
-                                        <HeaderAuth />
+                                        <div className="flex flex-col gap-2">
+                                            <Link href="/auth/login">
+                                                <Button
+                                                    variant="outline"
+                                                    className="w-full justify-center font-sans"
+                                                >
+                                                    Iniciar sesión
+                                                </Button>
+                                            </Link>
+                                            <Link href="/auth/register">
+                                                <Button
+                                                    className="w-full justify-center font-sans bg-boa-green text-white hover:bg-boa-green/90"
+                                                >
+                                                    Registrarme
+                                                </Button>
+                                            </Link>
+                                        </div>
                                     </div>
+
                                 </div>
                             </SheetContent>
                         </Sheet>
