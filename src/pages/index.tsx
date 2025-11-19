@@ -393,12 +393,12 @@ export default function HomePage() {
             </section>
 
             {/* ===================== DEPARTAMENTOS — BOA ===================== */}
-            <RevealOnScroll variant="tiltUp" amount={0.22} className="relative">
+            <section className="relative">
                 <div className="absolute inset-0 z-0 bg-gradient-to-b from-emerald-50/50 via-amber-50/40 to-white" />
                 <div className="pointer-events-none absolute -top-20 -left-20 h-64 w-64 rounded-full bg-emerald-300/10 blur-3xl" />
                 <div className="pointer-events-none absolute -bottom-10 -right-10 h-72 w-72 rounded-full bg-amber-300/10 blur-3xl" />
 
-                <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <RevealOnScroll variant="tiltUp" amount={0.22} className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-8">
                         <h2 className="font-sans text-4xl sm:text-5xl font-extrabold tracking-tight text-boa-ink">
                             Nuestros <span className="text-boa-green">Departamentos</span>
@@ -650,11 +650,11 @@ export default function HomePage() {
                             </Link>
                         </motion.div>
                     </div>
-                </div>
-            </RevealOnScroll>
+                </RevealOnScroll>
+            </section>
 
             {/* ===================== SLIDER EXPERIENCIAS — BOA ===================== */}
-            <RevealOnScroll variant="slideLeft" amount={0.25} className="relative font-sans">
+            <section className="relative font-sans">
                 <div className="absolute inset-0 z-0 bg-[linear-gradient(180deg,#FEFCF7_0%,#FFFFFF_78%)]" />
                 <div
                     className="absolute inset-0 z-0 opacity-[0.05] pointer-events-none"
@@ -665,7 +665,7 @@ export default function HomePage() {
                     }}
                 />
 
-                <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <RevealOnScroll variant="slideLeft" amount={0.25} className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="mb-8 text-center">
                         <h2 className="text-4xl sm:text-5xl font-extrabold text-boa-ink">
                             Próximas <span className="text-boa-green">Experiencias</span>
@@ -677,11 +677,11 @@ export default function HomePage() {
 
                     {/* Si no hay datos aún, no bloquea el render: simplemente no se muestra el slider */}
                     <ExperiencesSlider items={experienceItems} />
-                </div>
-            </RevealOnScroll>
+                </RevealOnScroll>
+            </section>
 
             {/* ===================== Gift Cards Section ===================== */}
-            <RevealOnScroll variant="pop" amount={0.25} className="relative font-sans">
+            <section className="relative font-sans">
                 <div className="absolute inset-0 z-0 bg-[linear-gradient(180deg,#FEFCF7_0%,#FFFFFF_85%)]" />
                 <div
                     className="absolute inset-0 z-0 opacity-[0.06] pointer-events-none"
@@ -696,7 +696,7 @@ export default function HomePage() {
                 <div className="pointer-events-none absolute -top-24 -left-24 w-[28rem] h-[28rem] rounded-full bg-boa-green/10 blur-3xl" aria-hidden />
                 <div className="pointer-events-none absolute -bottom-28 -right-24 w-[26rem] h-[26rem] rounded-full bg-boa-terra/12 blur-3xl" aria-hidden />
 
-                <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <RevealOnScroll variant="pop" amount={0.25} className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-14">
                         <h2 className="boa-heading font-sans text-4xl sm:text-5xl font-extrabold text-neutral-900">
                             Gift <span className="text-boa-green">Cards</span>
@@ -733,7 +733,7 @@ export default function HomePage() {
                             </span>
                         </p>
                     </div>
-                </div>
+                </RevealOnScroll>
 
                 <style jsx>{`
           .boa-fill-text {
@@ -759,7 +759,7 @@ export default function HomePage() {
             }
           }
         `}</style>
-            </RevealOnScroll>
+            </section>
 
             {selected && (
                 <GiftCardBuyModal
@@ -770,17 +770,17 @@ export default function HomePage() {
             )}
 
             {/* ===================== About BOA Preview - "BOA es comunidad" ===================== */}
-            <RevealOnScroll variant="fadeUp" amount={0.25} className="relative py-24 font-sans">
+            <section className="relative py-24 font-sans">
                 <div className="absolute inset-0 z-0 bg-[linear-gradient(180deg,#FAF8F2_0%,#FFFFFF_85%)]" />
 
-                <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <RevealOnScroll variant="fadeUp" amount={0.25} className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                         {/* Texto */}
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.6, ease: "easeOut" }}
-                            className="space-y-6 flex flex-col items-center lg:items-start text-center lg:text-left max-w-xl mx-auto lg:mx-0"
+                            className="space-y-6 flex flex-col items-start text-left max-w-xl mx-0"
                         >
                             <h2 className="text-4xl sm:text-5xl font-extrabold text-neutral-900 leading-tight">
                                 BOA es comunidad.
@@ -820,8 +820,8 @@ export default function HomePage() {
                             </div>
                         </motion.div>
                     </div>
-                </div>
-            </RevealOnScroll>
+                </RevealOnScroll>
+            </section>
         </section>
     );
 }
