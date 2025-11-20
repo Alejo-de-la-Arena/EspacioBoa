@@ -254,28 +254,11 @@ export default function Header() {
                                         </nav>
                                     </AnimatePresence>
 
-                                    {/* Auth al final para mejor clickeo */}
-                                    {/* Botones de auth simples al final */}
-                                    <div className="mt-5 pt-4 border-t border-neutral-200/70">
-                                        <div className="flex flex-col gap-2">
-                                            <Link href="/auth/login">
-                                                <Button
-                                                    variant="outline"
-                                                    className="w-full justify-center font-sans"
-                                                >
-                                                    Iniciar sesión
-                                                </Button>
-                                            </Link>
-                                            <Link href="/auth/register">
-                                                <Button
-                                                    className="w-full justify-center font-sans bg-boa-green text-white hover:bg-boa-green/90"
-                                                >
-                                                    Registrarme
-                                                </Button>
-                                            </Link>
+                                    {!user && (
+                                        <div className="mt-5 pt-4 border-t border-neutral-200/70">
+                                            <HeaderAuth />
                                         </div>
-                                    </div>
-
+                                    )}
                                 </div>
                             </SheetContent>
                         </Sheet>

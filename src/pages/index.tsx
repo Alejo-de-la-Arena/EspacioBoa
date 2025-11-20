@@ -100,8 +100,8 @@ function RevealOnScroll({
 
 function HeroTitle() {
     const STEP = 0.08;
-    const words = ["Donde", "lo", "rico", "y", "lo", "que", "hace", "bien", "se", "encuentran"];
-    const breakIndex = 7; // después de "bien"
+    const words = ["Café", "de", "especialidad,", "espacio", "holístico", "y", "cultural"];
+    const breakIndex = 4;
 
     const renderWord = (word: string, index: number, total: number) => {
         const isLast = index === total - 1;
@@ -169,7 +169,7 @@ function HeroTitle() {
 
     return (
         <h1
-            className="boa-hero-title font-sans text-white drop-shadow-[0_10px_30px_rgba(0,0,0,.45)] text-[1.25rem] sm:text-2xl md:text-5xl font-extrabold tracking-normal md:tracking-tight leading-[1.15] sm:leading-[1.06] mx-auto text-center"
+            className="boa-hero-title font-sans text-white drop-shadow-[0_10px_30px_rgba(0,0,0,.45)] text-[1.05rem] sm:text-[1.35rem] md:text-5xl font-extrabold tracking-normal md:tracking-tight leading-[1.18] sm:leading-[1.06] mx-auto text-center"
         >
             {/* Línea 1 */}
             <span className="block whitespace-nowrap">
@@ -185,6 +185,7 @@ function HeroTitle() {
         </h1>
     );
 }
+
 
 
 export default function HomePage() {
@@ -286,7 +287,7 @@ export default function HomePage() {
                         {/* Pill animada — mejor legibilidad mobile, wrap elegante */}
                         <div className="mt-4 flex justify-center">
                             <div
-                                className="boa-pill flex flex-wrap lg:flex-nowrap items-center justify-center gap-1.5 lg:gap-2.5 rounded-full bg-white/18 border border-white/30 px-3 py-1.5 sm:px-3.5 sm:py-2 backdrop-blur-sm w-auto max-w-[22rem] lg:max-w-none lg:mt-2 text-white/95 text-[0.625rem] sm:text-[0.75rem] md:text-xs lg:text-sm drop-shadow-[0_6px_18px_rgba(0,0,0,.35)]"
+                                className="boa-pill flex flex-nowrap items-center justify-center gap-1.5 lg:gap-2.5 rounded-full bg-white/18 border border-white/30 px-3 py-1.5 sm:px-3.5 sm:py-2 backdrop-blur-sm w-full md:w-auto max-w-full lg:mt-2 text-white/95 text-[0.625rem] sm:text-[0.7rem] md:text-xs lg:text-sm drop-shadow-[0_6px_18px_rgba(0,0,0,.35)]"
                             >
 
                                 <Coffee className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
@@ -390,21 +391,77 @@ export default function HomePage() {
             }
           }
 
-  /* --- Ajustes de pill para mobile chico --- */
-  @media (max-width: 389px) {
-    .boa-pill {
-      flex-wrap: nowrap;   
-      max-width: none;    
-      font-size: 0.55rem;    
-      gap: 0.25rem;           
-      padding-left: 0.75rem;
-      padding-right: 0.75rem;
-    }
+@media (max-width: 480px) {
+  .boa-pill {
+    max-width: 100%;
+    font-size: 0.7rem; 
+    gap: 0.35rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
 
-    .boa-pill svg {
-      width: 0.65rem;
-      height: 0.65rem;       
+  .boa-pill svg {
+    width: 0.7rem;
+    height: 0.7rem;
+  }
+}
+
+@media (max-width: 423px) {
+  .boa-pill {
+    font-size: 0.6rem; 
+  }
+
+  .boa-pill svg {
+    width: 0.6rem;
+    height: 0.6rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .boa-pill {
+    font-size: 0.5rem; 
+        gap: 0.25rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .boa-pill svg {
+    width: 0.5rem;
+    height: 0.5rem;
+  }
+}
+
+  @media (max-width: 350px) {
+  .boa-pill {
+    gap: 0.15rem;
+    padding-left: 0.15rem;
+    padding-right: 0.15rem;
+  }
+}
+
+ @media (max-width: 480px) {
+    .boa-hero-title {
+      font-size: 1.05rem;  
+      max-width: 20rem;  
+      margin-left: auto;
+      margin-right: auto;
     }
+  }
+
+  @media (max-width: 425px) {
+    .boa-hero-title {
+      font-size: 0.98rem;
+      max-width: 19rem;
+    }
+  }
+
+  @media (max-width: 375px) {
+    .boa-hero-title {
+      font-size: 0.92rem;
+      max-width: 18rem;
+    }
+  }
+
   }
         `}</style>
             </section>
@@ -418,10 +475,10 @@ export default function HomePage() {
                 <RevealOnScroll variant="tiltUp" amount={0.22} className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-8">
                         <h2 className="font-sans text-4xl sm:text-5xl font-extrabold tracking-tight text-boa-ink">
-                            Nuestros <span className="text-boa-green">Departamentos</span>
+                            Nuestras <span className="text-boa-green">Posibilidades</span>
                         </h2>
-                        <p className="mt-3 font-sans text-base sm:text-lg text-boa-ink/70 max-w-2xl mx-auto">
-                            Elegí por dónde entrar a BOA: Actividades, Gastronomía o Espacios.
+                        <p className="mt-3 font-sans text-base sm:text-xl text-boa-ink/70 max-w-2xl mx-auto">
+                            Descubrí todo lo que ofrece Boa.
                         </p>
                     </div>
 
@@ -687,7 +744,7 @@ export default function HomePage() {
                         <h2 className="text-4xl sm:text-5xl font-extrabold text-boa-ink">
                             Próximas <span className="text-boa-green">Experiencias</span>
                         </h2>
-                        <p className="mt-3 text-base sm:text-lg text-boa-ink/75 max-w-2xl mx-auto">
+                        <p className="mt-3 text-base sm:text-xl text-boa-ink/75 max-w-3xl mx-auto">
                             Deslizá y descubrí las Actividades y los Eventos que se vienen en BOA.
                         </p>
                     </div>
@@ -714,12 +771,12 @@ export default function HomePage() {
                 <div className="pointer-events-none absolute -bottom-28 -right-24 w-[26rem] h-[26rem] rounded-full bg-boa-terra/12 blur-3xl" aria-hidden />
 
                 <RevealOnScroll variant="pop" amount={0.25} className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-14">
+                    <div className="text-center mb-8">
                         <h2 className="boa-heading font-sans text-4xl sm:text-5xl font-extrabold text-neutral-900">
                             Gift <span className="text-boa-green">Cards</span>
                         </h2>
-                        <p className="mt-3 font-sans text-lg text-neutral-700 max-w-2xl mx-auto">
-                            Regalos que abrazan: café, arte y comunidad en una tarjeta especial.
+                        <p className="mt-3 font-sans text-xl text-neutral-700 max-w-2xl mx-auto">
+                            Regalá la experiencia Boa
                         </p>
                     </div>
 
@@ -744,9 +801,9 @@ export default function HomePage() {
                     </div>
 
                     <div className="mt-12 text-center">
-                        <p className="font-sans text-sm">
+                        <p className="font-sans text-md font-medium">
                             <span className="boa-fill-text">
-                                “En BOA creemos que los mejores regalos son los que se comparten.”
+                                En BOA creemos que los mejores regalos son los que se comparten.
                             </span>
                         </p>
                     </div>
@@ -787,7 +844,7 @@ export default function HomePage() {
             )}
 
             {/* ===================== About BOA Preview - "BOA es comunidad" ===================== */}
-            <section className="relative py-24 font-sans">
+            <section className="relative">
                 <div className="absolute inset-0 z-0 bg-[linear-gradient(180deg,#FAF8F2_0%,#FFFFFF_85%)]" />
 
                 <RevealOnScroll variant="fadeUp" amount={0.25} className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -799,15 +856,14 @@ export default function HomePage() {
                             transition={{ duration: 0.6, ease: "easeOut" }}
                             className="space-y-6 flex flex-col items-start text-left max-w-xl mx-0"
                         >
-                            <h2 className="text-4xl sm:text-5xl font-extrabold text-neutral-900 leading-tight">
-                                BOA es comunidad.
+                            <h2 className="text-4xl sm:text-5xl font-bold text-neutral-800 leading-tight">
+                                Boa es mucho más que un café de especialidad.
                                 <br />
-                                Es energía que se comparte.
+                                Es un lugar <span className="text-boa-green">para encontrarte</span>
                             </h2>
 
-                            <p className="text-lg text-neutral-700 leading-relaxed">
-                                Un lugar para encontrarnos, charlar, crear y disfrutar. Donde cada café, cada idea y cada sonrisa suman algo
-                                único.
+                            <p className="text-xl text-neutral-700 leading-relaxed">
+                                Somos un espacio creado para que te desconectes del ruido y disfrutes del día, ya sea solo o acompañado.
                             </p>
 
                             <Link
