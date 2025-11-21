@@ -2,7 +2,7 @@
 import Head from "next/head";
 import { motion } from "framer-motion";
 import { Heart, Sparkles } from "lucide-react";
-
+import { mediaUrl } from "@/lib/mediaUrl";
 import Activities from "@/components/Activities";
 import ActivitiesCalendar from "@/components/ActivitiesCalendar";
 import { useActivitiesLive } from "@/hooks/useActivitiesLive";
@@ -128,29 +128,31 @@ export default function ActivitiesPage() {
                                 animate={{ scale: 1, y: 0, opacity: 1 }}
                                 transition={{ duration: 1.2, ease: "easeOut" }}
                                 style={{
-                                    backgroundImage:
-                                        "url('https://res.cloudinary.com/dasch1s5i/image/upload/v1756773473/Gemini_Generated_Image_fldn88fldn88fldn_ztewxy.png')",
+                                    backgroundImage: `url('${mediaUrl(
+                                        "hero-activities/activities-bg.webp"
+                                    )}')`,
                                     backgroundSize: "cover",
                                     backgroundPosition: "center",
                                     backgroundRepeat: "no-repeat",
                                     filter: "saturate(0.96) brightness(1) contrast(1.04)",
                                 }}
                             />
-
                             <motion.div
                                 className="absolute inset-0 block sm:hidden"
                                 initial={{ scale: 1.06, y: 8, opacity: 0.98 }}
                                 animate={{ scale: 1, y: 0, opacity: 1 }}
                                 transition={{ duration: 1.2, ease: "easeOut" }}
                                 style={{
-                                    backgroundImage:
-                                        "url('https://res.cloudinary.com/dasch1s5i/image/upload/v1761316955/activities-bg-mobile_diuocb.webp')",
+                                    backgroundImage: `url('${mediaUrl(
+                                        "hero-activities/activities-bg-mobile.webp"
+                                    )}')`,
                                     backgroundSize: "cover",
                                     backgroundPosition: "center 18%",
                                     backgroundRepeat: "no-repeat",
                                     filter: "saturate(0.96) brightness(1) contrast(1.04)",
                                 }}
                             />
+
 
                             <div className="absolute inset-0 bg-[#FBF7EC]/60 mix-blend-multiply" />
                             <div

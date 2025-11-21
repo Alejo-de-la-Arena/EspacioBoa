@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useApp } from "@/contexts/AppContext";
 import { GiftCardCard } from "@/components/GiftCardCard";
 import GiftCardBuyModal from "@/components/GiftCardBuyModal";
-import { RevealOnScroll } from "@/components/RevealOnScroll";
+
 
 export default function GiftCardsPage() {
     const { giftCards = [] } = useApp();
@@ -14,11 +14,6 @@ export default function GiftCardsPage() {
     const [open, setOpen] = useState(false);
     const [selected, setSelected] = useState<any>(null);
 
-    // Animations
-    const container = {
-        hidden: { opacity: 0, y: 8 },
-        visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.12, delayChildren: 0.12 } },
-    };
     const item = {
         hidden: { opacity: 0, y: 16, scale: 0.98 },
         visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.45, ease: "easeOut" } },
@@ -28,7 +23,7 @@ export default function GiftCardsPage() {
     const DECOR_BG =
         "https://res.cloudinary.com/dfrhrnwwi/image/upload/v1756867726/nano-banana-no-bg-2025-09-03T02-47-52_1_jb6zay.jpg";
 
-    const list = giftCards.length ? giftCards.slice(0, 3) : fallbackGC;
+    const list = giftCards.length ? giftCards.slice(0, 3) : null;
 
     return (
         <section>
@@ -52,7 +47,7 @@ export default function GiftCardsPage() {
                     <div aria-hidden className="pointer-events-none absolute -bottom-10 -right-10 h-72 w-72 rounded-full bg-amber-300/10 blur-3xl" />
                 </div>
 
-                <RevealOnScroll variant="blurRise" amount={0.3} className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <section className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Encabezado */}
                     <div className="text-center mb-10 sm:mb-14">
                         <h1 className="text-[32px] sm:text-5xl font-extrabold tracking-tight text-boa-ink">
@@ -87,7 +82,7 @@ export default function GiftCardsPage() {
                             </span>
                         </p>
                     </div>
-                </RevealOnScroll>
+                </section>
             </section>
 
             {/* Modal */}
@@ -101,28 +96,3 @@ export default function GiftCardsPage() {
         </section>
     );
 }
-
-/** Fallback por si el contexto aún no cargó giftCards */
-const fallbackGC = [
-    {
-        id: "gc1",
-        name: "Experiencia Bienestar",
-        description: "Movimiento, calma y café de bienvenida.",
-        value: 25000,
-        benefits: ["3 clases de yoga", "1 sesión de meditación", "Café de bienvenida"],
-    },
-    {
-        id: "gc2",
-        name: "Café Lover",
-        description: "Para amantes del café de especialidad.",
-        value: 15000,
-        benefits: ["5 cafés premium", "1 taller de barismo", "Descuento en granos"],
-    },
-    {
-        id: "gc3",
-        name: "Tarot",
-        description: "Conexión y claridad con guías especializadas.",
-        value: 12500,
-        benefits: ["2 sesiones", "1 taller de introducción", "Descuentos en actividades"],
-    },
-];

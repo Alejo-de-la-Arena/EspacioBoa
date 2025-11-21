@@ -79,16 +79,11 @@ const shimmer = (w: number, h: number) => {
     return `data:image/svg+xml;base64,${toBase64(svg)}`;
 };
 
-// placeholder chico, súper liviano para <Image placeholder="blur" />
-const blurPlaceholder = shimmer(32, 20);
 
-
-/* --------------------------- Slider Reusable UI ------------------------- */
 type SliderProps = {
     images?: string[];
     alt?: string;
     sizes?: string;
-    /** Debe coincidir con sharedHeight para empatar alturas con el Card */
     aspectClass?: string;
 };
 
@@ -96,7 +91,6 @@ function CinematicSlider({
     images,
     alt = "Espacio BOA",
     sizes = "(min-width:1024px) 50vw, 100vw",
-    // Alturas más generosas: sincronizar con sharedHeight en la página
     aspectClass = "h-[74vw] sm:h-[60vw] lg:h-[clamp(520px,64vh,620px)] xl:h-[clamp(540px,66vh,640px)] 2xl:h-[clamp(500px,60vh,600px)]",
 }: SliderProps) {
     const [index, setIndex] = useState(0);
@@ -202,7 +196,7 @@ function CinematicSlider({
                                     alt=""
                                     fill
                                     sizes={sizes}
-                                    quality={60}
+                                    quality={90}
                                     className="object-cover blur-md scale-110 opacity-80"
                                     aria-hidden
                                 />
@@ -426,12 +420,15 @@ export default function SpacesPage() {
 
     return (
         <section>
-            {/* ===== SECCIÓN ESPACIOS ===== */}
-            <section id="espacios" className="relative pt-14 pb-40 sm:py-16">
+            <section
+                id="espacios"
+                className="relative pt-14 pb-52 sm:py-16" 
+            >
+
 
                 <div className="absolute inset-0 -z-10">
                     <Image
-                        src={mediaUrl("hero-spaces/spaces-bg.png")}
+                        src={mediaUrl("hero-spaces/spaces-bg.webp")}
                         alt="Pared blanca con plantas, estilo BOA"
                         fill
                         priority
@@ -439,7 +436,6 @@ export default function SpacesPage() {
                         sizes="100vw"
                         className="object-cover object-[42%_35%]"
                     />
-                    {/* Overlay suave para contraste de textos (ajustá opacidad si querés) */}
                     <div className="pointer-events-none absolute inset-0 bg-white/60 sm:bg-white/50" />
                 </div>
 
