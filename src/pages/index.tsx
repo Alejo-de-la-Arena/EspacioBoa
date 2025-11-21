@@ -52,6 +52,43 @@ function pickRandom<T>(arr: T[], n: number) {
     return copy.slice(0, Math.min(n, copy.length));
 }
 
+function isUpcomingActivity(a: any) {
+    const rawStart =
+        a?.start_at ??
+        a?.startAt ??
+        a?.start_date ??
+        a?.startDate ??
+        a?.date ??
+        null;
+
+    const rawEnd =
+        a?.end_at ??
+        a?.endAt ??
+        a?.end_date ??
+        a?.endDate ??
+        null;
+
+    const now = new Date();
+
+    if (rawEnd) {
+        const endDate = new Date(rawEnd);
+        if (!Number.isNaN(endDate.getTime())) {
+            return endDate >= now;
+        }
+    }
+
+    if (rawStart) {
+        const startDate = new Date(rawStart);
+        if (!Number.isNaN(startDate.getTime())) {
+            return startDate >= now;
+        }
+    }
+
+    return true;
+}
+
+
+
 type RevealVariant = "fadeUp" | "slideLeft" | "pop" | "tiltUp";
 
 function RevealOnScroll({
@@ -191,56 +228,76 @@ export default function HomePage() {
     const experienceItems = useMemo(() => {
         const desired = 4;
 
-        const t = (x: any) => x?.title ?? x?.name ?? x?.activityTitle ?? x?.eventTitle ?? "";
-        const img = (x: any) => x?.image ?? x?.hero_image ?? x?.cover ?? x?.banner ?? x?.thumbnail ?? "";
-        const sid = (x: any) => x?.id ?? x?._id ?? x?.slug ?? x?.uuid ?? Math.random().toString(36).slice(2);
+        const t = (x: any) =>
+            x?.title ?? x?.name ?? x?.activityTitle ?? x?.eventTitle ?? "";
 
-        const actsRaw = Array.isArray(liveActivities) ? liveActivities : [];
-        const evesRaw = Array.isArray(events) ? events : [];
+        const img = (x: any) =>
+            x?.image ??
+            x?.hero_image ?? // columna de la tabla activities
+            x?.cover ??
+            x?.banner ??
+            x?.thumbnail ??
+            "";
 
-        const acts = actsRaw
-            .filter((a) => a && (t(a) || img(a)))
-            .map((a) => ({ ...a, id: sid(a), title: t(a), image: img(a), _kind: "activity" as const }));
+        const sid = (x: any) =>
+            x?.id ??
+            x?._id ??
+            x?.slug ??
+            x?.uuid ??
+            Math.random().toString(36).slice(2);
 
-        const eves = evesRaw
-            .filter((e) => e && (t(e) || img(e)))
-            .map((e) => ({ ...e, id: sid(e), title: t(e), image: img(e), _kind: "event" as const }));
+        const actsRaw: any[] = Array.isArray(liveActivities) ? liveActivities : [];
 
-        const pickActs = pickRandom(acts, Math.min(2, acts.length));
-        const pickEves = pickRandom(eves, Math.min(2, eves.length));
+        const activities = actsRaw
+            // Publicadas / activas
+            .filter((a) => a && a.is_published !== false)
+            // Que tengan al menos título o imagen
+            .filter((a) => t(a) || img(a))
+            // Que todavía no hayan pasado
+            .filter(isUpcomingActivity)
+            // Mapeo al formato del slider
+            .map((a) => {
+                const start =
+                    a?.start_at ??
+                    a?.startAt ??
+                    a?.start_date ??
+                    a?.startDate ??
+                    a?.date ??
+                    null;
 
-        const used = new Set<string>([
-            ...pickActs.map((a) => `activity:${a.id}`),
-            ...pickEves.map((e) => `event:${e.id}`),
-        ]);
-        const remainingActs = shuffleInPlace(acts.filter((a) => !used.has(`activity:${a.id}`)));
-        const remainingEves = shuffleInPlace(eves.filter((e) => !used.has(`event:${e.id}`)));
+                let date: string | undefined;
+                let time: string | undefined;
 
-        let pool: ExpItem[] = [...pickActs, ...pickEves];
-        const takeNext = () => (remainingActs.length ? remainingActs.shift()! : remainingEves.shift()!);
-        while (pool.length < desired && (remainingActs.length || remainingEves.length)) {
-            pool.push(takeNext());
-        }
+                if (start) {
+                    const d = new Date(start);
+                    if (!Number.isNaN(d.getTime())) {
+                        date = d.toISOString(); // lo vamos a leer en el slider
+                        time = d.toLocaleTimeString("es-AR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                        });
+                    }
+                }
 
-        if (acts.length > 0 && !pool.some((i) => i._kind === "activity")) {
-            pool = [acts[0], ...pool.filter((i) => i._kind !== "activity")].slice(0, desired);
-        }
+                return {
+                    ...a,
+                    id: sid(a),
+                    title: t(a),
+                    description: a.description ?? "",
+                    image: img(a),
+                    date,          // fecha de la actividad
+                    time,          // hora de la actividad
+                    capacity: a.capacity ?? null,
+                    price: a.price ?? undefined,
+                    _kind: "activity" as const,
+                };
+            });
 
-        return shuffleInPlace(pool).slice(0, desired);
-    }, [liveActivities, events]);
+        const shuffled = shuffleInPlace(activities.slice());
+        const result = shuffled.slice(0, desired);
 
-    useEffect(() => {
-        console.groupCollapsed("%c[EXPERIENCES DIAG] HomePage", "color:#0b7; font-weight:bold;");
-        console.debug("activities len:", Array.isArray(liveActivities) ? liveActivities.length : liveActivities);
-        console.debug("events len:", Array.isArray(events) ? events.length : events);
-        console.debug("experienceItems len:", experienceItems.length);
-        console.debug("kinds:", experienceItems.map((i) => i?._kind));
-        console.debug("titles:", experienceItems.map((i) => i?.title));
-        console.groupEnd();
-    }, [liveActivities, events, experienceItems]);
-
-    const featuredMenu = menuItems.filter((item) => item.featured).slice(0, 3);
-    const featuredGiftCards = giftCards.slice(0, 2);
+        return result;
+    }, [liveActivities]);
 
     const cardItem = {
         hidden: { opacity: 0, y: 16, scale: 0.98 },
@@ -718,8 +775,9 @@ export default function HomePage() {
                             Próximas <span className="text-boa-green">Experiencias</span>
                         </h2>
                         <p className="mt-3 text-base sm:text-xl text-boa-ink/75 max-w-3xl mx-auto">
-                            Deslizá y descubrí las Actividades y los Eventos que se vienen en BOA.
+                            Deslizá y descubrí las actividades que se vienen en BOA.
                         </p>
+
                     </div>
 
                     {/* Si no hay datos aún, no bloquea el render: simplemente no se muestra el slider */}
@@ -933,23 +991,28 @@ function ExperiencesSlider({ items }: { items: ExpItem[] }) {
                 style={{ scrollSnapType: "x mandatory" }}
             >
                 {items.map((item, i) => {
-                    const isEvent = item._kind === "event";
                     const title = item.title ?? "Experiencia BOA";
                     const desc = item.description ?? "";
                     const img =
                         item.image ||
                         "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=90&w=2400";
-                    const href = item.href ?? (isEvent ? "/events" : "/activities");
-                    const day = isEvent && item.date ? new Date(item.date).toLocaleDateString("es-ES") : item?.schedule?.day;
-                    const time = isEvent ? item.time : item?.schedule?.time;
+
+                    // Siempre actividades en este slider
+                    const href = item.href ?? "/activities";
+
+                    const day: string | undefined = item.date
+                        ? new Date(item.date).toLocaleDateString("es-ES")
+                        : undefined;
+
+                    const time: string | undefined = item.time ?? item.schedule?.time;
+
                     const price = item?.price;
                     const cap = typeof item.capacity === "number" ? item.capacity : null;
                     const enr = typeof item.enrolled === "number" ? item.enrolled : null;
-                    const tag = isEvent ? "Evento" : "Actividad";
-
+                    const tag = "Actividad";
                     return (
                         <article
-                            key={`${item._kind ?? (isEvent ? "event" : "activity")}-${item.id ?? i}`}
+                            key={`activity-${item.id ?? i}`}
                             aria-roledescription="slide"
                             aria-label={`${i + 1} de ${slideCount}`}
                             className="snap-center shrink-0 w-full"
