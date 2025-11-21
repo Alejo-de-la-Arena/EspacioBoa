@@ -17,7 +17,6 @@ type GiftcardDb = {
     name: string;
     description: string | null;
     value: number;
-    benefits: any; // jsonb -> string[]
     image_url: string | null;
     is_active: boolean | null;
     created_by: string | null;
@@ -189,12 +188,12 @@ function dataURLtoBlob(dataUrl: string): Blob {
     return new Blob([u8arr], { type: mime });
 }
 
-/* =========================================================
-   Vista previa de la giftcard (plantilla)
-   ========================================================= */
-function CardPreview({ gc }: { gc: GiftcardDb }) {
-    const benefits = Array.isArray(gc.benefits) ? gc.benefits : [];
 
+const GENERIC_TITLE = "Gift Card";
+const GENERIC_DESC =
+    "Un regalo abierto para disfrutar BOA: café, arte y momentos de bienestar.";
+
+function CardPreview({ gc }: { gc: GiftcardDb }) {
     const flowerURI =
         "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'><g fill='%23308a73'><circle cx='7' cy='3' r='2'/><circle cx='11' cy='7' r='2'/><circle cx='7' cy='11' r='2'/><circle cx='3' cy='7' r='2'/><circle cx='9.8' cy='4.2' r='1.5'/><circle cx='9.8' cy='9.8' r='1.5'/><circle cx='4.2' cy='9.8' r='1.5'/><circle cx='4.2' cy='4.2' r='1.5'/><circle cx='7' cy='7' r='2.2'/></g></svg>\")";
 
@@ -220,14 +219,16 @@ function CardPreview({ gc }: { gc: GiftcardDb }) {
             rgba(164, 216, 195, .95) 100%
           )
         `,
-                boxShadow: "inset 0 0 0 3px rgba(255,255,255,.65), 0 18px 42px rgba(41,51,45,.14)",
+                boxShadow:
+                    "inset 0 0 0 3px rgba(255,255,255,.65), 0 18px 42px rgba(41,51,45,.14)",
             }}
         >
             <div
                 style={{
                     position: "relative",
                     borderRadius: 26,
-                    padding: 30,
+                    padding: 36,
+                    minHeight: 320,
                     overflow: "hidden",
                     background: "linear-gradient(180deg, #FFFBF4 0%, #FFF7EB 100%)",
                     boxShadow: "inset 0 0 0 1px rgba(92, 74, 56, .07)",
@@ -294,7 +295,8 @@ function CardPreview({ gc }: { gc: GiftcardDb }) {
                         width: 240,
                         height: 240,
                         borderRadius: 999,
-                        background: "radial-gradient(closest-side, rgba(214,232,221,.34), rgba(214,232,221,0))",
+                        background:
+                            "radial-gradient(closest-side, rgba(214,232,221,.34), rgba(214,232,221,0))",
                         filter: "blur(2px)",
                     }}
                 />
@@ -307,7 +309,8 @@ function CardPreview({ gc }: { gc: GiftcardDb }) {
                         width: 250,
                         height: 250,
                         borderRadius: 999,
-                        background: "radial-gradient(closest-side, rgba(250,241,224,.32), rgba(250,241,224,0))",
+                        background:
+                            "radial-gradient(closest-side, rgba(250,241,224,.32), rgba(250,241,224,0))",
                         filter: "blur(2px)",
                     }}
                 />
@@ -320,21 +323,21 @@ function CardPreview({ gc }: { gc: GiftcardDb }) {
                             lineHeight: "36px",
                             fontWeight: 800,
                             color: "#1b2a22",
-                            marginBottom: 8,
+                            marginBottom: 12,
                         }}
                     >
-                        {gc.name}
+                        {GENERIC_TITLE}
                     </h3>
 
                     <p
                         style={{
                             color: "#2c3a33",
                             fontSize: 18,
-                            lineHeight: "24px",
-                            margin: "2px 0 18px",
+                            lineHeight: "26px",
+                            margin: "6px 0 28px",
                         }}
                     >
-                        {gc.description || ""}
+                        {GENERIC_DESC}
                     </p>
 
                     {/* Precio */}
@@ -343,7 +346,7 @@ function CardPreview({ gc }: { gc: GiftcardDb }) {
                             fontSize: 44,
                             fontWeight: 900,
                             color: "#1b2a22",
-                            marginBottom: 18,
+                            marginBottom: 26,
                             position: "relative",
                         }}
                     >
@@ -365,50 +368,56 @@ function CardPreview({ gc }: { gc: GiftcardDb }) {
                         />
                     </div>
 
-                    {benefits.length > 0 && (
-                        <ul
-                            style={{
-                                margin: "0 0 22px",
-                                padding: 0,
-                                listStyle: "none",
-                                color: "#213A31",
-                                fontSize: 18,
-                            }}
-                        >
-                            {benefits.slice(0, 5).map((b: string, i: number) => (
-                                <li
-                                    key={i}
-                                    style={{
-                                        display: "flex",
-                                        gap: 10,
-                                        alignItems: "center",
-                                        marginBottom: 9,
-                                    }}
-                                >
-                                    <span
-                                        style={{
-                                            width: 14,
-                                            height: 14,
-                                            display: "inline-block",
-                                            backgroundImage: flowerURI,
-                                            backgroundRepeat: "no-repeat",
-                                            backgroundSize: "14px 14px",
-                                        }}
-                                    />
-                                    {b}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-
-                    {/* Separador */}
+                    {/* Separador decorado con flor */}
                     <div
                         style={{
-                            height: 1,
-                            margin: "8px 0 12px",
-                            background: "linear-gradient(90deg, rgba(43,58,50,.06), rgba(43,58,50,.12), rgba(43,58,50,.06))",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            margin: "20px 0 20px",
                         }}
-                    />
+                    >
+                        <div
+                            style={{
+                                flex: 1,
+                                height: 1,
+                                background:
+                                    "linear-gradient(90deg, rgba(43,58,50,.04), rgba(43,58,50,.16), rgba(43,58,50,.04))",
+                            }}
+                        />
+                        <div
+                            style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: 999,
+                                backgroundColor: "rgba(31,122,99,.06)",
+                                boxShadow: "0 0 0 1px rgba(31,122,99,.16)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}
+                        >
+                            <span
+                                aria-hidden
+                                style={{
+                                    width: 14,
+                                    height: 14,
+                                    display: "inline-block",
+                                    backgroundImage: flowerURI,
+                                    backgroundRepeat: "no-repeat",
+                                    backgroundSize: "14px 14px",
+                                }}
+                            />
+                        </div>
+                        <div
+                            style={{
+                                flex: 1,
+                                height: 1,
+                                background:
+                                    "linear-gradient(90deg, rgba(43,58,50,.04), rgba(43,58,50,.16), rgba(43,58,50,.04))",
+                            }}
+                        />
+                    </div>
 
                     <p
                         style={{
@@ -452,7 +461,6 @@ export default function AdminGiftcards() {
     const [name, setName] = React.useState("");
     const [description, setDescription] = React.useState("");
     const [value, setValue] = React.useState<string>("");
-    const [benefits, setBenefits] = React.useState<string>(""); // csv
     const [imageUrl, setImageUrl] = React.useState("");
     const [isActive, setIsActive] = React.useState(true);
 
@@ -852,7 +860,6 @@ export default function AdminGiftcards() {
         setName("");
         setDescription("");
         setValue("");
-        setBenefits("");
         setImageUrl("");
         setIsActive(true);
     }
@@ -865,7 +872,6 @@ export default function AdminGiftcards() {
         setName(r.name ?? "");
         setDescription(r.description ?? "");
         setValue(r.value != null ? String(r.value) : "");
-        setBenefits(Array.isArray(r.benefits) ? r.benefits.join(", ") : (r.benefits ?? ""));
         setImageUrl(r.image_url ?? "");
         setIsActive(Boolean(r.is_active));
         setOpen(true);
@@ -908,14 +914,12 @@ export default function AdminGiftcards() {
     async function shareWhatsApp(gc: GiftcardDb) {
         try {
             await ensureGiftcardImage(gc);
-            const benefits = Array.isArray(gc.benefits) ? gc.benefits : [];
-            const includes = benefits.length ? `Incluye: ${benefits.slice(0, 5).join(" • ")}` : "";
 
             const text =
-                `Gift Card BOA — ${gc.name}\n` +
-                (gc.description ? `${gc.description}\n` : "") +
+                `Gift Card BOA\n` +
                 `Valor: $${Number(gc.value ?? 0).toLocaleString("es-AR")}\n` +
-                (includes ? `${includes}` : "");
+                `${GENERIC_DESC}\n\n` +
+                `Uso presencial en BOA presentando la gift card al momento de pagar.`;
 
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
         } catch (e: any) {
@@ -927,6 +931,7 @@ export default function AdminGiftcards() {
             });
         }
     }
+
 
     async function copyGiftcardImage(gc: GiftcardDb) {
         try {
@@ -1036,7 +1041,6 @@ export default function AdminGiftcards() {
             name,
             description: description || null,
             value: Number(value),
-            benefits: benefits ? benefits.split(",").map((s) => s.trim()).filter(Boolean) : [],
             image_url: imageUrl || null,
             is_active: !!isActive,
         };
@@ -1319,15 +1323,6 @@ export default function AdminGiftcards() {
                                         rows={3}
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
-                                    />
-                                </div>
-
-                                <div className="sm:col-span-2 grid gap-1">
-                                    <label className="text-sm">Beneficios (separados por coma)</label>
-                                    <Input
-                                        value={benefits}
-                                        onChange={(e) => setBenefits(e.target.value)}
-                                        placeholder="Ej: 3 cafés, 1 taller, descuento en granos"
                                     />
                                 </div>
 

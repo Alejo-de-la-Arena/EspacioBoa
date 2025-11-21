@@ -169,14 +169,10 @@ function HeroTitle() {
 
     return (
         <h1
-            className="boa-hero-title font-sans text-white drop-shadow-[0_10px_30px_rgba(0,0,0,.45)] text-[1.05rem] sm:text-[1.35rem] md:text-5xl font-extrabold tracking-normal md:tracking-tight leading-[1.18] sm:leading-[1.06] mx-auto text-center"
+            className="boa-hero-title font-sans text-white drop-shadow-[0_10px_30px_rgba(0,0,0,.45)] text-[1.5rem] sm:text-[1.35rem] md:text-5xl font-extrabold tracking-normal md:tracking-tight leading-[1.18] sm:leading-[1.06] mx-auto text-center"
         >
-            {/* Línea 1 */}
-            <span className="block whitespace-nowrap">
+            <span className="block text-wrap">
                 {words.slice(0, breakIndex + 1).map((w, i) => renderWord(w, i, words.length))}
-            </span>
-            {/* Línea 2 */}
-            <span className="block whitespace-nowrap">
                 {words.slice(breakIndex + 1).map((w, idx) => {
                     const index = breakIndex + 1 + idx;
                     return renderWord(w, index, words.length);
@@ -419,15 +415,15 @@ export default function HomePage() {
 
 @media (max-width: 390px) {
   .boa-pill {
-    font-size: 0.5rem; 
+    font-size: 0.6rem; 
         gap: 0.25rem;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
   }
 
   .boa-pill svg {
-    width: 0.5rem;
-    height: 0.5rem;
+    width: 0.6rem;
+    height: 0.6rem;
   }
 }
 
@@ -438,29 +434,6 @@ export default function HomePage() {
     padding-right: 0.15rem;
   }
 }
-
- @media (max-width: 480px) {
-    .boa-hero-title {
-      font-size: 1.05rem;  
-      max-width: 20rem;  
-      margin-left: auto;
-      margin-right: auto;
-    }
-  }
-
-  @media (max-width: 425px) {
-    .boa-hero-title {
-      font-size: 0.98rem;
-      max-width: 19rem;
-    }
-  }
-
-  @media (max-width: 375px) {
-    .boa-hero-title {
-      font-size: 0.92rem;
-      max-width: 18rem;
-    }
-  }
 
   }
         `}</style>
@@ -790,7 +763,7 @@ export default function HomePage() {
                             >
                                 <GiftCardCard
                                     gc={gc}
-                                    showBuyButton
+                                    mode="public"
                                     onBuy={() => {
                                         setSelected(gc);
                                         setOpen(true);

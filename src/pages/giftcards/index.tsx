@@ -33,7 +33,7 @@ export default function GiftCardsPage() {
     return (
         <section>
             <section
-                
+
                 className="relative py-16 sm:py-20 font-sans overflow-hidden"
             >
                 {/* Capa: imagen decorativa detrás (sutil) */}
@@ -67,12 +67,14 @@ export default function GiftCardsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
                         {list.map((gc: any, i: number) => (
                             <motion.div key={`${gc.id ?? gc.name}-${i}`} variants={item} whileHover={{ y: -6 }}>
-                                <GiftCardCard gc={gc}
-                                    showBuyButton
+                                <GiftCardCard
+                                    gc={gc}
+                                    mode="public"
                                     onBuy={() => {
                                         setSelected(gc);
                                         setOpen(true);
-                                    }} />
+                                    }}
+                                />
                             </motion.div>
                         ))}
                     </div>
