@@ -1,14 +1,14 @@
 {
     "categories": {
-        "cafe": "https://res.cloudinary.com/dasch1s5i/image/upload/v1760554922/boa-coffee_u8srcy.png",
+        "cafe": "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/menu/boa-coffee.webp",
         "panaderia": "https://res.cloudinary.com/dasch1s5i/image/upload/v1760555469/baguette-boa_dtmwfe.png",
-        "brunch": "https://res.cloudinary.com/dasch1s5i/image/upload/v1760555790/boa-plate_tfkvwc.png",
-        "pizzas": "https://res.cloudinary.com/dasch1s5i/image/upload/v1760555791/pizza-boa_wruzme.png",
-        "wraps": "https://res.cloudinary.com/dasch1s5i/image/upload/v1760555468/boa-wrap_udu0tb.png",
-        "para-tomar": "https://res.cloudinary.com/dasch1s5i/image/upload/v1760567065/beer-boa_gpepk7.png",
-        "sin-tacc": "https://res.cloudinary.com/dasch1s5i/image/upload/v1760566775/boa-gluten-free_mfnjii.png",
-        "al-plato": "https://res.cloudinary.com/dasch1s5i/image/upload/v1760555790/boa-plate_tfkvwc.png",
-        "panes": "https://res.cloudinary.com/dasch1s5i/image/upload/v1760567007/boa-panes_ufrguw.png"
+        "brunch": "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/menu/boa-plate.webp",
+        "pizzas": "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/menu/pizza-boa.webp",
+        "wraps": "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/menu/boa-wrap.webp",
+        "para-tomar": "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/menu/beer-boa.webp",
+        "sin-tacc": "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/menu/boa-gluten-free.webp",
+        "al-plato": "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/menu/boa-plate.webp",
+        "panes": "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/menu/boa-panes.webp"
     },
     "items": {
         "espresso": "1200/img-5670.webp",

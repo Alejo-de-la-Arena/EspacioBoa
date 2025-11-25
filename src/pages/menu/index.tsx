@@ -1,27 +1,20 @@
 "use client";
 
-
-
-
 import React, { useMemo, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { X, Leaf, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RevealOnScroll, REVEAL_PRESET_CYCLE } from "@/components/RevealOnScroll";
 import rawImages from "@/data/images.json";
+import { mediaUrl } from "@/lib/mediaUrl";
+
 type ImagesJSON = {
     categories: Record<string, string>;
     items: Record<string, string>;
 };
 const IMAGES = rawImages as ImagesJSON;
 
-
-
-
 type MenuItemOption = { name: string; price: number | string };
-
 
 type MenuItem = {
     name: string;
@@ -31,7 +24,6 @@ type MenuItem = {
     options?: MenuItemOption[];
 };
 
-
 type MenuCategory = {
     id: string;
     title: string;
@@ -39,7 +31,6 @@ type MenuCategory = {
     extras?: MenuItemOption[];
     extrasLabel?: string;
 };
-
 
 /* ========= Utils ========= */
 const formatARS = (n?: number | string) =>
@@ -51,44 +42,27 @@ const formatARS = (n?: number | string) =>
         }).format(n)
         : n ?? "—";
 
-
-
-
 const FALLBACK_IMAGE =
     "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=1600&q=80&auto=format&fit=crop";
 
-
-
-
 const CATEGORY_IMAGES: Record<string, string> = IMAGES.categories || {};
-
-
-
 
 const imgForItem = (sectionId: string, name: string) => {
     const key = name.trim().toLowerCase();
     return IMAGES.items[key] || CATEGORY_IMAGES[sectionId] || FALLBACK_IMAGE;
 };
 
-
-
-
 const withFallback = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const t = e.currentTarget;
     if (t.src !== FALLBACK_IMAGE) t.src = FALLBACK_IMAGE;
 };
-
-
-
 
 function describeItem(sectionId: string, name: string, existing?: string) {
     if (existing && existing.trim().length > 0) return existing.trim();
     return "";
 }
 
-
-
-
+/* ========= Data ========= */
 const MENU: MenuCategory[] = [
     {
         id: "cafe",
@@ -111,8 +85,6 @@ const MENU: MenuCategory[] = [
             { name: "Leches vegetales", price: "+1200" },
         ],
     },
-
-
     {
         id: "panaderia",
         title: "panadería",
@@ -136,8 +108,6 @@ const MENU: MenuCategory[] = [
             { name: "Cookies", price: 3300 },
         ],
     },
-
-
     {
         id: "para-tomar",
         title: "para tomar",
@@ -166,32 +136,38 @@ const MENU: MenuCategory[] = [
             { name: "Gaseosas", price: 4200 },
         ],
     },
-
-
     {
         id: "sin-tacc",
         title: "SIN T.A.C.C.",
         items: [
             { name: "Cookie de banana", price: 5500 },
             { name: "Brownie patagónico", price: 7500 },
-            { name: "Carrot cake", price: 11000, options: [{ name: "Mitad de porción", price: 6000 }] },
-            { name: "Lingote de chocolate & maní", price: 12000, options: [{ name: "Mitad de porción", price: 6500 }] },
+            {
+                name: "Carrot cake",
+                price: 11000,
+                options: [{ name: "Mitad de porción", price: 6000 }],
+            },
+            {
+                name: "Lingote de chocolate & maní",
+                price: 12000,
+                options: [{ name: "Mitad de porción", price: 6500 }],
+            },
         ],
     },
-
-
     {
         id: "brunch",
         title: "brunch",
         items: [
-            { name: "Tostón de palta", price: 9200, options: [{ name: "Huevo", price: "+4500" }] },
+            {
+                name: "Tostón de palta",
+                price: 9200,
+                options: [{ name: "Huevo", price: "+4500" }],
+            },
             { name: "Tostado", price: 10200 },
             { name: "Bowl de yogur", price: 10200, note: "con granola y frutas" },
             { name: "Huevos revueltos", price: 9200 },
         ],
     },
-
-
     {
         id: "pizzas",
         title: "pizzas y empanadas",
@@ -202,8 +178,6 @@ const MENU: MenuCategory[] = [
             { name: "Empanadas", price: 4500 },
         ],
     },
-
-
     {
         id: "wraps",
         title: "wraps",
@@ -212,8 +186,6 @@ const MENU: MenuCategory[] = [
             { name: "Wrap de bondiola", price: 15500 },
         ],
     },
-
-
     {
         id: "al-plato",
         title: "al plato",
@@ -225,8 +197,6 @@ const MENU: MenuCategory[] = [
             { name: "Pollo al curry", price: 19000 },
         ],
     },
-
-
     {
         id: "panes",
         title: "panes",
@@ -238,13 +208,7 @@ const MENU: MenuCategory[] = [
     },
 ];
 
-
-
-
-
-
-/* ==================== Modal de producto (redimensionado y con mejores espaciados) ==================== */
-/* ==================== Modal de producto (warm + espaciados optimizados) ==================== */
+/* ========== Product Modal ========== */
 function ProductModal({
     open,
     item,
@@ -267,29 +231,70 @@ function ProductModal({
         return () => window.removeEventListener("keydown", onEsc);
     }, [open, onClose]);
 
-
     if (!item) return null;
     const img = imgForItem(sectionId, item.name);
     const description = describeItem(sectionId, item.name, item.description);
 
-
-    /* Paleta por categoría (tonos cálidos + verde BOA) */
     const THEME: Record<
         string,
         { cream: string; accent: string; accentSoft: string; ring: string }
     > = {
-        cafe: { cream: "#FFF8EE", accent: "#1E7A66", accentSoft: "rgba(30,122,102,.10)", ring: "rgba(30,122,102,.35)" },
-        "panaderia": { cream: "#FFF7E9", accent: "#2E7D59", accentSoft: "rgba(46,125,89,.10)", ring: "rgba(46,125,89,.32)" },
-        "para-tomar": { cream: "#FFF9F1", accent: "#0F7C68", accentSoft: "rgba(15,124,104,.10)", ring: "rgba(15,124,104,.33)" },
-        "sin-tacc": { cream: "#FFF8F0", accent: "#1F805E", accentSoft: "rgba(31,128,94,.10)", ring: "rgba(31,128,94,.33)" },
-        brunch: { cream: "#FFF7EE", accent: "#1E7A66", accentSoft: "rgba(30,122,102,.10)", ring: "rgba(30,122,102,.35)" },
-        pizzas: { cream: "#FFF6EC", accent: "#1E7A66", accentSoft: "rgba(30,122,102,.10)", ring: "rgba(30,122,102,.35)" },
-        wraps: { cream: "#FFF7ED", accent: "#1E7A66", accentSoft: "rgba(30,122,102,.10)", ring: "rgba(30,122,102,.35)" },
-        "al-plato": { cream: "#FFF7EE", accent: "#1E7A66", accentSoft: "rgba(30,122,102,.10)", ring: "rgba(30,122,102,.35)" },
-        panes: { cream: "#FFF6EA", accent: "#2E7D59", accentSoft: "rgba(46,125,89,.10)", ring: "rgba(46,125,89,.32)" },
+        cafe: {
+            cream: "#FFF8EE",
+            accent: "#1E7A66",
+            accentSoft: "rgba(30,122,102,.10)",
+            ring: "rgba(30,122,102,.35)",
+        },
+        panaderia: {
+            cream: "#FFF7E9",
+            accent: "#2E7D59",
+            accentSoft: "rgba(46,125,89,.10)",
+            ring: "rgba(46,125,89,.32)",
+        },
+        "para-tomar": {
+            cream: "#FFF9F1",
+            accent: "#0F7C68",
+            accentSoft: "rgba(15,124,104,.10)",
+            ring: "rgba(15,124,104,.33)",
+        },
+        "sin-tacc": {
+            cream: "#FFF8F0",
+            accent: "#1F805E",
+            accentSoft: "rgba(31,128,94,.10)",
+            ring: "rgba(31,128,94,.33)",
+        },
+        brunch: {
+            cream: "#FFF7EE",
+            accent: "#1E7A66",
+            accentSoft: "rgba(30,122,102,.10)",
+            ring: "rgba(30,122,102,.35)",
+        },
+        pizzas: {
+            cream: "#FFF6EC",
+            accent: "#1E7A66",
+            accentSoft: "rgba(30,122,102,.10)",
+            ring: "rgba(30,122,102,.35)",
+        },
+        wraps: {
+            cream: "#FFF7ED",
+            accent: "#1E7A66",
+            accentSoft: "rgba(30,122,102,.10)",
+            ring: "rgba(30,122,102,.35)",
+        },
+        "al-plato": {
+            cream: "#FFF7EE",
+            accent: "#1E7A66",
+            accentSoft: "rgba(30,122,102,.10)",
+            ring: "rgba(30,122,102,.35)",
+        },
+        panes: {
+            cream: "#FFF6EA",
+            accent: "#2E7D59",
+            accentSoft: "rgba(46,125,89,.10)",
+            ring: "rgba(46,125,89,.32)",
+        },
     };
     const t = THEME[sectionId] || THEME.cafe;
-
 
     return (
         <AnimatePresence>
@@ -305,19 +310,16 @@ function ProductModal({
                 >
                     <motion.div
                         onClick={(e) => e.stopPropagation()}
-                        initial={{ y: 30, scale: 0.98, opacity: 0 }}
-                        animate={{ y: 0, scale: 1, opacity: 1 }}
-                        exit={{ y: 12, scale: 0.985, opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 120, damping: 18, mass: 0.7 }}
-                        /* Tamaño grande y fondo cálido */
-                        className="relative w-screen md:w-full md:max-w-6xl h-[100vh] supports-[height:100svh]:h-[100svh] md:h-[60vh] rounded-none md:rounded-2xl overflow-hidden shadow-[0_30px_90px_rgba(16,185,129,.22)]"
+                        initial={{ y: 24, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 12, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: "easeOut" }}
+                        className="relative w-screen md:w-full md:max-w-6xl h-[100vh] supports-[height:100svh]:h-[100svh] md:h-[60vh] rounded-none md:rounded-2xl overflow-hidden shadow-[0_24px_70px_rgba(15,118,110,.25)]"
                         style={{
                             background: `linear-gradient(180deg, ${t.cream} 0%, #FFFFFF 140%)`,
-                            boxShadow: `0 30px 90px ${t.accentSoft}`,
                             outline: `1px solid ${t.ring}`,
                         }}
                     >
-                        {/* X */}
                         <button
                             className="absolute right-3 top-3 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 ring-1 text-neutral-700 hover:text-neutral-900"
                             onClick={onClose}
@@ -326,10 +328,7 @@ function ProductModal({
                             <X className="h-5 w-5" />
                         </button>
 
-
-                        {/* Layout 58/42 */}
                         <div className="grid grid-cols-1 md:grid-cols-[58%_42%] h-full">
-                            {/* Imagen a toda la altura */}
                             <div className="relative h-[38vh] md:h-full overflow-hidden">
                                 <img
                                     src={img}
@@ -340,10 +339,7 @@ function ProductModal({
                                 />
                             </div>
 
-
-                            {/* Panel derecho: centrado visual + espaciados compactos */}
                             <div className="grid grid-rows-[auto_1fr_auto] gap-4 sm:gap-5 p-5 sm:p-6 md:p-8 md:pr-14 h-full overflow-hidden">
-                                {/* Header compacto */}
                                 <div className="max-w-[560px] mx-auto w-full">
                                     <h3 className="text-[24px] md:text-[28px] font-semibold text-neutral-900 leading-tight tracking-[-0.01em]">
                                         {item.name}
@@ -358,8 +354,6 @@ function ProductModal({
                                     </div>
                                 </div>
 
-
-                                {/* Body: scrollea si hay mucho texto; tarjeta de descripción cálida */}
                                 <div className="min-h-0 overflow-y-auto pr-1 max-w-[560px] mx-auto w-full">
                                     {description && (
                                         <div
@@ -376,11 +370,11 @@ function ProductModal({
                                         </div>
                                     )}
 
-
                                     {item.note && (
-                                        <p className="mt-2 text-[13.5px] text-neutral-600">{item.note}</p>
+                                        <p className="mt-2 text-[13.5px] text-neutral-600">
+                                            {item.note}
+                                        </p>
                                     )}
-
 
                                     {Array.isArray(item.options) && item.options.length > 0 && (
                                         <div
@@ -403,7 +397,10 @@ function ProductModal({
                                                         className="flex items-center justify-between text-[14.5px]"
                                                     >
                                                         <span className="text-neutral-800">{op.name}</span>
-                                                        <span className="font-semibold" style={{ color: t.accent }}>
+                                                        <span
+                                                            className="font-semibold"
+                                                            style={{ color: t.accent }}
+                                                        >
                                                             {formatARS(op.price)}
                                                         </span>
                                                     </li>
@@ -411,7 +408,6 @@ function ProductModal({
                                             </ul>
                                         </div>
                                     )}
-
 
                                     {(item.price ?? null) !== null && (
                                         <div className="mt-4">
@@ -433,7 +429,6 @@ function ProductModal({
                                         </div>
                                     )}
 
-
                                     <div
                                         className="mt-4 h-px w-full"
                                         style={{
@@ -443,14 +438,14 @@ function ProductModal({
                                     />
                                 </div>
 
-
-                                {/* Footer fijo */}
                                 <div className="flex items-center justify-between gap-3 max-w-[560px] mx-auto w-full pt-1">
                                     <Button
                                         variant="outline"
                                         className="h-10 px-5 rounded-full"
                                         onClick={onPrev}
-                                        style={{ boxShadow: `inset 0 0 0 1px ${t.accentSoft}` }}
+                                        style={{
+                                            boxShadow: `inset 0 0 0 1px ${t.accentSoft}`,
+                                        }}
                                     >
                                         <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
                                     </Button>
@@ -471,17 +466,7 @@ function ProductModal({
     );
 }
 
-
-
-
-
-
-
-
-/* ==================== Modal de categoría (con “zona X” en la lista) ==================== */
-/* ==================== Modal de categoría (warm + mismas medidas del modal de producto) ==================== */
-/* ==================== Modal de categoría — Horizontal cálido con degradado ==================== */
-/* ==================== Modal de categoría — horizontal cálido, X segura y scroll con aire ==================== */
+/* ========== Category Modal ========== */
 function CategoryModal({
     open,
     category,
@@ -500,27 +485,63 @@ function CategoryModal({
         return () => window.removeEventListener("keydown", onEsc);
     }, [open, onClose]);
 
-
     if (!category) return null;
     const img = CATEGORY_IMAGES[category.id] || FALLBACK_IMAGE;
 
-
-    /* Paleta por categoría */
     const THEME: Record<
         string,
         { cream: string; accent: string; accentSoft: string; ring: string }
     > = {
-        cafe: { cream: "#FFF8EE", accent: "#1E7A66", accentSoft: "rgba(30,122,102,.10)", ring: "rgba(30,122,102,.35)" },
-        panaderia: { cream: "#FFF6EA", accent: "#2E7D59", accentSoft: "rgba(46,125,89,.10)", ring: "rgba(46,125,89,.32)" },
-        "para-tomar": { cream: "#FFF9F1", accent: "#0F7C68", accentSoft: "rgba(15,124,104,.10)", ring: "rgba(15,124,104,.33)" },
-        "sin-tacc": { cream: "#FFF8F0", accent: "#1F805E", accentSoft: "rgba(31,128,94,.10)", ring: "rgba(31,128,94,.33)" },
-        brunch: { cream: "#FFF7EE", accent: "#1E7A66", accentSoft: "rgba(30,122,102,.10)", ring: "rgba(30,122,102,.35)" },
-        pizzas: { cream: "#FFF6EC", accent: "#1E7A66", accentSoft: "rgba(30,122,102,.10)", ring: "rgba(30,122,102,.35)" },
-        wraps: { cream: "#FFF7ED", accent: "#1E7A66", accentSoft: "rgba(30,122,102,.10)", ring: "rgba(30,122,102,.35)" },
-        "al-plato": { cream: "#FFF7EE", accent: "#1E7A66", accentSoft: "rgba(30,122,102,.10)", ring: "rgba(30,122,102,.35)" },
+        cafe: {
+            cream: "#FFF8EE",
+            accent: "#1E7A66",
+            accentSoft: "rgba(30,122,102,.10)",
+            ring: "rgba(30,122,102,.35)",
+        },
+        panaderia: {
+            cream: "#FFF6EA",
+            accent: "#2E7D59",
+            accentSoft: "rgba(46,125,89,.10)",
+            ring: "rgba(46,125,89,.32)",
+        },
+        "para-tomar": {
+            cream: "#FFF9F1",
+            accent: "#0F7C68",
+            accentSoft: "rgba(15,124,104,.10)",
+            ring: "rgba(15,124,104,.33)",
+        },
+        "sin-tacc": {
+            cream: "#FFF8F0",
+            accent: "#1F805E",
+            accentSoft: "rgba(31,128,94,.10)",
+            ring: "rgba(31,128,94,.33)",
+        },
+        brunch: {
+            cream: "#FFF7EE",
+            accent: "#1E7A66",
+            accentSoft: "rgba(30,122,102,.10)",
+            ring: "rgba(30,122,102,.35)",
+        },
+        pizzas: {
+            cream: "#FFF6EC",
+            accent: "#1E7A66",
+            accentSoft: "rgba(30,122,102,.10)",
+            ring: "rgba(30,122,102,.35)",
+        },
+        wraps: {
+            cream: "#FFF7ED",
+            accent: "#1E7A66",
+            accentSoft: "rgba(30,122,102,.10)",
+            ring: "rgba(30,122,102,.35)",
+        },
+        "al-plato": {
+            cream: "#FFF7EE",
+            accent: "#1E7A66",
+            accentSoft: "rgba(30,122,102,.10)",
+            ring: "rgba(30,122,102,.35)",
+        },
     };
     const t = THEME[category.id] || THEME.cafe;
-
 
     return (
         <AnimatePresence>
@@ -539,15 +560,15 @@ function CategoryModal({
                         initial={{ y: 24, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: 12, opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 110, damping: 18 }}
-                        className="relative w-screen md:w-full md:max-w-7xl h-[92vh] supports-[height:100svh]:h-[92svh] md:h-[86vh] rounded-none md:rounded-2xl overflow-hidden shadow-[0_28px_90px_rgba(16,185,129,.22)]"
+                        transition={{ duration: 0.25, ease: "easeOut" }}
+                        className="relative w-screen md:w-full md:max-w-7xl h-[92vh] supports-[height:100svh]:h-[92svh] md:h-[86vh] rounded-none md:rounded-2xl overflow-hidden shadow-[0_24px_80px_rgba(15,118,110,.25)]"
                         style={{
                             background: `linear-gradient(180deg, ${t.cream} 0%, #FFFFFF 160%)`,
                             outline: `1px solid ${t.ring}`,
                         }}
                     >
                         <div className="grid grid-cols-1 md:grid-cols-[50%_50%] h-full">
-                            {/* IZQ: Hero */}
+                            {/* IZQ: Hero (solo desktop) */}
                             <div className="relative overflow-hidden hidden md:block">
                                 <img
                                     src={img}
@@ -558,7 +579,6 @@ function CategoryModal({
                                 <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(70%_60%_at_50%_50%,rgba(0,0,0,.34)_0%,rgba(0,0,0,.20)_48%,rgba(0,0,0,.10)_70%,rgba(0,0,0,0)_100%)]" />
                                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_0%,rgba(0,0,0,.16)_100%)] pointer-events-none" />
 
-
                                 <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center px-6">
                                     <span className="text-xs uppercase tracking-wide bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full mb-3">
                                         Gastronomía BOA
@@ -566,17 +586,27 @@ function CategoryModal({
                                     <h3 className="capitalize text-5xl font-semibold drop-shadow-[0_2px_8px_rgba(0,0,0,.3)]">
                                         {category.title}
                                     </h3>
-                                    <svg viewBox="0 0 520 28" className="mx-auto h-6 w-[min(420px,80%)] opacity-90 mt-3">
-                                        <path d="M6 22 C 140 4, 380 4, 514 22" stroke="rgba(255,255,255,.9)" strokeWidth="6" strokeLinecap="round" fill="none" />
+                                    <svg
+                                        viewBox="0 0 520 28"
+                                        className="mx-auto h-6 w-[min(420px,80%)] opacity-90 mt-3"
+                                    >
+                                        <path
+                                            d="M6 22 C 140 4, 380 4, 514 22"
+                                            stroke="rgba(255,255,255,.9)"
+                                            strokeWidth="6"
+                                            strokeLinecap="round"
+                                            fill="none"
+                                        />
                                     </svg>
-                                    <p className="text-[13px] mt-2 opacity-90">Arte, comunidad y sabores de especialidad</p>
+                                    <p className="text-[13px] mt-2 opacity-90">
+                                        Arte, comunidad y sabores de especialidad
+                                    </p>
                                 </div>
                             </div>
 
-
-                            {/* DER: Topbar sticky (X) + lista con scroll espacioso */}
+                            {/* DER: Topbar + lista */}
                             <div className="relative min-h-0 flex flex-col h-full">
-                                {/* Topbar desktop con X (no pisa contenido) */}
+                                {/* Topbar desktop */}
                                 <div
                                     className="hidden md:flex sticky top-0 z-30 items-center justify-end px-4"
                                     style={{
@@ -596,14 +626,18 @@ function CategoryModal({
                                     </button>
                                 </div>
 
-
-                                {/* Topbar mobile con título + X */}
+                                {/* Topbar mobile */}
                                 <div
                                     className="md:hidden sticky top-0 z-30"
-                                    style={{ background: `${t.cream}`, boxShadow: `inset 0 -1px 0 ${t.accentSoft}` }}
+                                    style={{
+                                        background: `${t.cream}`,
+                                        boxShadow: `inset 0 -1px 0 ${t.accentSoft}`,
+                                    }}
                                 >
                                     <div className="flex items-center justify-between px-4 py-3">
-                                        <h3 className="capitalize text-lg font-semibold text-neutral-900">{category.title}</h3>
+                                        <h3 className="capitalize text-lg font-semibold text-neutral-900">
+                                            {category.title}
+                                        </h3>
                                         <button
                                             className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-black"
                                             style={{ boxShadow: `inset 0 0 0 1px ${t.ring}` }}
@@ -615,8 +649,7 @@ function CategoryModal({
                                     </div>
                                 </div>
 
-
-                                {/* LISTA scroll: más padding y gutter reservado para que no “corte” nada */}
+                                {/* LISTA */}
                                 <div
                                     className="flex-1 overflow-y-auto p-5 pr-6 lg:pr-8"
                                     style={{
@@ -626,21 +659,27 @@ function CategoryModal({
                                     <ul className="space-y-4 pb-16">
                                         {category.items.map((it, i) => {
                                             const thumb = imgForItem(category.id, it.name);
-                                            const short = describeItem(category.id, it.name, it.description)
+                                            const short = describeItem(
+                                                category.id,
+                                                it.name,
+                                                it.description
+                                            )
                                                 .replace(/^Ingredientes:\s*/i, "")
-                                                .replace(/\. Elaborado de forma artesanal\.$/i, "");
+                                                .replace(
+                                                    /\. Elaborado de forma artesanal\.$/i,
+                                                    ""
+                                                );
                                             const brownSoft = "rgba(181,138,90,.12)";
-                                            const greenSoft = t.accentSoft || "rgba(30,122,102,.12)";
-
+                                            const greenSoft =
+                                                t.accentSoft || "rgba(30,122,102,.12)";
 
                                             return (
                                                 <li key={i}>
                                                     <button
                                                         onClick={() => onSelectItem(i)}
                                                         aria-label={`Ver ${it.name}`}
-                                                        className="group relative w-full text-left transition-all"
+                                                        className="group relative w-full text-left transition-all rounded-[24px] overflow-hidden"
                                                         style={{
-                                                            borderRadius: 24,
                                                             padding: "16px 20px",
                                                             background: `
                                 linear-gradient(180deg, rgba(255,248,238,.96) 0%, rgba(255,246,228,.94) 100%),
@@ -657,12 +696,11 @@ function CategoryModal({
                                                                         src={thumb}
                                                                         onError={withFallback}
                                                                         alt={it.name}
-                                                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                                                                        className="w-full h-full object-cover"
                                                                         loading="lazy"
                                                                     />
                                                                 </div>
                                                             </div>
-
 
                                                             {/* Texto */}
                                                             <div className="min-w-0">
@@ -674,23 +712,34 @@ function CategoryModal({
                                                                         {short}
                                                                     </p>
                                                                 )}
-                                                                {Array.isArray(it.options) && it.options.length > 0 && (
-                                                                    <div className="mt-2 space-y-1.5">
-                                                                        {it.options.map((op, k) => (
-                                                                            <div key={k} className="flex items-center justify-between text-[14px] text-neutral-800">
-                                                                                <span className="inline-flex items-center gap-2 w-full">
-                                                                                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: t.accent }} />
-                                                                                    {op.name}
-                                                                                </span>
-                                                                                <span className="font-semibold" style={{ color: t.accent }}>
-                                                                                    {formatARS(op.price)}
-                                                                                </span>
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
+                                                                {Array.isArray(it.options) &&
+                                                                    it.options.length > 0 && (
+                                                                        <div className="mt-2 space-y-1.5">
+                                                                            {it.options.map((op, k) => (
+                                                                                <div
+                                                                                    key={k}
+                                                                                    className="flex items-center justify-between text-[14px] text-neutral-800"
+                                                                                >
+                                                                                    <span className="inline-flex items-center gap-2 w-full">
+                                                                                        <span
+                                                                                            className="h-1.5 w-1.5 rounded-full"
+                                                                                            style={{
+                                                                                                background: t.accent,
+                                                                                            }}
+                                                                                        />
+                                                                                        {op.name}
+                                                                                    </span>
+                                                                                    <span
+                                                                                        className="font-semibold"
+                                                                                        style={{ color: t.accent }}
+                                                                                    >
+                                                                                        {formatARS(op.price)}
+                                                                                    </span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
                                                             </div>
-
 
                                                             {/* Precio */}
                                                             {(it.price ?? null) !== null && (
@@ -721,22 +770,7 @@ function CategoryModal({
     );
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* ==================== Card de categoría ==================== */
+/* ========== Category Card ========== */
 function CategoryCard({
     category,
     onOpen,
@@ -745,7 +779,6 @@ function CategoryCard({
     onOpen: (c: MenuCategory) => void;
 }) {
     const src = CATEGORY_IMAGES[category.id] || FALLBACK_IMAGE;
-
 
     return (
         <button
@@ -759,23 +792,17 @@ function CategoryCard({
       "
             aria-label={`Abrir ${category.title}`}
         >
-            {/* Imagen a full, sin padding, cubre todo */}
             <img
                 src={src}
                 onError={withFallback}
                 alt={category.title}
                 className="
           absolute inset-0 w-full h-full object-cover object-center
-          transition-transform duration-700 group-hover:scale-[1.02]
         "
             />
 
-
-            {/* Overlay crema sutil para consistencia visual */}
             <div className="absolute inset-0 bg-[#FFFBF4]/30 mix-blend-soft-light" />
 
-
-            {/* Detalles y texto */}
             <div className="relative z-10 h-full flex flex-col justify-end px-5 pb-5">
                 <span className="inline-flex items-center gap-2 text-emerald-900/90 text-sm mb-1">
                     <span className="h-2 w-2 rounded-full bg-[#1E7A66]" />
@@ -794,34 +821,18 @@ function CategoryCard({
     );
 }
 
-
-
-
-
-
-
-
-/* ==================== Página ==================== */
+/* ========== Page ========== */
 export default function MenuPage() {
     const categories = useMemo(() => MENU, []);
     const [catOpen, setCatOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] =
         useState<MenuCategory | undefined>(undefined);
 
-
-
-
     const [idx, setIdx] = useState<number>(0);
     const [productOpen, setProductOpen] = useState(false);
 
-
-
-
     const items = selectedCategory?.items || [];
     const item = items[idx];
-
-
-
 
     const openCategory = (c: MenuCategory) => {
         setSelectedCategory(c);
@@ -830,24 +841,17 @@ export default function MenuPage() {
         setCatOpen(true);
     };
 
-
-
-
     const closeCategory = () => {
         setCatOpen(false);
         setProductOpen(false);
     };
-
-
-
 
     return (
         <section
             aria-labelledby="boa-hero"
             className="relative overflow-hidden"
             style={{
-                backgroundImage:
-                    "url(https://res.cloudinary.com/dasch1s5i/image/upload/v1760568862/menu-bg_ezlbwv.png)",
+                backgroundImage: `url('${mediaUrl("menu/menu-bg.webp")}')`,
                 backgroundSize: "cover",
                 backgroundRepeat: "no-repeat",
                 backgroundPosition: "center",
@@ -855,9 +859,11 @@ export default function MenuPage() {
         >
             {/* HERO */}
             <section aria-labelledby="boa-hero" className="relative z-10">
-                <RevealOnScroll
+                <motion.div
                     className="container mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-12 text-center"
-                    variant="zoomRotate" amount={0.2}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
                 >
                     <h1
                         id="boa-hero"
@@ -866,12 +872,11 @@ export default function MenuPage() {
                         Gastronomía <span className="text-emerald-700">BOA</span>
                     </h1>
 
-
                     <motion.div
                         className="mx-auto mt-2 w-[min(520px,90%)]"
-                        initial={{ scaleX: 0 }}
-                        animate={{ scaleX: 1 }}
-                        transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
+                        initial={{ opacity: 0, scaleX: 0.9 }}
+                        animate={{ opacity: 1, scaleX: 1 }}
+                        transition={{ duration: 0.35, ease: "easeOut", delay: 0.1 }}
                     >
                         <svg
                             viewBox="0 0 520 28"
@@ -889,23 +894,21 @@ export default function MenuPage() {
                         </svg>
                     </motion.div>
 
-
                     <motion.p
                         className="mx-auto mt-4 max-w-3xl text-lg text-neutral-700"
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4, duration: 0.8 }}
+                        transition={{ duration: 0.35, ease: "easeOut", delay: 0.15 }}
                     >
                         Cocina de especialidad, honesta y consciente. Un ritual para
                         disfrutar lento, compartir y volver.
                     </motion.p>
 
-
                     <motion.div
                         className="mt-8 flex flex-wrap items-center justify-center gap-3"
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.6, duration: 0.8 }}
+                        transition={{ duration: 0.35, ease: "easeOut", delay: 0.2 }}
                     >
                         <a
                             href="#categories"
@@ -914,45 +917,34 @@ export default function MenuPage() {
                             Ver el menú
                         </a>
                     </motion.div>
-                </RevealOnScroll>
+                </motion.div>
             </section>
-
 
             {/* GRID de categorías */}
             <section className="py-8 sm:py-12">
                 <motion.div
                     className="mx-auto w-full max-w-7xl px-4 sm:px-6"
                     id="categories"
-                    initial="hidden"
-                    whileInView="visible"
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.15 }}
-                    transition={{ staggerChildren: 0.15 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
                 >
-                    <motion.div
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8"
-                        variants={{
-                            visible: { transition: { staggerChildren: 0.15 } },
-                        }}
-                    >
-                        {categories.map((cat, i) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                        {categories.map((cat) => (
                             <motion.div
                                 key={cat.id}
-                                variants={{
-                                    hidden: { opacity: 0, y: 30 },
-                                    visible: { opacity: 1, y: 0 },
-                                }}
-                                transition={{
-                                    duration: 0.6,
-                                    ease: [0.25, 0.1, 0.25, 1],
-                                }}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true, amount: 0.15 }}
+                                transition={{ duration: 0.35, ease: "easeOut" }}
                             >
                                 <CategoryCard category={cat} onOpen={openCategory} />
                             </motion.div>
                         ))}
-                    </motion.div>
+                    </div>
                 </motion.div>
             </section>
-
 
             {/* MODALES */}
             <CategoryModal
@@ -965,7 +957,6 @@ export default function MenuPage() {
                 }}
             />
 
-
             <ProductModal
                 open={productOpen && Boolean(item)}
                 item={item}
@@ -974,8 +965,10 @@ export default function MenuPage() {
                 onPrev={() =>
                     setIdx((i) => (i - 1 + items.length) % Math.max(items.length, 1))
                 }
-                onNext={() => setIdx((i) => (i + 1) % Math.max(items.length, 1))}
+                onNext={() =>
+                    setIdx((i) => (i + 1) % Math.max(items.length, 1))
+                }
             />
-        </section >
+        </section>
     );
 }

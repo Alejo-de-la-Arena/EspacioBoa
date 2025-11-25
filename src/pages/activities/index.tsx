@@ -1,19 +1,14 @@
-// pages/activities/index.tsx
 import Head from "next/head";
-import { motion } from "framer-motion";
 import { Heart, Sparkles } from "lucide-react";
 import { mediaUrl } from "@/lib/mediaUrl";
 import Activities from "@/components/Activities";
 import ActivitiesCalendar from "@/components/ActivitiesCalendar";
 import { useActivitiesLive } from "@/hooks/useActivitiesLive";
-
-import { RevealOnScroll, REVEAL_PRESET_CYCLE } from "@/components/RevealOnScroll";
-
-import * as React from "react";
 import { useAuth } from "@/stores/useAuth";
 import type { Activity } from "@/types";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
+import { motion } from "framer-motion";
 
 function deriveScheduleFromStart(startISO?: string) {
     if (!startISO) return { day: "—", time: "—" };
@@ -62,21 +57,20 @@ function normalizeActivity(ui: any): Activity {
 }
 
 export default function ActivitiesPage() {
-    // 👇 CLAVE: esperar a que Auth esté inicializado
     const { initialized } = useAuth();
-
-    // Tu hook real de datos (asegurate de que internamente también espere `initialized`)
     const { activities: rawActivities = [], loading: dataLoading } = useActivitiesLive();
 
-    // Loader combinado
     const isLoading = !initialized || dataLoading;
 
-    // Escape hatch (anti spinner infinito)
-    const [stuck, setStuck] = React.useState(false);
+    const [stuck, setStuck] = useState(false);
     const router = useRouter();
-    React.useEffect(() => {
-        if (!isLoading) return;
-        const id = setTimeout(() => setStuck(true), 10000); // 10s
+
+    useEffect(() => {
+        if (!isLoading) {
+            setStuck(false);
+            return;
+        }
+        const id = setTimeout(() => setStuck(true), 10000);
         return () => clearTimeout(id);
     }, [isLoading]);
 
@@ -87,7 +81,9 @@ export default function ActivitiesPage() {
 
     return (
         <>
-            <Head><title>Actividades | BOA</title></Head>
+            <Head>
+                <title>Actividades | BOA</title>
+            </Head>
 
             {isLoading && !stuck ? (
                 <section>
@@ -102,7 +98,10 @@ export default function ActivitiesPage() {
                     <div className="text-center space-y-3">
                         <p className="text-neutral-700">Tardó demasiado en cargar. Podés reintentar.</p>
                         <button
-                            onClick={() => { setStuck(false); router.reload(); }}
+                            onClick={() => {
+                                setStuck(false);
+                                router.reload();
+                            }}
                             className="px-4 py-2 rounded-lg ring-1 ring-emerald-300 hover:bg-emerald-50"
                         >
                             Reintentar
@@ -111,37 +110,20 @@ export default function ActivitiesPage() {
                 </section>
             ) : (
                 <section>
-                    {/* Hero */}
-                    <section
-                        className="relative min-h-[80vh] sm:min-h-[100vh] pt-28 pb-16 font-sans overflow-hidden grid place-items-center"
-                        onMouseMove={(e) => {
-                            const el = e.currentTarget as HTMLElement;
-                            const r = el.getBoundingClientRect();
-                            el.style.setProperty("--mx", `${e.clientX - r.left}px`);
-                            el.style.setProperty("--my", `${e.clientY - r.top}px`);
-                        }}
-                    >
+                    <section className="relative min-h-[80vh] sm:min-h-[100vh] pt-28 pb-16 font-sans overflow-hidden grid place-items-center">
                         <div className="absolute inset-0 -z-10">
-                            <motion.div
+                            <div
                                 className="absolute inset-0 hidden sm:block"
-                                initial={{ scale: 1.06, y: 8, opacity: 0.98 }}
-                                animate={{ scale: 1, y: 0, opacity: 1 }}
-                                transition={{ duration: 1.2, ease: "easeOut" }}
                                 style={{
-                                    backgroundImage: `url('${mediaUrl(
-                                        "hero-activities/activities-bg.webp"
-                                    )}')`,
+                                    backgroundImage: `url('${mediaUrl("hero-activities/activities-bg.webp")}')`,
                                     backgroundSize: "cover",
                                     backgroundPosition: "center",
                                     backgroundRepeat: "no-repeat",
                                     filter: "saturate(0.96) brightness(1) contrast(1.04)",
                                 }}
                             />
-                            <motion.div
+                            <div
                                 className="absolute inset-0 block sm:hidden"
-                                initial={{ scale: 1.06, y: 8, opacity: 0.98 }}
-                                animate={{ scale: 1, y: 0, opacity: 1 }}
-                                transition={{ duration: 1.2, ease: "easeOut" }}
                                 style={{
                                     backgroundImage: `url('${mediaUrl(
                                         "hero-activities/activities-bg-mobile.webp"
@@ -152,17 +134,7 @@ export default function ActivitiesPage() {
                                     filter: "saturate(0.96) brightness(1) contrast(1.04)",
                                 }}
                             />
-
-
                             <div className="absolute inset-0 bg-[#FBF7EC]/60 mix-blend-multiply" />
-                            <div
-                                aria-hidden
-                                className="pointer-events-none absolute inset-0"
-                                style={{
-                                    background:
-                                        "radial-gradient(220px 160px at var(--mx,50%) var(--my,50%), rgba(30,122,102,.10), transparent 60%)",
-                                }}
-                            />
                             <div
                                 aria-hidden
                                 className="absolute inset-0 opacity-[0.06] pointer-events-none"
@@ -174,12 +146,10 @@ export default function ActivitiesPage() {
                             <div className="relative isolate max-w-3xl mx-auto text-center">
                                 <div className="relative z-10">
                                     <motion.div
-                                        initial={{ opacity: 0, y: -8, filter: "blur(4px)" }}
-                                        whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                                        viewport={{ once: true, amount: 0.6 }}
-                                        transition={{ type: "spring", stiffness: 110, damping: 14 }}
-                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full 
-                     bg-boa-green/25 backdrop-blur-md ring-1 ring-boa-green/40 text-boa-green-foreground"
+                                        initial={{ opacity: 0, y: -8 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.35, ease: "easeOut" }}
+                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-boa-green/25 backdrop-blur-md ring-1 ring-boa-green/40 text-boa-green-foreground"
                                     >
                                         <Sparkles className="h-4 w-4 text-boa-green" />
                                         <span className="text-[12px] font-semibold tracking-wide text-boa-green">
@@ -188,43 +158,45 @@ export default function ActivitiesPage() {
                                     </motion.div>
 
                                     <motion.h1
-                                        initial={{ opacity: 0, y: 14, scale: 0.98, letterSpacing: "0.04em" }}
-                                        whileInView={{ opacity: 1, y: 0, scale: 1, letterSpacing: "0em" }}
-                                        viewport={{ once: true, amount: 0.7 }}
-                                        transition={{ type: "spring", stiffness: 120, damping: 16 }}
+                                        initial={{ opacity: 0, y: 14 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.4, ease: "easeOut", delay: 0.08 }}
                                         className="mt-4 text-4xl sm:text-6xl font-extrabold tracking-tight text-neutral-900"
                                     >
                                         Actividades que te <span className="text-boa-green">hacen bien</span>
                                     </motion.h1>
 
-                                    <svg className="mt-3 mx-auto w-56 h-4 relative z-20" viewBox="0 0 220 18" fill="none" aria-hidden="true">
-                                        <motion.path
+                                    <motion.svg
+                                        className="mt-3 mx-auto w-56 h-4 relative z-20"
+                                        viewBox="0 0 220 18"
+                                        fill="none"
+                                        aria-hidden="true"
+                                        initial={{ opacity: 0, y: 6 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.35, ease: "easeOut", delay: 0.16 }}
+                                    >
+                                        <path
                                             d="M6 10C55 15 125 15 214 8"
                                             stroke="hsl(var(--boa-green))"
                                             strokeWidth="6"
                                             strokeLinecap="round"
-                                            initial={{ pathLength: 1, opacity: 1 }}
-                                            whileInView={{ pathLength: 1, opacity: 1 }}
-                                            viewport={{ once: true, amount: 1 }}
-                                            transition={{ duration: 0.9, ease: "easeInOut", delay: 0.2 }}
                                         />
-                                    </svg>
+                                    </motion.svg>
 
                                     <motion.p
-                                        initial={{ opacity: 0, y: 8, filter: "blur(6px)" }}
-                                        whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                                        viewport={{ once: true, amount: 0.2 }}
-                                        transition={{ duration: 0.55, ease: "easeOut", delay: 0.12 }}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.4, ease: "easeOut", delay: 0.22 }}
                                         className="mt-4 text-base sm:text-xl leading-relaxed relative z-20 text-neutral-800 max-w-[100%] mx-auto"
                                     >
-                                        Movimiento, arte y bienestar en un mismo lugar. <br /> Descubrí tu próxima clase y reservá en segundos.
+                                        Movimiento, arte y bienestar en un mismo lugar. <br /> Descubrí tu próxima
+                                        clase y reservá en segundos.
                                     </motion.p>
                                 </div>
                             </div>
                         </div>
                     </section>
 
-                    {/* lista pública */}
                     <Activities activities={activities} />
                     <ActivitiesCalendar activities={activities} />
                 </section>
