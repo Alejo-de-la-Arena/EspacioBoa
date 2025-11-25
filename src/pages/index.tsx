@@ -1,4 +1,4 @@
-"use client";
+import { useInView, motion as m } from "framer-motion";
 import { useApp } from "@/contexts/AppContext";
 import { useActivitiesLive } from "@/hooks/useActivitiesLive";
 import { useEffect, useRef, useState, useMemo } from "react";
@@ -87,21 +87,9 @@ function isUpcomingActivity(a: any) {
     return true;
 }
 
+
+
 type RevealVariant = "fadeUp" | "slideLeft" | "pop" | "tiltUp";
-
-const REVEAL_VARIANTS: Record<
-    RevealVariant,
-    { hidden: any; visible: any }
-> = {
-    fadeUp: { hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0 } },
-    slideLeft: { hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } },
-    pop: { hidden: { opacity: 0, scale: 0.97 }, visible: { opacity: 1, scale: 1 } },
-    tiltUp: {
-        hidden: { opacity: 0, y: 18, rotateX: -6 },
-        visible: { opacity: 1, y: 0, rotateX: 0 },
-    },
-};
-
 
 function RevealOnScroll({
     children,
@@ -116,28 +104,36 @@ function RevealOnScroll({
     delay?: number;
     variant?: RevealVariant;
 }) {
+    const ref = useRef<HTMLDivElement | null>(null);
+    const inView = useInView(ref, { amount, margin: "0px 0px -10% 0px" });
+    const state = inView ? "visible" : "hidden";
+
+    const variants: Record<RevealVariant, { hidden: any; visible: any }> = {
+        fadeUp: { hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0 } },
+        slideLeft: { hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } },
+        pop: { hidden: { opacity: 0, scale: 0.97 }, visible: { opacity: 1, scale: 1 } },
+        tiltUp: { hidden: { opacity: 0, y: 18, rotateX: -6 }, visible: { opacity: 1, y: 0, rotateX: 0 } },
+    };
+
     return (
-        <motion.section
+        <section
+            ref={ref}
             className={["relative isolate", className || ""].join(" ")}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: false, amount }}
-            variants={REVEAL_VARIANTS[variant]}
-            transition={{ duration: 0.55, ease: "easeOut", delay }}
-            style={{
-                overflow: "hidden",
-                contain: "paint",
-                willChange: "transform",
-                transformStyle: "preserve-3d",
-                backfaceVisibility: "hidden",
-            }}
+            style={{ overflow: "hidden", contain: "paint", willChange: "transform" }}
         >
-            <div className="py-16 sm:py-18 md:py-20 lg:py-24">{children}</div>
-        </motion.section>
+            <m.div
+                initial="hidden"
+                animate={state}
+                variants={variants[variant]}
+                transition={{ duration: 0.55, ease: "easeOut", delay }}
+                className="relative z-10 will-change-transform"
+                style={{ transformStyle: "preserve-3d", backfaceVisibility: "hidden" }}
+            >
+                <div className="py-16 sm:py-18 md:py-20 lg:py-24">{children}</div>
+            </m.div>
+        </section>
     );
 }
-
-
 
 function HeroTitle() {
     const STEP = 0.08;
@@ -226,8 +222,8 @@ function HeroTitle() {
 
 
 export default function HomePage() {
-    const { giftCards } = useApp();
-    const { activities: liveActivities = [] } = useActivitiesLive();
+    const { events, menuItems, giftCards, loading: appLoading } = useApp();
+    const { activities: liveActivities = [], loading: actsLoading } = useActivitiesLive();
 
     const experienceItems = useMemo(() => {
         const desired = 4;
@@ -494,6 +490,8 @@ export default function HomePage() {
     padding-left: 0.15rem;
     padding-right: 0.15rem;
   }
+}
+
   }
         `}</style>
             </section>
@@ -937,12 +935,6 @@ function ExperiencesSlider({ items }: { items: ExpItem[] }) {
     const [index, setIndex] = useState(0);
     const slideCount = items?.length ?? 0;
 
-    const indexRef = useRef(0);
-
-    useEffect(() => {
-        indexRef.current = index;
-    }, [index]);
-
     useEffect(() => {
         const el = containerRef.current;
         if (!el) return;
@@ -955,21 +947,21 @@ function ExperiencesSlider({ items }: { items: ExpItem[] }) {
         return () => el.removeEventListener("scroll", onScroll);
     }, [slideCount]);
 
-    const pausedRef = useRef(false);
+    console.groupCollapsed("%c[EXPERIENCES DIAG] Slider props", "color:#07f; font-weight:bold;");
+    console.debug("items length:", items?.length ?? 0, "kinds:", items?.map((i) => i?._kind));
+    console.groupEnd();
 
+    const pausedRef = useRef(false);
     useEffect(() => {
         if (!slideCount) return;
-        const el = containerRef.current;
-        if (!el) return;
-
+        const el = containerRef.current!;
         const id = setInterval(() => {
             if (pausedRef.current) return;
-            const next = (indexRef.current + 1) % slideCount;
+            const next = (index + 1) % slideCount;
             el.scrollTo({ left: el.clientWidth * next, behavior: "smooth" });
         }, 5500);
-
         return () => clearInterval(id);
-    }, [slideCount]);
+    }, [index, slideCount]);
 
     const goto = (i: number) => {
         const el = containerRef.current;
@@ -1026,14 +1018,7 @@ function ExperiencesSlider({ items }: { items: ExpItem[] }) {
                             className="snap-center shrink-0 w-full"
                         >
                             <div className="relative h-[480px] md:h-[560px] lg:h-[550px] rounded-[30px] overflow-hidden ring-1 ring-boa-ink/10 shadow-[0_18px_48px_rgba(2,6,23,.12)]">
-                                <Image
-                                    src={img}
-                                    alt={title}
-                                    fill
-                                    quality={90}
-                                    sizes="100vw"
-                                    className="object-cover"
-                                />
+                                <Image src={img} alt={title} fill priority={i === 0} quality={90} sizes="100vw" className="object-cover" />
                                 <div className="absolute inset-0 z-0 bg-[radial-gradient(120%_70%_at_50%_80%,rgba(0,0,0,.35)_0%,rgba(0,0,0,.08)_55%,transparent_80%)]" />
                                 <div className="absolute inset-0 z-0 bg-gradient-to-t from-boa-ink/40 via-boa-ink/10 to-transparent" />
                                 <div className="absolute inset-x-4 sm:inset-x-6 md:left-8 md:right-auto md:max-w-[560px] bottom-6 md:bottom-8">
