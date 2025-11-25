@@ -23,7 +23,7 @@ export default function GiftCardsPage() {
     const DECOR_BG =
         "https://res.cloudinary.com/dfrhrnwwi/image/upload/v1756867726/nano-banana-no-bg-2025-09-03T02-47-52_1_jb6zay.jpg";
 
-    const list = giftCards.length ? giftCards.slice(0, 3) : null;
+    const list = Array.isArray(giftCards) && giftCards.length ? giftCards.slice(0, 3) : [];
 
     return (
         <section>
@@ -73,6 +73,7 @@ export default function GiftCardsPage() {
                             </motion.div>
                         ))}
                     </div>
+
 
                     {/* Remate */}
                     <div className="mt-12 text-center">
