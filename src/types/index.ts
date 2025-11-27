@@ -17,22 +17,23 @@ export interface Person {
 }
 
 export interface Activity {
-    id: string;              // ← vuelve a permitir number
+    id: string;        
     slug?: string;
     title: string;
     description: string;
-    images?: string[];                // ← ahora opcional
+    images?: string[];               
     image?: string;
     category: string;
     price?: number;
     featured?: boolean;
-    schedule: { day: string; time: string }; // seguimos exigiendo schedule
+    schedule: { day: string; time: string }; 
     location: string;
     enrolled: number;
     capacity: number;
+    seatsRemaining?: number; 
     instructor?: Person;
-    start_at?: string; // ISO
-    end_at?: string;   // ISO
+    start_at?: string; 
+    end_at?: string;   
     is_published?: boolean;
     hero_image?: string;
     gallery?: string[] | any;

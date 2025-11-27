@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/stores/useAuth"; // asumiendo que ya lo tenés
+import { useAuth } from "@/stores/useAuth"; 
 import { Loader2, Check, Clock, X } from "lucide-react";
 
 type Props = { kind: "activity" | "event"; id: string; seatsRemaining?: number };

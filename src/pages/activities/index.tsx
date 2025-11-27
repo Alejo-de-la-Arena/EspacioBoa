@@ -5,60 +5,15 @@ import Activities from "@/components/Activities";
 import ActivitiesCalendar from "@/components/ActivitiesCalendar";
 import { useActivitiesLive } from "@/hooks/useActivitiesLive";
 import { useAuth } from "@/stores/useAuth";
-import type { Activity } from "@/types";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 
-function deriveScheduleFromStart(startISO?: string) {
-    if (!startISO) return { day: "—", time: "—" };
-    const d = new Date(startISO);
-    const day = d.toLocaleDateString("es-AR", { weekday: "long" }) || "—";
-    const prettyDay = day.charAt(0).toUpperCase() + day.slice(1);
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
-    return { day: prettyDay, time: `${hh}:${mm}` };
-}
-
-function normalizeActivity(ui: any): Activity {
-    const start_at: string | undefined = ui.start_at ?? ui.startAt ?? ui.start ?? undefined;
-    const end_at: string | undefined = ui.end_at ?? ui.endAt ?? ui.end ?? undefined;
-    const gallery: string[] = Array.isArray(ui.gallery) ? ui.gallery : [];
-    const images: string[] = Array.isArray(ui.images)
-        ? ui.images
-        : ui.hero_image
-            ? [ui.hero_image]
-            : ui.image
-                ? [ui.image]
-                : [];
-    const schedule = ui.schedule ?? deriveScheduleFromStart(start_at);
-
-    return {
-        id: ui.id,
-        slug: ui.slug ?? undefined,
-        title: ui.title ?? "",
-        description: ui.description ?? "",
-        images,
-        image: ui.image ?? ui.hero_image ?? images[0],
-        category: ui.category ?? "General",
-        price: typeof ui.price === "number" ? ui.price : undefined,
-        featured: !!ui.featured,
-        schedule,
-        location: ui.location ?? "Espacio BOA",
-        enrolled: typeof ui.enrolled === "number" ? ui.enrolled : 0,
-        capacity: typeof ui.capacity === "number" ? ui.capacity : 0,
-        instructor: ui.instructor,
-        start_at,
-        end_at,
-        is_published: ui.is_published ?? undefined,
-        hero_image: ui.hero_image ?? undefined,
-        gallery,
-    };
-}
 
 export default function ActivitiesPage() {
     const { initialized } = useAuth();
-    const { activities: rawActivities = [], loading: dataLoading } = useActivitiesLive();
+    const { activities, loading: dataLoading } = useActivitiesLive();
+
 
     const isLoading = !initialized || dataLoading;
 
@@ -73,11 +28,6 @@ export default function ActivitiesPage() {
         const id = setTimeout(() => setStuck(true), 10000);
         return () => clearTimeout(id);
     }, [isLoading]);
-
-    const activities: Activity[] = useMemo(
-        () => rawActivities.map(normalizeActivity),
-        [rawActivities]
-    );
 
     return (
         <>

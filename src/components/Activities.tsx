@@ -116,11 +116,11 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                     variants={headerVariants}
                     initial="hidden"
                     animate={animateState}
-                    className="mb-6 md:mb-8 rounded-2xl bg-[#FFFCF7]/85 ring-1 ring-[#EEDCC9] backdrop-blur px-4 py-3"
+                    className="mb-6 md:mb-8 rounded-2xl bg-[#FFFCF7]/85 ring-1 ring-[#EEDCC9] backdrop-blur px-3 py-2 sm:px-4 sm:py-3"
                 >
-                    <div className="flex flex-col gap-3 md:grid md:grid-cols-[180px_220px_1fr_auto] md:items-center">
+                    <div className="grid grid-cols-2 gap-2 md:gap-3 md:grid-cols-[180px_220px_1fr_auto] md:items-center py-1">
                         <Select value={day} onValueChange={setDay}>
-                            <SelectTrigger className="h-10 rounded-xl bg-white/90 ring-1 ring-boa-green/20 border-0">
+                            <SelectTrigger className="h-9 md:h-10 w-full rounded-xl bg-white/90 ring-1 ring-boa-green/20 border-0 ">
                                 <SelectValue placeholder="Día" />
                             </SelectTrigger>
                             <SelectContent>
@@ -134,7 +134,7 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                         </Select>
 
                         <Select value={cat} onValueChange={setCat}>
-                            <SelectTrigger className="h-10 rounded-xl bg-white/90 ring-1 ring-boa-green/20 border-0">
+                            <SelectTrigger className="h-9 md:h-10 w-full rounded-xl bg-white/90 ring-1 ring-boa-green/20 border-0">
                                 <SelectValue placeholder="Actividad" />
                             </SelectTrigger>
                             <SelectContent>
@@ -147,21 +147,21 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                             </SelectContent>
                         </Select>
 
-                        <div className="relative">
+                        <div className="relative w-full col-span-2 md:col-span-1 py-1 pt-2">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-boa-ink/40" />
                             <Input
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder="Buscar por nombre o descripción…"
                                 aria-label="Buscar actividades"
-                                className="h-10 pl-10 rounded-xl bg-white/90 ring-1 ring-boa-green/20 border-0"
+                                className="h-9 md:h-10 w-full pl-10 rounded-xl bg-white/90 ring-1 ring-boa-green/20 border-0"
                             />
                         </div>
 
-                        <div className="md:justify-self-end">
+                        <div className="w-full md:w-auto md:justify-self-end col-span-2 md:col-auto py-1">
                             <Button
                                 variant="outline"
-                                className="h-10 rounded-xl ring-1 ring-boa-green/30 hover:bg-boa-green/10"
+                                className="md:w-auto h-9 md:h-10 rounded-xl ring-1 ring-boa-green/30 hover:bg-boa-green/10"
                                 onClick={() => {
                                     setSearch("");
                                     setDay("all");
@@ -173,7 +173,7 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                         </div>
                     </div>
 
-                    <div className="mt-2 text-xs text-boa-ink/60">
+                    <div className="mt-1.5 text-xs text-boa-ink/60">
                         Mostrando{" "}
                         <span className="font-semibold text-boa-green">{filtered.length}</span> de{" "}
                         <span className="font-semibold">{activities.length}</span> actividades.
@@ -272,7 +272,7 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                                     <p className="mt-2 text-white/80 text-sm line-clamp-1">{a.description}</p>
 
                                     <div className="mt-4 translate-y-0 transition-all duration-300 group-hover:opacity-100">
-                                        <div className="grid grid-cols-1 gap-2 text-[13px] text-white/90 sm:hidden">
+                                        <div className="grid grid-cols-1 gap-1.5 text-[13px] text-white/90 sm:hidden">
                                             <div className="flex items-center">
                                                 <Calendar className="h-4 w-4 mr-2" />
                                                 {a.schedule.day}
@@ -284,6 +284,12 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                                             <div className="flex items-center">
                                                 <MapPin className="h-4 w-4 mr-2" />
                                                 {a.location}
+                                            </div>
+                                            <div className="flex items-center">
+                                                <Users className="h-4 w-4 mr-2" />
+                                                <span className="tabular-nums">
+                                                    {a.enrolled}/{a.capacity}
+                                                </span>
                                             </div>
                                         </div>
 
@@ -318,8 +324,8 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                                                 <Button
                                                     size="sm"
                                                     className={`group/btn rounded-full px-4 ${a.enrolled >= a.capacity
-                                                            ? "bg-white/30 hover:bg-white/30 cursor-not-allowed"
-                                                            : "bg-white text-boa-ink hover:bg-white/90"
+                                                        ? "bg-white/30 hover:bg-white/30 cursor-not-allowed"
+                                                        : "bg-white text-boa-ink hover:bg-white/90"
                                                         }`}
                                                     disabled={a.enrolled >= a.capacity}
                                                 >
@@ -338,8 +344,8 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                                                 <Button
                                                     size="sm"
                                                     className={`group/btn rounded-full px-4 ${a.enrolled >= a.capacity
-                                                            ? "bg-white/30 hover:bg-white/30 cursor-not-allowed"
-                                                            : "bg-white text-boa-ink hover:bg-white/90"
+                                                        ? "bg-white/30 hover:bg-white/30 cursor-not-allowed"
+                                                        : "bg-white text-boa-ink hover:bg-white/90"
                                                         }`}
                                                     disabled={a.enrolled >= a.capacity}
                                                 >
