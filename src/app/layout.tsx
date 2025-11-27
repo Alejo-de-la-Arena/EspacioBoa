@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
 import { Montserrat, Dancing_Script } from "next/font/google";
-import AuthHydrator from "./_auth-hydrator"; // 👈
+import AuthHydrator from "./_auth-hydrator"; 
 
 export const metadata: Metadata = {
     title: "BOA",

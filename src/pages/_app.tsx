@@ -1,11 +1,11 @@
-// src/pages/_app.tsx
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { AppContextProvider } from "@/contexts/AppContext";
-import Layout from "@/components/Layout";                 // ⬅️ agrega el layout
-import AuthInit from "@/components/auth/AuthInit";        // ⬅️ hidrata auth en Pages Router
-import { Toaster } from "@/components/ui/toaster"; // ⬅️ nuevo
+import Layout from "@/components/Layout";
+import AuthInit from "@/components/auth/AuthInit";
+import { Toaster } from "@/components/ui/toaster";
 import { Montserrat, Dancing_Script } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const montserrat = Montserrat({
     subsets: ["latin"],
@@ -32,6 +32,9 @@ export default function App({ Component, pageProps }: AppProps) {
                     <Toaster />
                 </Layout>
             </AppContextProvider>
+
+            {/* 👇 Acá activás Speed Insights */}
+            <SpeedInsights />
         </div>
     );
 }
