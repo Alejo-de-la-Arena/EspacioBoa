@@ -23,7 +23,6 @@ export default function EventsPage() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [onlyToday, setOnlyToday] = useState(false);
   const [onlyWeekend, setOnlyWeekend] = useState(false);
-  const [onlySpots, setOnlySpots] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -120,15 +119,9 @@ export default function EventsPage() {
       if (onlyToday && !(t >= startOfToday && t <= endOfToday)) return false;
       if (onlyWeekend && !isWeekend(d)) return false;
 
-      if (onlySpots) {
-        const realEnrolled = counts[String(ev.id)] ?? (ev.enrolled ?? 0);
-        const remaining = (ev.capacity ?? 0) - realEnrolled;
-        if (!(remaining > 0)) return false;
-      }
-
       return true;
     });
-  }, [filteredEvents, onlyToday, onlyWeekend, onlySpots, counts]);
+  }, [filteredEvents, onlyToday, onlyWeekend, counts]);
 
   const groupedByMonth = useMemo(() => {
     const fmt = new Intl.DateTimeFormat("es-ES", {
@@ -202,7 +195,8 @@ export default function EventsPage() {
             <div className="relative overflow-hidden rounded-2xl ring-1 ring-emerald-100/70 bg-white/85 backdrop-blur-sm shadow-[0_10px_30px_rgba(16,185,129,0.07)]">
               <div className="absolute inset-x-0 top-0 h-1.5 opacity-60 bg-[linear-gradient(90deg,#34d399_0%,#a7f3d0_35%,#fff7ed_100%)]" />
               <div className="p-4 sm:p-5">
-                <nav className="border-b border-emerald-100/70">
+                {/* DESKTOP: tabs de categorías */}
+                <nav className="border-b border-emerald-100/70 hidden sm:block">
                   <ul className="flex flex-wrap gap-4 sm:gap-6">
                     {["all", ...categories].map((cat) => {
                       const label = cat === "all" ? "Todos los eventos" : cat;
@@ -212,11 +206,10 @@ export default function EventsPage() {
                           <button
                             onClick={() => setSelectedCategory(cat)}
                             aria-pressed={active}
-                            className={`relative pb-2 text-[14px] sm:text-[15px] transition-colors focus:outline-none ${
-                              active
-                                ? "text-emerald-800 font-semibold"
-                                : "text-neutral-700 hover:text-emerald-700"
-                            }`}
+                            className={`relative pb-2 text-[14px] sm:text-[15px] transition-colors focus:outline-none ${active
+                              ? "text-emerald-800 font-semibold"
+                              : "text-neutral-700 hover:text-emerald-700"
+                              }`}
                           >
                             {label}
                             {active && (
@@ -237,7 +230,86 @@ export default function EventsPage() {
                   </ul>
                 </nav>
 
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
+                {/* MOBILE: categoría + mes + search + chips */}
+                <div className="mt-3 space-y-3 sm:hidden">
+                  {/* Row 1: categoría + mes */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <Select
+                      value={selectedCategory}
+                      onValueChange={setSelectedCategory}
+                    >
+                      <SelectTrigger className="h-10 w-full rounded-xl border border-emerald-100 bg-white focus:ring-emerald-300 font-sans">
+                        <SelectValue placeholder="Categoría" />
+                      </SelectTrigger>
+                      <SelectContent className="font-sans">
+                        <SelectItem className="font-sans" value="all">
+                          Todos los eventos
+                        </SelectItem>
+                        {categories.map((c) => (
+                          <SelectItem key={c} value={c} className="font-sans">
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                      <SelectTrigger className="h-10 w-full rounded-xl border border-emerald-100 bg-white focus:ring-emerald-300 font-sans">
+                        <SelectValue placeholder="Mes" />
+                      </SelectTrigger>
+                      <SelectContent className="font-sans">
+                        <SelectItem className="font-sans" value="all">
+                          Todos los meses
+                        </SelectItem>
+                        {months.map((m) => (
+                          <SelectItem
+                            className="font-sans"
+                            key={m.value}
+                            value={m.value}
+                          >
+                            {m.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Row 2: search */}
+                  <div className="relative w-full">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                    <Input
+                      placeholder="Buscar experiencias…"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="h-10 pl-9 pr-3 rounded-xl border border-emerald-100 bg-white focus:ring-emerald-300 placeholder:text-neutral-400 font-sans"
+                    />
+                  </div>
+
+                  {/* Row 3: Hoy / Fin de semana */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setOnlyToday((v) => !v)}
+                      className={`h-10 px-3 rounded-md text-[13px] ring-1 transition font-sans ${onlyToday
+                        ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
+                        : "bg-white text-neutral-700 ring-emerald-100 hover:bg-emerald-50/60"
+                        }`}
+                    >
+                      Hoy
+                    </button>
+                    <button
+                      onClick={() => setOnlyWeekend((v) => !v)}
+                      className={`h-10 px-3 rounded-md text-[13px] ring-1 transition font-sans ${onlyWeekend
+                        ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
+                        : "bg-white text-neutral-700 ring-emerald-100 hover:bg-emerald-50/60"
+                        }`}
+                    >
+                      Fin de semana
+                    </button>
+                  </div>
+                </div>
+
+                {/* DESKTOP: search + mes + chips en una fila */}
+                <div className="mt-4 hidden sm:flex sm:flex-row sm:items-center sm:gap-3">
                   <div className="relative w-full sm:w-[280px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                     <Input
@@ -271,39 +343,28 @@ export default function EventsPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setOnlyToday((v) => !v)}
-                      className={`h-10 px-3 rounded-md text-[13px] ring-1 transition font-sans ${
-                        onlyToday
-                          ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
-                          : "bg-white text-neutral-700 ring-emerald-100 hover:bg-emerald-50/60"
-                      }`}
+                      className={`h-10 px-3 rounded-md text-[13px] ring-1 transition font-sans ${onlyToday
+                        ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
+                        : "bg-white text-neutral-700 ring-emerald-100 hover:bg-emerald-50/60"
+                        }`}
                     >
                       Hoy
                     </button>
                     <button
                       onClick={() => setOnlyWeekend((v) => !v)}
-                      className={`h-10 px-3 rounded-md text-[13px] ring-1 transition font-sans ${
-                        onlyWeekend
-                          ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
-                          : "bg-white text-neutral-700 ring-emerald-100 hover:bg-emerald-50/60"
-                      }`}
+                      className={`h-10 px-3 rounded-md text-[13px] ring-1 transition font-sans ${onlyWeekend
+                        ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
+                        : "bg-white text-neutral-700 ring-emerald-100 hover:bg-emerald-50/60"
+                        }`}
                     >
                       Fin de semana
-                    </button>
-                    <button
-                      onClick={() => setOnlySpots((v) => !v)}
-                      className={`h-10 px-3 rounded-md text-[13px] ring-1 transition font-sans ${
-                        onlySpots
-                          ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
-                          : "bg-white text-neutral-700 ring-emerald-100 hover:bg-emerald-50/60"
-                      }`}
-                    >
-                      Con cupos
                     </button>
                   </div>
                 </div>
               </div>
             </div>
           </motion.header>
+
 
           <div className="pt-8 event-list">
             {enhancedFilteredEvents.length === 0 ? (
@@ -327,7 +388,6 @@ export default function EventsPage() {
                     setSelectedCategory("all");
                     setOnlyToday(false);
                     setOnlyWeekend(false);
-                    setOnlySpots(false);
                   }}
                   variant="outline"
                   className="rounded-full"
@@ -356,45 +416,39 @@ export default function EventsPage() {
                       {(group as any).items.map((event: any) => {
                         const d = new Date(event.date);
                         const isPast = d.getTime() < Date.now();
-                        const isToday =
-                          d.toDateString() === new Date().toDateString();
+                        const isToday = d.toDateString() === new Date().toDateString();
                         const dd = d.getDate().toString().padStart(2, "0");
-                        const mm = (d.getMonth() + 1)
-                          .toString()
-                          .padStart(2, "0");
+                        const mm = (d.getMonth() + 1).toString().padStart(2, "0");
                         const weekday = d
                           .toLocaleDateString("es-ES", { weekday: "long" })
                           .toUpperCase();
                         const cap = event.capacity ?? 0;
-                        const enr =
-                          counts[String(event.id)] ??
-                          event.enrolled ??
-                          0;
-                        const hasSpots =
-                          cap > 0 ? cap - enr > 0 : true;
+                        const enr = counts[String(event.id)] ?? event.enrolled ?? 0;
+                        const hasSpots = cap > 0 ? cap - enr > 0 : true;
                         const pct =
-                          cap > 0
-                            ? Math.min(100, Math.max(0, (enr / cap) * 100))
-                            : 0;
+                          cap > 0 ? Math.min(100, Math.max(0, (enr / cap) * 100)) : 0;
 
                         return (
-                          <motion.article
+                          <Link
                             key={event.id}
-                            initial={{ opacity: 0, y: 8 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true, amount: 0.25 }}
-                            transition={{ duration: 0.25, ease: "easeOut" }}
-                            className="group grid grid-cols-1 sm:grid-cols-[124px,1fr,auto] items-stretch gap-3 sm:gap-6 rounded-xl overflow-hidden relative bg-gradient-to-br from-white to-emerald-50/20 ring-1 ring-inset ring-emerald-100/70 hover:ring-emerald-200 hover:shadow-[0_12px_28px_rgba(16,185,129,0.10)] border-l-4 border-l-emerald-200/70 transition-[transform,box-shadow,border-color] duration-200 ease-out"
+                            href={`/events/${event.id}`}
+                            className="group block"
                           >
-                            <div className="pointer-events-none absolute inset-0 opacity-[0.035] bg-[radial-gradient(circle_at_1px_1px,#10b981_1px,transparent_1px)] [background-size:14px_14px]" />
-                            <Link href={`/events/${event.id}`} className="block h-full">
-                              <div className="relative overflow-hidden w-full h-[200px] rounded-t-xl sm:w-[124px] sm:h-[140px] sm:rounded-l-xl sm:rounded-tr-none">
+                            <motion.article
+                              initial={{ opacity: 0, y: 8 }}
+                              whileInView={{ opacity: 1, y: 0 }}
+                              viewport={{ once: true, amount: 0.25 }}
+                              transition={{ duration: 0.25, ease: "easeOut" }}
+                              className="grid grid-cols-1 sm:grid-cols-[180px,1fr,auto] items-stretch gap-3 sm:gap-6 rounded-xl overflow-hidden relative bg-gradient-to-br from-white to-emerald-50/20 ring-1 ring-inset ring-emerald-100/70 hover:ring-emerald-200 hover:shadow-[0_12px_28px_rgba(16,185,129,0.10)] border-l-4 border-l-emerald-200/70 transition-[transform,box-shadow,border-color] duration-200 ease-out cursor-pointer sm:min-h-[220px]"
+                            >
+                              <div className="pointer-events-none absolute inset-0 opacity-[0.035] bg-[radial-gradient(circle_at_1px_1px,#10b981_1px,transparent_1px)] [background-size:14px_14px]" />
+
+                              {/* Imagen */}
+                              <div
+                                className="relative overflow-hidden w-full h-[200px] sm:w-[180px] sm:h-[220px]rounded-t-xl sm:rounded-l-xl sm:rounded-tr-none"
+                              >
                                 <img
-                                  src={
-                                    event.flyerVertical ||
-                                    event.poster ||
-                                    event.image
-                                  }
+                                  src={event.flyerVertical || event.poster || event.image}
                                   alt={event.title}
                                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                                   loading="lazy"
@@ -410,106 +464,100 @@ export default function EventsPage() {
                                   </span>
                                 )}
                               </div>
-                            </Link>
-
-                            <div className="grid grid-cols-[1fr_auto] gap-2 px-3 pb-3 pt-2 sm:contents">
-                              <div className="py-3 pr-2 sm:py-3 sm:pr-2 sm:pl-0">
-                                <Link href={`/events/${event.id}`}>
+                              {/* Contenido */}
+                              <div className="grid grid-cols-[1fr_auto] gap-2 px-3 pb-3 pt-2 sm:contents">
+                                <div className="py-3 pr-2 sm:py-3 sm:pr-2 sm:pl-0">
                                   <h4 className="text-[20px] sm:text-[22px] font-semibold text-neutral-900 group-hover:text-emerald-700 transition-colors font-sans">
                                     {event.title}
                                   </h4>
-                                </Link>
 
-                                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-neutral-700 font-sans">
-                                  <span className="inline-flex items-center gap-1.5">
-                                    <Calendar className="h-4 w-4 text-emerald-600" />
-                                    {`${weekday} ${dd}/${mm}`}
-                                  </span>
-                                  {event.time && (
+                                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-neutral-700 font-sans">
                                     <span className="inline-flex items-center gap-1.5">
-                                      <Clock className="h-4 w-4 text-emerald-600" />
-                                      {event.time}
+                                      <Calendar className="h-4 w-4 text-emerald-600" />
+                                      {`${weekday} ${dd}/${mm}`}
                                     </span>
-                                  )}
-                                  <span className="inline-flex items-center gap-1.5 min-w-0">
-                                    <MapPin className="h-4 w-4 text-emerald-600" />
-                                    <span className="truncate">
-                                      {event.location ||
-                                        "BOA – Espacio Principal"}
+                                    {event.time && (
+                                      <span className="inline-flex items-center gap-1.5">
+                                        <Clock className="h-4 w-4 text-emerald-600" />
+                                        {event.time}
+                                      </span>
+                                    )}
+                                    <span className="inline-flex items-center gap-1.5 min-w-0">
+                                      <MapPin className="h-4 w-4 text-emerald-600" />
+                                      <span className="truncate">
+                                        {event.location || "BOA – Espacio Principal"}
+                                      </span>
                                     </span>
-                                  </span>
-                                </div>
+                                  </div>
 
-                                {typeof cap === "number" && cap > 0 ? (
-                                  <div className="mt-3 inline-flex items-center gap-3 rounded-lg bg-emerald-50/40 ring-1 ring-emerald-100 px-2.5 py-1.5 font-sans">
-                                    <div
-                                      className="relative h-8 w-8 rounded-full grid place-items-center"
-                                      style={{
-                                        background: `conic-gradient(#10b981 ${pct}%, #e6f5ef ${pct}% 100%)`,
-                                      }}
-                                      aria-label={`Capacidad ${enr} de ${cap}`}
-                                      role="img"
-                                    >
-                                      <div className="absolute inset-[3px] rounded-full bg-white" />
-                                      <span className="relative text-[10px] font-bold text-emerald-700 tabular-nums">
-                                        {Math.max(0, cap - enr)}
+                                  {typeof cap === "number" && cap > 0 ? (
+                                    <div className="mt-3 inline-flex items-center gap-3 rounded-lg bg-emerald-50/40 ring-1 ring-emerald-100 px-2.5 py-1.5 font-sans">
+                                      <div
+                                        className="relative h-8 w-8 rounded-full grid place-items-center"
+                                        style={{
+                                          background: `conic-gradient(#10b981 ${pct}%, #e6f5ef ${pct}% 100%)`,
+                                        }}
+                                        aria-label={`Capacidad ${enr} de ${cap}`}
+                                        role="img"
+                                      >
+                                        <div className="absolute inset-[3px] rounded-full bg-white" />
+                                        <span className="relative text-[10px] font-bold text-emerald-700 tabular-nums">
+                                          {Math.max(0, cap - enr)}
+                                        </span>
+                                      </div>
+                                      <div className="leading-tight">
+                                        <div className="text-[12px] font-semibold text-neutral-900">
+                                          Capacidad
+                                        </div>
+                                        <div className="text-[12px] text-neutral-700 tabular-nums">
+                                          {enr}/{cap}{" "}
+                                          <span className="text-neutral-500">•</span>{" "}
+                                          Quedan {Math.max(0, cap - enr)}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="mt-3 inline-flex items-center gap-2 rounded-lg bg-neutral-50 ring-1 ring-neutral-200 px-2.5 py-1">
+                                      <Users className="h-4 w-4 text-neutral-500" />
+                                      <span className="text-[12px] text-neutral-700 font-sans">
+                                        Capacidad no definida
                                       </span>
                                     </div>
-                                    <div className="leading-tight">
-                                      <div className="text-[12px] font-semibold text-neutral-900">
-                                        Capacidad
-                                      </div>
-                                      <div className="text-[12px] text-neutral-700 tabular-nums">
-                                        {enr}/{cap}{" "}
-                                        <span className="text-neutral-500">
-                                          •
-                                        </span>{" "}
-                                        Quedan {Math.max(0, cap - enr)}
-                                      </div>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="mt-3 inline-flex items-center gap-2 rounded-lg bg-neutral-50 ring-1 ring-neutral-200 px-2.5 py-1">
-                                    <Users className="h-4 w-4 text-neutral-500" />
-                                    <span className="text-[12px] text-neutral-700 font-sans">
-                                      Capacidad no definida
-                                    </span>
-                                  </div>
-                                )}
+                                  )}
 
-                                {event.description && (
-                                  <p className="mt-2 text-[13px] text-neutral-600 line-clamp-2 font-sans">
-                                    {event.description}
-                                  </p>
-                                )}
-                              </div>
-
-                              <div className="px-1 sm:px-4 py-3 flex flex-col items-end gap-2 sm:gap-3">
-                                <div className="text-[15px] font-bold text-emerald-700 font-sans">
-                                  ${event.price}
+                                  {event.description && (
+                                    <p className="mt-2 text-[13px] text-neutral-600 line-clamp-2 font-sans">
+                                      {event.description}
+                                    </p>
+                                  )}
                                 </div>
-                                <Link href={`/events/${event.id}`}>
+
+                                <div className="px-1 sm:px-4 py-3 flex flex-col items-end gap-2 sm:gap-3">
+                                  <div className="text-[15px] font-bold text-emerald-700 font-sans">
+                                    ${event.price}
+                                  </div>
+                                  {/* Este botón ahora es puramente visual; el Link exterior maneja el click */}
                                   <Button
                                     size="sm"
-                                    className={`rounded-full font-sans ${
-                                      isPast || !hasSpots
-                                        ? "bg-neutral-400 hover:bg-neutral-400 cursor-not-allowed"
-                                        : "bg-emerald-600 hover:bg-emerald-700"
-                                    }`}
+                                    className={`rounded-full font-sans ${isPast || !hasSpots
+                                      ? "bg-neutral-400 hover:bg-neutral-400 cursor-not-allowed"
+                                      : "bg-emerald-600 hover:bg-emerald-700"
+                                      }`}
                                     disabled={isPast || !hasSpots}
                                   >
                                     {isPast
                                       ? "Finalizado"
                                       : !hasSpots
-                                      ? "Completo"
-                                      : "Ver detalles"}
+                                        ? "Completo"
+                                        : "Ver detalles"}
                                   </Button>
-                                </Link>
+                                </div>
                               </div>
-                            </div>
-                          </motion.article>
+                            </motion.article>
+                          </Link>
                         );
                       })}
+
                     </div>
                   </section>
                 ))}

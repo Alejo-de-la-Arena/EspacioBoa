@@ -290,7 +290,7 @@ function DayView({
 
     return (
         <div className="rounded-2xl bg-[#FFFDF8] ring-1 ring-[#EEDCC9] p-4 shadow-[0_12px_28px_rgba(82,47,0,.07)]">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 items-center justify-between mb-3">
                 <div className="font-semibold text-boa-ink">
                     {DAYS_FULL[(jsDay + 6) % 7]}{" "}
                     <span className="text-boa-ink/60">{date.toLocaleDateString("es-AR")}</span>

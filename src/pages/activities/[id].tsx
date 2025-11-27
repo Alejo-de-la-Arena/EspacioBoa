@@ -527,8 +527,8 @@ export default function ActivityDetailPage() {
                                                             disabled={isEnrolling}
                                                             className="
       w-full rounded-full py-6 border-2
-      border-red-500 text-red-500
-      hover:bg-red-500 hover:text-white
+      border-red-500 hover:text-red-500
+      bg-red-500 text-white hover:bg-white
       disabled:opacity-50 disabled:pointer-events-none
     "
                                                         >

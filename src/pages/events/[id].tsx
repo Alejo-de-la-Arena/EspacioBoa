@@ -496,7 +496,7 @@ export default function EventDetailPage() {
                                                             <Button
                                                                 variant="outline"
                                                                 disabled={isProcessing}
-                                                                className="w-full rounded-2xl py-3 border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                                                                className="w-full rounded-2xl py-3 border-2 border-red-500 hover:text-red-500 hover:bg-white bg-red-500 text-white"
                                                             >
                                                                 {isProcessing ? "Cancelando…" : "Cancelar inscripción"}
                                                             </Button>
@@ -616,11 +616,60 @@ export default function EventDetailPage() {
                         </Button>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {/* MOBILE: slider idéntico al de Activities */}
+                    <div className="mt-5 flex gap-6 overflow-x-auto pb-2 sm:hidden">
+                        {(suggestions || []).map((ev: any) => (
+                            <article
+                                key={ev.id}
+                                className="min-w-[280px] max-w-[280px] rounded-2xl ring-inset overflow-hidden ring-1 ring-[#EEDCC9] bg-white shadow-[0_10px_28px_rgba(82,47,0,.10)] cursor-pointer"
+                                onClick={() => router.push(`/events/${ev.id}`)}
+                            >
+                                <div className="relative h-40">
+                                    <img
+                                        src={ev.flyerVertical || ev.poster || ev.image}
+                                        alt={ev.title}
+                                        className="absolute inset-0 w-full h-full object-cover"
+                                    />
+                                    {ev.category && (
+                                        <div className="absolute bottom-3 left-3 rounded-full px-2.5 py-1 text-[11px] font-semibold bg-white/85 text-boa-ink/85 ring-1 ring-white/70">
+                                            {ev.category}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="p-4">
+                                    <h3 className="font-semibold text-boa-ink">{ev.title}</h3>
+                                    {ev.description && (
+                                        <p className="text-sm text-boa-ink/70 line-clamp-2 mt-1">
+                                            {ev.description}
+                                        </p>
+                                    )}
+
+                                    <div className="mt-3 flex items-center justify-between">
+                                        <span className="font-bold text-boa-green">
+                                            {typeof ev.price === "number" ? `$${ev.price}` : "-"}
+                                        </span>
+                                        <Button
+                                            size="sm"
+                                            className="rounded-full bg-boa-green hover:bg-green-900"
+                                        >
+                                            Ver detalles
+                                        </Button>
+                                    </div>
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+
+                    {/* DESKTOP/TABLET: grilla como antes */}
+                    <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {suggestions.map((ev: any) => {
                             const d = new Date(ev.date);
                             const dateLabel = d.toLocaleDateString("es-AR", {
-                                weekday: "long", year: "numeric", month: "long", day: "numeric"
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
                             });
                             const pretty = dateLabel.charAt(0).toUpperCase() + dateLabel.slice(1);
 
@@ -628,11 +677,9 @@ export default function EventDetailPage() {
                                 <article
                                     key={ev.id}
                                     onClick={() => router.push(`/events/${ev.id}`)}
-                                    className="
-              cursor-pointer rounded-2xl overflow-hidden bg-white
-              ring-1 ring-emerald-100 hover:ring-emerald-200
-              transition shadow-sm hover:shadow-[0_14px_34px_rgba(16,185,129,0.15)]
-            "
+                                    className="cursor-pointer rounded-2xl overflow-hidden bg-white
+                       ring-1 ring-emerald-100 hover:ring-emerald-200
+                       transition shadow-sm hover:shadow-[0_14px_34px_rgba(16,185,129,0.15)]"
                                 >
                                     <div className="relative h-44 w-full overflow-hidden">
                                         <img
@@ -644,16 +691,26 @@ export default function EventDetailPage() {
                                     </div>
 
                                     <div className="p-5">
-                                        <h3 className="font-semibold text-neutral-900 mb-1">{ev.title}</h3>
+                                        <h3 className="font-semibold text-neutral-900 mb-1">
+                                            {ev.title}
+                                        </h3>
                                         {ev.description && (
                                             <p className="text-[13px] text-neutral-600 line-clamp-2 mb-2">
                                                 {ev.description}
                                             </p>
                                         )}
-                                        <div className="text-[12px] text-neutral-500 mb-4">{pretty}{ev.time ? ` – ${ev.time}` : ""}</div>
+                                        <div className="text-[12px] text-neutral-500 mb-4">
+                                            {pretty}
+                                            {ev.time ? ` – ${ev.time}` : ""}
+                                        </div>
                                         <div className="flex items-center justify-between">
-                                            <span className="font-bold text-emerald-700">${ev.price}</span>
-                                            <Button size="sm" className="rounded-full bg-white ring-1 ring-neutral-200 text-neutral-800 hover:bg-neutral-50 hover:ring-emerald-200">
+                                            <span className="font-bold text-emerald-700">
+                                                ${ev.price}
+                                            </span>
+                                            <Button
+                                                size="sm"
+                                                className="rounded-full bg-white ring-1 ring-neutral-200 text-neutral-800 hover:bg-neutral-50 hover:ring-emerald-200"
+                                            >
                                                 Ver detalles
                                             </Button>
                                         </div>
@@ -664,6 +721,7 @@ export default function EventDetailPage() {
                     </div>
                 </div>
             </section>
+
 
         </section>
     );

@@ -35,19 +35,20 @@ export default function AccountPage() {
     const [phone, setPhone] = React.useState("");
     const [saving, setSaving] = React.useState(false);
 
-    // Cargar valores del usuario cuando esté disponible
     React.useEffect(() => {
         if (!user) return;
-        setDisplayName(user.user_metadata?.display_name || user.user_metadata?.name || "");
+        setDisplayName(
+            user.user_metadata?.display_name || user.user_metadata?.name || ""
+        );
         setPhone(user.user_metadata?.phone || "");
     }, [user]);
 
-    // ⛔️ Guard de verificación de sesión (primero)
+    // 🔐 Loading de sesión
     if (!initialized) {
         return (
-            <main className="relative h-[100svh] overflow-hidden font-sans md:h-screen">
+            <main className="relative min-h-[100svh] font-sans md:min-h-screen overflow-x-hidden">
                 <div className="container mx-auto max-w-3xl px-4">
-                    <div className="grid min-h-[100svh] place-content-center">
+                    <div className="flex min-h-[100svh] items-center justify-center py-10">
                         <div className="rounded-2xl border bg-white/80 backdrop-blur-sm p-8 text-center shadow">
                             <Loader2 className="mx-auto mb-3 h-6 w-6 animate-spin" />
                             Verificando tu sesión…
@@ -58,11 +59,14 @@ export default function AccountPage() {
         );
     }
 
-    // Guard de no autenticado
+    // 🚫 No autenticado
     if (!user) {
         return (
-            <main className="relative h-[100svh] overflow-hidden font-sans md:h-screen">
-                <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+            <main className="relative min-h-[100svh] font-sans md:min-h-screen overflow-x-hidden">
+                <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 -z-10"
+                >
                     <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(253,251,245,0.95),rgba(247,249,246,0.95))]" />
                     <div className="absolute -top-48 -left-40 h-[560px] w-[560px] rounded-full blur-2xl bg-[radial-gradient(closest-side,rgba(251,247,236,0.95),rgba(251,247,236,0.55),transparent)]" />
                     <div className="absolute -right-40 -top-24 h-[500px] w-[500px] rounded-full blur-2xl bg-[radial-gradient(closest-side,rgba(234,247,240,0.9),rgba(234,247,240,0.45),transparent)]" />
@@ -70,10 +74,14 @@ export default function AccountPage() {
                 </div>
 
                 <div className="container mx-auto max-w-3xl px-4">
-                    <div className="grid min-h-[100svh] place-content-center">
+                    <div className="flex min-h-[100svh] items-center justify-center py-10">
                         <div className="rounded-2xl border border-amber-100/60 bg-white/80 backdrop-blur-sm p-8 text-center shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
-                            <h1 className="text-3xl font-semibold tracking-tight">Necesitás iniciar sesión</h1>
-                            <p className="mt-2 text-muted-foreground">Ingresá para ver y editar tu perfil.</p>
+                            <h1 className="text-3xl font-semibold tracking-tight">
+                                Necesitás iniciar sesión
+                            </h1>
+                            <p className="mt-2 text-muted-foreground">
+                                Ingresá para ver y editar tu perfil.
+                            </p>
                             <Button asChild className="mt-5">
                                 <a href="/login">Ir a iniciar sesión</a>
                             </Button>
@@ -99,34 +107,55 @@ export default function AccountPage() {
 
     const hardHome = () => {
         const url = `${window.location.origin}/?updated=${Date.now()}`;
-        try { window.location.replace(url); } catch { }
-        setTimeout(() => { try { if (window.location.href !== url) window.location.href = url; } catch { } }, 120);
-        setTimeout(() => { try { if (window.location.href !== url) window.location.assign(url); } catch { } }, 240);
-        setTimeout(() => { try { window.location.reload(); } catch { } }, 700);
+        try {
+            window.location.replace(url);
+        } catch { }
+        setTimeout(() => {
+            try {
+                if (window.location.href !== url) window.location.href = url;
+            } catch { }
+        }, 120);
+        setTimeout(() => {
+            try {
+                if (window.location.href !== url) window.location.assign(url);
+            } catch { }
+        }, 240);
+        setTimeout(() => {
+            try {
+                window.location.reload();
+            } catch { }
+        }, 700);
     };
 
-    // Guardado optimista + refresh
     const onSave = async () => {
         setSaving(true);
 
-        // 1) Optimista
         if (applyUser && user) {
             const patched = {
                 ...user,
                 user_metadata: { ...user.user_metadata, display_name: displayName, phone },
             };
-            try { applyUser(patched); } catch { }
+            try {
+                applyUser(patched);
+            } catch { }
         }
 
-        // 2) Persistir en Supabase y refrescar user real
         try {
-            await supabase.auth.updateUser({ data: { display_name: displayName, phone } });
+            await supabase.auth.updateUser({
+                data: { display_name: displayName, phone },
+            });
             const { data } = await supabase.auth.getUser();
             applyUser?.(data?.user ?? null);
-            toast({ title: "Perfil actualizado", description: "Redirigiendo al inicio…" });
+            toast({
+                title: "Perfil actualizado",
+                description: "Redirigiendo al inicio…",
+            });
             hardHome();
         } catch {
-            toast({ title: "No pudimos actualizar tu perfil", variant: "destructive" });
+            toast({
+                title: "No pudimos actualizar tu perfil",
+                variant: "destructive",
+            });
         } finally {
             setSaving(false);
         }
@@ -137,7 +166,7 @@ export default function AccountPage() {
         : initialsFromUser(user);
 
     return (
-        <main className="relative h-[100svh] overflow-hidden font-sans md:h-screen">
+        <main className="relative min-h-[100svh] font-sans md:min-h-screen overflow-x-hidden">
             <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(253,251,245,0.95),rgba(247,249,246,0.95))]" />
                 <div className="absolute -top-48 -left-40 h-[560px] w-[560px] rounded-full blur-2xl bg-[radial-gradient(closest-side,rgba(251,247,236,0.95),rgba(251,247,236,0.55),transparent)]" />
@@ -146,10 +175,15 @@ export default function AccountPage() {
             </div>
 
             <div className="container mx-auto max-w-5xl px-4">
-                <div className="grid min-h-[100svh] place-content-center">
+                <div className="py-6 sm:py-10">
                     <div className="w-full">
+                        {/* Back */}
                         <div className="mb-4 flex items-center">
-                            <Button variant="ghost" asChild className="hover:bg-boa-green/10">
+                            <Button
+                                variant="ghost"
+                                asChild
+                                className="hover:bg-boa-green/10 rounded-full px-3 py-2 border border-emerald-200 shadow-sm"
+                            >
                                 <Link href="/" aria-label="Volver">
                                     <ArrowLeft className="h-4 w-4 mr-2" />
                                     Volver
@@ -157,13 +191,18 @@ export default function AccountPage() {
                             </Button>
                         </div>
 
+                        {/* Título */}
                         <div className="mb-6">
-                            <h1 className="text-4xl font-extrabold tracking-tight">Mi perfil</h1>
+                            <h1 className="text-4xl font-extrabold tracking-tight">
+                                Mi perfil
+                            </h1>
                             <p className="mt-1 text-sm text-muted-foreground">
-                                Gestioná tus datos personales. Tu correo sólo se usa para notificaciones y acceso.
+                                Gestioná tus datos personales. Tu correo sólo se usa para
+                                notificaciones y acceso.
                             </p>
                         </div>
 
+                        {/* Tarjeta de perfil */}
                         <section className="rounded-2xl border border-amber-100/70 bg-white/85 backdrop-blur-[2px] shadow-[0_10px_40px_rgba(0,0,0,0.06)]">
                             <div className="h-2 w-full rounded-t-2xl bg-[linear-gradient(90deg,#39b889,#6bd0a7,#39b889)]" />
                             <div className="grid gap-8 p-6 md:grid-cols-[300px,1fr] md:p-8">
@@ -172,9 +211,14 @@ export default function AccountPage() {
                                     <div className="relative">
                                         <Avatar className="h-28 w-28 ring-4 ring-emerald-500/15 shadow-sm">
                                             {avatarUrl ? (
-                                                <AvatarImage src={avatarUrl} alt={user.email ?? "Usuario"} />
+                                                <AvatarImage
+                                                    src={avatarUrl}
+                                                    alt={user.email ?? "Usuario"}
+                                                />
                                             ) : null}
-                                            <AvatarFallback className="text-xl">{fallbackInitials}</AvatarFallback>
+                                            <AvatarFallback className="text-xl">
+                                                {fallbackInitials}
+                                            </AvatarFallback>
                                         </Avatar>
                                         {emailVerified && (
                                             <span className="absolute -right-1 -bottom-1 rounded-full bg-emerald-600 text-white p-1.5 shadow-md">
@@ -184,15 +228,24 @@ export default function AccountPage() {
                                     </div>
 
                                     <div className="mt-4 text-center md:text-left">
-                                        <p className="text-xl font-semibold">{displayName || user.email}</p>
-                                        <p className="text-sm text-muted-foreground">Miembro desde {createdAt}</p>
+                                        <p className="text-xl font-semibold">
+                                            {displayName || user.email}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Miembro desde {createdAt}
+                                        </p>
                                     </div>
                                 </div>
 
                                 {/* Formulario */}
                                 <div className="grid gap-6">
                                     <div className="grid gap-2">
-                                        <Label htmlFor="displayName" className="text-sm font-medium">Nombre completo</Label>
+                                        <Label
+                                            htmlFor="displayName"
+                                            className="text-sm font-medium"
+                                        >
+                                            Nombre completo
+                                        </Label>
                                         <Input
                                             id="displayName"
                                             value={displayName}
@@ -204,7 +257,9 @@ export default function AccountPage() {
                                     </div>
 
                                     <div className="grid gap-2">
-                                        <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                                        <Label htmlFor="email" className="text-sm font-medium">
+                                            Email
+                                        </Label>
                                         <div className="flex items-center gap-3">
                                             <Input
                                                 id="email"
@@ -218,7 +273,10 @@ export default function AccountPage() {
                                                     verificado
                                                 </Badge>
                                             ) : (
-                                                <Badge variant="outline" className="gap-1 rounded-full">
+                                                <Badge
+                                                    variant="outline"
+                                                    className="gap-1 rounded-full"
+                                                >
                                                     <ShieldAlert className="h-3.5 w-3.5" />
                                                     sin verificar
                                                 </Badge>
@@ -227,7 +285,9 @@ export default function AccountPage() {
                                     </div>
 
                                     <div className="grid gap-2">
-                                        <Label htmlFor="phone" className="text-sm font-medium">Teléfono (opcional)</Label>
+                                        <Label htmlFor="phone" className="text-sm font-medium">
+                                            Teléfono (opcional)
+                                        </Label>
                                         <Input
                                             id="phone"
                                             value={phone}
@@ -244,7 +304,14 @@ export default function AccountPage() {
                                             disabled={saving}
                                             className="h-11 rounded-xl px-6 bg-emerald-600 hover:bg-emerald-600/90 text-white shadow-sm"
                                         >
-                                            {saving ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Guardando…</>) : ("Guardar cambios")}
+                                            {saving ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Guardando…
+                                                </>
+                                            ) : (
+                                                "Guardar cambios"
+                                            )}
                                         </Button>
                                     </div>
                                 </div>
