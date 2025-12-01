@@ -33,7 +33,6 @@ export default function App({ Component, pageProps }: AppProps) {
                 </Layout>
             </AppContextProvider>
 
-            {/* 👇 Acá activás Speed Insights */}
             <SpeedInsights />
         </div>
     );

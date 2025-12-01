@@ -224,7 +224,7 @@ export default function LoginView() {
                                 </button>
 
 
-                                {/* Google */}
+                                {/* Google
                                 <button
                                     type="button"
                                     onClick={signInWithGoogle}
@@ -247,7 +247,7 @@ export default function LoginView() {
                                             <span>Continuar con Google</span>
                                         </>
                                     )}
-                                </button>
+                                </button> */}
 
 
                                 <div className="text-right">
