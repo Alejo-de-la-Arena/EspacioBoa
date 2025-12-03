@@ -17,7 +17,6 @@ export function GiftCardCard({
     mode?: Mode;
     onBuy?: () => void;
 }) {
-    // Mini flor (la usamos en el separador circular)
     const flowerURI =
         "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'><g fill='%23308a73'><circle cx='7' cy='3' r='2'/><circle cx='11' cy='7' r='2'/><circle cx='7' cy='11' r='2'/><circle cx='3' cy='7' r='2'/><circle cx='9.8' cy='4.2' r='1.5'/><circle cx='9.8' cy='9.8' r='1.5'/><circle cx='4.2' cy='9.8' r='1.5'/><circle cx='4.2' cy='4.2' r='1.5'/><circle cx='7' cy='7' r='2.2'/></g></svg>\")";
 

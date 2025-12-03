@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import HeaderAuth from "@/components/auth/HeaderAuth";
 import { useAuth } from "@/stores/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabaseClient";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Menu,
@@ -21,6 +23,10 @@ import {
     LayoutDashboard,
     HeartHandshake,
     X,
+    UserRound,
+    Ticket,
+    LogOut,
+    Shield,
 } from "lucide-react";
 
 const LOGO_SRC =
@@ -43,10 +49,60 @@ export default function Header() {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const [progress, setProgress] = useState(0);
-    const { user } = useAuth();
-    const isAdmin = Boolean(
-        user?.user_metadata?.is_admin || user?.is_admin || user?.role === "admin"
-    );
+
+    const { user, signOut } = useAuth();
+    const { toast } = useToast();
+
+    // admin real: metadata + tabla profiles
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const metaAdmin =
+            user?.user_metadata?.is_admin === true ||
+            user?.user_metadata?.role === "admin" ||
+            (Array.isArray(user?.app_metadata?.roles) &&
+                user.app_metadata.roles.includes("admin"));
+
+        if (metaAdmin) {
+            setIsAdmin(true);
+            return;
+        }
+
+        if (!user?.id) {
+            setIsAdmin(false);
+            return;
+        }
+
+        const checkAdminFromProfile = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from("profiles")
+                    .select("is_admin")
+                    .eq("id", user.id)
+                    .single();
+
+                if (cancelled) return;
+
+                if (error) {
+                    setIsAdmin(false);
+                    return;
+                }
+
+                setIsAdmin(Boolean(data?.is_admin));
+            } catch {
+                if (!cancelled) setIsAdmin(false);
+            }
+        };
+
+        checkAdminFromProfile();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [user?.id]);
+
 
     useEffect(() => {
         const onScroll = () => {
@@ -59,6 +115,24 @@ export default function Header() {
         window.addEventListener("scroll", onScroll, { passive: true });
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
+
+    const handleLogout = async () => {
+        try {
+            await Promise.resolve(signOut());
+            await Promise.resolve(supabase.auth.signOut({ scope: "local" }));
+            await Promise.resolve(supabase.auth.signOut({ scope: "global" }));
+        } catch { }
+
+        toast({
+            title: "Sesión cerrada",
+            description: "Te esperamos pronto en BOA.",
+        });
+
+        if (typeof window !== "undefined") {
+            const url = `${window.location.origin}/?signedout=${Date.now()}`;
+            window.location.href = url;
+        }
+    };
 
     return (
         <motion.header
@@ -146,7 +220,7 @@ export default function Header() {
                         <HeaderAuth />
                     </div>
 
-                    {/* Mobile Right: solo trigger del menú (sin auth inline) */}
+                    {/* Mobile Right: trigger menú */}
                     <div className="flex items-center gap-2 lg:hidden">
                         <Sheet open={isOpen} onOpenChange={setIsOpen}>
                             <SheetTrigger asChild>
@@ -157,29 +231,22 @@ export default function Header() {
                                     aria-label="Abrir menú"
                                     aria-expanded={isOpen}
                                 >
-
                                     <Menu className="h-10 w-10 transition-transform duration-150 group-data-[state=open]:rotate-90" />
                                 </Button>
                             </SheetTrigger>
-
 
                             <SheetContent
                                 side="right"
                                 className="w-80 bg-white border-l border-neutral-200/60 p-0 overflow-x-hidden [&>button.absolute.right-4.top-4]:hidden"
                             >
-
+                                {/* Header del sheet (sin dropdown de usuario) */}
                                 <div className="relative px-5 pt-5 pb-4 border-b border-neutral-200/60 bg-gradient-to-br from-emerald-50/70 to-white">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm font-medium text-neutral-700">Menú</span>
+                                        <span className="text-sm font-medium text-neutral-700">
+                                            Menú
+                                        </span>
 
                                         <div className="flex items-center gap-2">
-                                            {/* UserMenu arriba, solo si hay usuario logueado */}
-                                            {user && (
-                                                <div className="flex items-center">
-                                                    <HeaderAuth />
-                                                </div>
-                                            )}
-
                                             <SheetClose asChild>
                                                 <button
                                                     aria-label="Cerrar menú"
@@ -191,8 +258,6 @@ export default function Header() {
                                         </div>
                                     </div>
                                 </div>
-
-
 
                                 {/* Navegación móvil */}
                                 <div className="p-5 overflow-y-auto max-h-[calc(100vh-64px)]">
@@ -220,16 +285,24 @@ export default function Header() {
                                                             ].join(" ")}
                                                         >
                                                             <Icon className="h-5 w-5" />
-                                                            <span className="flex-1 font-sans font-medium">{item.name}</span>
+                                                            <span className="flex-1 font-sans font-medium">
+                                                                {item.name}
+                                                            </span>
                                                             <ChevronRight className="h-4 w-4 opacity-60" />
                                                         </Link>
                                                     </motion.div>
                                                 );
                                             })}
 
-                                            {isAdmin && (
+                                            {/* Sección "Tu cuenta" solo si hay usuario */}
+                                            {user && (
                                                 <>
-                                                    <div className="h-px my-2 bg-neutral-200/80" />
+                                                    <div className="h-px my-3 bg-neutral-200/80" />
+                                                    <p className="px-4 pb-1 pt-2 text-[11px] uppercase tracking-[0.16em] text-neutral-500">
+                                                        Tu cuenta
+                                                    </p>
+
+                                                    {/* Mi perfil */}
                                                     <motion.div
                                                         initial={{ opacity: 0, y: 6 }}
                                                         animate={{ opacity: 1, y: 0 }}
@@ -240,20 +313,88 @@ export default function Header() {
                                                         }}
                                                     >
                                                         <Link
-                                                            href="/admin"
+                                                            href="/account"
                                                             onClick={() => setIsOpen(false)}
-                                                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold transition-all duration-300 text-neutral-900 hover:bg-neutral-50 hover:text-boa-green"
+                                                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-neutral-800 hover:bg-neutral-50 hover:text-boa-green"
                                                         >
-                                                            <LayoutDashboard className="h-5 w-5" />
-                                                            <span className="flex-1">Administrar BOA</span>
+                                                            <UserRound className="h-5 w-5" />
+                                                            <span className="flex-1">Mi perfil</span>
                                                             <ChevronRight className="h-4 w-4 opacity-60" />
                                                         </Link>
+                                                    </motion.div>
+
+                                                    {/* Mis inscripciones */}
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: 6 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        exit={{ opacity: 0, y: 6 }}
+                                                        transition={{
+                                                            delay: 0.02 * (navigation.length + 2),
+                                                            duration: 0.18,
+                                                        }}
+                                                    >
+                                                        <Link
+                                                            href="/account/inscripciones"
+                                                            onClick={() => setIsOpen(false)}
+                                                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-neutral-800 hover:bg-neutral-50 hover:text-boa-green"
+                                                        >
+                                                            <Ticket className="h-5 w-5" />
+                                                            <span className="flex-1">Mis inscripciones</span>
+                                                            <ChevronRight className="h-4 w-4 opacity-60" />
+                                                        </Link>
+                                                    </motion.div>
+
+                                                    {/* Administrar BOA (solo admins) */}
+                                                    {isAdmin && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: 6 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            exit={{ opacity: 0, y: 6 }}
+                                                            transition={{
+                                                                delay: 0.02 * (navigation.length + 3),
+                                                                duration: 0.18,
+                                                            }}
+                                                        >
+                                                            <Link
+                                                                href="/admin"
+                                                                onClick={() => setIsOpen(false)}
+                                                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium hover:bg-neutral-50 hover:text-boa-green"
+                                                            >
+                                                                <Shield className="h-5 w-5" />
+                                                                <span className="flex-1">Administrar BOA</span>
+                                                                <ChevronRight className="h-4 w-4 opacity-60" />
+                                                            </Link>
+                                                        </motion.div>
+                                                    )}
+
+                                                    {/* Cerrar sesión */}
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: 6 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        exit={{ opacity: 0, y: 6 }}
+                                                        transition={{
+                                                            delay: 0.02 * (navigation.length + 4),
+                                                            duration: 0.18,
+                                                        }}
+                                                    >
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setIsOpen(false);
+                                                                handleLogout();
+                                                            }}
+                                                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-red-600 hover:bg-red-50"
+                                                        >
+                                                            <LogOut className="h-5 w-5" />
+                                                            <span className="flex-1 text-left">Cerrar sesión</span>
+                                                        </button>
                                                     </motion.div>
                                                 </>
                                             )}
                                         </nav>
                                     </AnimatePresence>
 
+                                    {/* Si NO hay usuario, mostramos HeaderAuth para login/registro */}
                                     {!user && (
                                         <div className="mt-5 pt-4 border-t border-neutral-200/70">
                                             <HeaderAuth />

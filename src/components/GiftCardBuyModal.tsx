@@ -176,7 +176,7 @@ export default function GiftCardBuyModal({ open, onClose, gift }: Props) {
                                 className="rounded-lg border px-3 py-2"
                                 value={phone}
                                 onChange={(e) => setPhone(e.target.value)}
-                                placeholder="Ej: 11 7096 1318"
+                                placeholder="Ej: 11 1234 5678"
                             />
                         </label>
 

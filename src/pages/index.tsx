@@ -14,7 +14,6 @@ import {
     Coffee,
     Heart,
     Calendar,
-    Gift,
     ArrowRight,
     Users,
     Sparkles,
@@ -29,9 +28,9 @@ type ExpItem = {
     description?: string;
     image?: string;
     href?: string;
-    date?: string; // eventos
-    time?: string; // eventos
-    schedule?: { day?: string; time?: string }; // actividades
+    date?: string;
+    time?: string; 
+    schedule?: { day?: string; time?: string }; 
     capacity?: number;
     enrolled?: number;
     price?: number | string;
@@ -157,7 +156,7 @@ function HeroTitle() {
                     <span className="relative inline-block">
                         {word}
                         <svg
-                            className="absolute left-1/2 -translate-x-1/2 w-full opacity-0 bottom-[-0.7rem]"
+                            className="absolute left-1/2 -translate-x-1/2 w-full opacity-0 bottom-[-0.2rem] sm:bottom-[-0.7rem]"
                             viewBox="0 0 100 7"
                             fill="none"
                             preserveAspectRatio="none"
@@ -947,22 +946,6 @@ function ExperiencesSlider({ items }: { items: ExpItem[] }) {
         return () => el.removeEventListener("scroll", onScroll);
     }, [slideCount]);
 
-    console.groupCollapsed("%c[EXPERIENCES DIAG] Slider props", "color:#07f; font-weight:bold;");
-    console.debug("items length:", items?.length ?? 0, "kinds:", items?.map((i) => i?._kind));
-    console.groupEnd();
-
-    const pausedRef = useRef(false);
-    useEffect(() => {
-        if (!slideCount) return;
-        const el = containerRef.current!;
-        const id = setInterval(() => {
-            if (pausedRef.current) return;
-            const next = (index + 1) % slideCount;
-            el.scrollTo({ left: el.clientWidth * next, behavior: "smooth" });
-        }, 5500);
-        return () => clearInterval(id);
-    }, [index, slideCount]);
-
     const goto = (i: number) => {
         const el = containerRef.current;
         if (!el) return;
@@ -973,14 +956,7 @@ function ExperiencesSlider({ items }: { items: ExpItem[] }) {
     if (!slideCount) return null;
 
     return (
-        <div
-            className="relative"
-            onMouseEnter={() => (pausedRef.current = true)}
-            onMouseLeave={() => (pausedRef.current = false)}
-            onFocusCapture={() => (pausedRef.current = true)}
-            onBlurCapture={() => (pausedRef.current = false)}
-        >
-            {/* Viewport */}
+        <div className="relative">
             <div
                 ref={containerRef}
                 role="region"
@@ -993,9 +969,7 @@ function ExperiencesSlider({ items }: { items: ExpItem[] }) {
                 {items.map((item, i) => {
                     const title = item.title ?? "Experiencia BOA";
                     const desc = item.description ?? "";
-                    const img =
-                        item.image ||
-                        "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=90&w=2400";
+                    const img = item.image;
 
                     // Siempre actividades en este slider
                     const href = item.href ?? "/activities";

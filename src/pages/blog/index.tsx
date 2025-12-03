@@ -3,23 +3,51 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { RevealOnScroll, REVEAL_PRESET_CYCLE } from "@/components/RevealOnScroll";
+import { RevealOnScroll } from "@/components/RevealOnScroll";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, ArrowRight, Heart, Coffee } from "lucide-react";
+import {
+    Select,
+    SelectTrigger,
+    SelectValue,
+    SelectContent,
+    SelectItem,
+} from "@/components/ui/select";
+
 
 /* ================= Animations ================= */
 const container = {
     hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.1, delayChildren: 0.12 } },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: { staggerChildren: 0.08, delayChildren: 0.05 },
+    },
 };
 const item = {
     hidden: { opacity: 0, y: 16 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
 };
 
-/* ================= Mock data (plug a tu CMS cuando quieras) ================= */
+/* ================= Hero images ================= */
+const HERO_IMAGES = [
+    {
+        src: "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5210.webp",
+        alt: "Café de especialidad en mesa cálida",
+    },
+    {
+        src: "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5420.webp",
+        alt: "Cuaderno y lápiz — escribir y crear",
+    },
+    {
+        src: "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5190.webp",
+        alt: "Charla entre amigos",
+    },
+];
+
+/* ================= Mock data ================= */
 type Post = {
     id: string;
     title: string;
@@ -104,6 +132,7 @@ export default function BlogPage() {
     const [term, setTerm] = useState("");
     const [cat, setCat] = useState("all");
     const [mounted, setMounted] = useState(false);
+
     useEffect(() => setMounted(true), []);
 
     const featured = RAW_POSTS.filter((p) => p.featured);
@@ -144,45 +173,60 @@ export default function BlogPage() {
     return (
         <section>
             <main className="font-sans">
-                {/* ======================= HERO (nuevo — editorial split) ======================= */}
+                {/* ======================= HERO (texto + imágenes) ======================= */}
                 <RevealOnScroll
                     variant="tiltUp"
-                    className="relative isolate overflow-hidden py-16 sm:py-20">
-
-
+                    className="relative isolate overflow-hidden"
+                >
                     <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="grid lg:grid-cols-12 gap-10 items-stretch">
+                        <div className="grid lg:grid-cols-12 gap-2 items-stretch">
                             {/* Columna texto */}
-                            <motion.div variants={item} className="lg:col-span-5 flex flex-col justify-center">
+                            <motion.div
+                                variants={item}
+                                className="lg:col-span-5 flex flex-col justify-center"
+                            >
                                 <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-boa-ink">
-                                    Historias que <span className="text-boa-green">se saborean</span>
+                                    Historias que{" "}
+                                    <span className="text-boa-green">se saborean</span>
                                 </h1>
-                                <p className="mt-4 text-neutral-700 text-lg">
-                                    Bienestar, arte y café de especialidad. Lecturas cercanas, útiles y con la vibra BOA.
+                                <p className="mt-4 text-neutral-700 text-lg max-w-md">
+                                    Bienestar, arte y café de especialidad. Lecturas cercanas, útiles
+                                    y con la vibra BOA.
                                 </p>
-
-                                {/* Buscador + temas populares */}
-                                <div className="mt-6 space-y-3">
-                                    <div className="relative">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
-                                        <Input
-                                            value={term}
-                                            onChange={(e) => setTerm(e.target.value)}
-                                            placeholder="Buscar artículos, temas, autores…"
-                                            className="pl-10 h-12 bg-white border-neutral-200"
-                                        />
-                                    </div>
-                                </div>
                             </motion.div>
 
-                            {/* Columna collage */}
+                            {/* Columna imágenes */}
                             <motion.div variants={item} className="lg:col-span-7">
-                                <div className="grid grid-cols-3 grid-rows-2 gap-4 h-[420px] sm:h-[500px]">
+                                <div className="sm:hidden mt-8">
+                                    <div className="relative">
+                                        <div className="pointer-events-none absolute left-0 top-0 h-full w-10 bg-gradient-to-r from-white to-transparent" />
+                                        <div className="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-white to-transparent" />
+                                        <div className="flex gap-5 overflow-x-auto snap-x snap-mandatory pb-4 pl-1 pr-6 [-ms-overflow-style:none] [scrollbar-width:none]">
+                                            {HERO_IMAGES.map((img) => (
+                                                <div
+                                                    key={img.src}
+                                                    className="relative group snap-center shrink-0 w-[82%] h-[320px] rounded-[32px] overflow-hidden ring-1 ring-boa-ink/10 bg-neutral-100/40"
+                                                >
+                                                    <Image
+                                                        src={img.src}
+                                                        alt={img.alt}
+                                                        fill
+                                                        className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                                                    />
+                                                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/10 via-transparent to-white/10 mix-blend-multiply" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Desktop / tablet: collage original, solo >= sm */}
+                                <div className="hidden sm:grid grid-cols-3 grid-rows-2 gap-4 h-[420px] sm:h-[500px]">
                                     {/* alto */}
                                     <div className="col-span-2 row-span-2 relative rounded-3xl overflow-hidden ring-1 ring-boa-ink/10 shadow-xl">
                                         <Image
-                                            src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5210.webp"
-                                            alt="Café de especialidad en mesa cálida"
+                                            src={HERO_IMAGES[0].src}
+                                            alt={HERO_IMAGES[0].alt}
                                             fill
                                             className="object-cover"
                                         />
@@ -190,16 +234,16 @@ export default function BlogPage() {
                                     {/* dos piezas chicas */}
                                     <div className="relative rounded-3xl overflow-hidden ring-1 ring-boa-ink/10">
                                         <Image
-                                            src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5420.webp"
-                                            alt="Cuaderno y lápiz — escribir y crear"
+                                            src={HERO_IMAGES[1].src}
+                                            alt={HERO_IMAGES[1].alt}
                                             fill
                                             className="object-cover"
                                         />
                                     </div>
                                     <div className="relative rounded-3xl overflow-hidden ring-1 ring-boa-ink/10">
                                         <Image
-                                            src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5190.webp"
-                                            alt="Charla entre amigos"
+                                            src={HERO_IMAGES[2].src}
+                                            alt={HERO_IMAGES[2].alt}
                                             fill
                                             className="object-cover"
                                         />
@@ -214,23 +258,29 @@ export default function BlogPage() {
                     <div className="pointer-events-none absolute -right-24 -top-24 w-[24rem] h-[24rem] rounded-full bg-boa-terra/12 blur-3xl" />
                 </RevealOnScroll>
 
-                {/* ======================= DESTACADOS (magazine layout) ======================= */}
+                {/* ======================= DESTACADOS ======================= */}
                 {featured.length > 0 && (
-                    <RevealOnScroll variant="zoomRotate" amount={0.2} className="relative py-14 overflow-hidden">
+                    <RevealOnScroll
+                        variant="zoomRotate"
+                        amount={0.2}
+                        className="relative  overflow-hidden"
+                    >
                         <div className="absolute inset-0 bg-[linear-gradient(180deg,#FEFCF7_0%,#FFFFFF_78%)]" />
                         <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                             <div className="text-center mb-8">
                                 <h2 className="text-4xl sm:text-5xl font-extrabold text-boa-ink">
-                                    Destacados <span className="text-boa-green">de la semana</span>
+                                    Destacados{" "}
+                                    <span className="text-boa-green">de la semana</span>
                                 </h2>
                                 <p className="mt-3 text-boa-ink/70 max-w-2xl mx-auto">
-                                    Selección editorial del equipo BOA. Para leer con un café al lado.
+                                    Selección editorial del equipo BOA. Para leer con un café al
+                                    lado.
                                 </p>
                             </div>
 
-                            {/* Grid 2/3 + 1/3 (sin slider) */}
+                            {/* Grid 2/3 + 1/3 */}
                             <div className="grid lg:grid-cols-3 gap-6">
-                                {/* Principal (2 columnas) */}
+                                {/* Principal */}
                                 <article className="lg:col-span-2 relative h-[420px] md:h-[520px] rounded-[28px] overflow-hidden ring-1 ring-boa-ink/10 shadow-[0_18px_48px_rgba(2,6,23,.12)]">
                                     <Image
                                         src={featured[0].image}
@@ -244,39 +294,57 @@ export default function BlogPage() {
                                     <div className="absolute bottom-6 left-6 right-6">
                                         <div className="max-w-xl rounded-2xl bg-white/95 ring-1 ring-boa-ink/15 p-6 backdrop-blur">
                                             <div className="flex items-center text-[12px] mb-1">
-                                                <span className={`px-2 py-1 rounded-full ${catColor(featured[0].category)}`}>
+                                                <span
+                                                    className={`px-2 py-1 rounded-full ${catColor(
+                                                        featured[0].category
+                                                    )}`}
+                                                >
                                                     {featured[0].category}
                                                 </span>
                                             </div>
                                             <h3 className="text-2xl sm:text-3xl font-extrabold text-boa-ink leading-tight">
                                                 {featured[0].title}
                                             </h3>
-                                            <p className="mt-2 text-boa-ink/80">{featured[0].excerpt}</p>
+                                            <p className="mt-2 text-boa-ink/80">
+                                                {featured[0].excerpt}
+                                            </p>
                                             <div className="mt-4">
                                                 <Link
                                                     href={`/blog/${featured[0].slug}`}
                                                     className="inline-flex items-center gap-2 rounded-full border border-boa-ink/20 bg-white px-4 py-2 text-sm font-medium text-boa-ink hover:bg-boa-cream"
                                                 >
-                                                    Leer ahora <ArrowRight className="h-4 w-4" />
+                                                    Leer ahora{" "}
+                                                    <ArrowRight className="h-4 w-4" />
                                                 </Link>
                                             </div>
                                         </div>
                                     </div>
                                 </article>
 
-                                {/* Secundarios apilados */}
+                                {/* Secundarios */}
                                 <div className="space-y-6">
                                     {featured.slice(1, 3).map((p) => (
                                         <article
                                             key={p.id}
                                             className="relative h-[200px] sm:h-[240px] rounded-[20px] overflow-hidden ring-1 ring-boa-ink/10"
                                         >
-                                            <Image src={p.image} alt={p.title} fill className="object-cover" />
+                                            <Image
+                                                src={p.image}
+                                                alt={p.title}
+                                                fill
+                                                className="object-cover"
+                                            />
                                             <div className="absolute inset-0 bg-gradient-to-t from-boa-ink/55 via-boa-ink/25 to-transparent" />
                                             <div className="absolute bottom-4 left-4 right-4">
                                                 <div className="rounded-xl bg-white/95 ring-1 ring-boa-ink/15 p-4 backdrop-blur">
                                                     <div className="flex items-center text-[12px] mb-1">
-                                                        <span className={`px-2 py-1 rounded-full ${catColor(p.category)}`}>{p.category}</span>
+                                                        <span
+                                                            className={`px-2 py-1 rounded-full ${catColor(
+                                                                p.category
+                                                            )}`}
+                                                        >
+                                                            {p.category}
+                                                        </span>
                                                     </div>
                                                     <h3 className="text-[18px] font-extrabold text-boa-ink leading-tight line-clamp-2">
                                                         {p.title}
@@ -291,43 +359,70 @@ export default function BlogPage() {
                     </RevealOnScroll>
                 )}
 
-                {/* ======================= FILTROS ======================= */}
-                <section  className="py-8 border-y border-neutral-100 bg-white sticky top-0 z-20">
-                    <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
+                {/* ======================= FILTROS + BUSCADOR ======================= */}
+                <section className="py-8 border-y border-neutral-100 bg-white">
+                    <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
                         <div className="flex items-center gap-2 text-neutral-600">
                             <Coffee className="h-5 w-5" />
                             <span className="font-medium">Explorar artículos</span>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                            {categories.map((c) => (
-                                <button
-                                    key={c}
-                                    onClick={() => setCat(c)}
-                                    className={[
-                                        "px-4 py-2 rounded-full text-sm ring-1 transition",
-                                        cat === c
-                                            ? "bg-boa-green text-white ring-boa-green/50"
-                                            : "bg-white text-boa-ink ring-boa-ink/15 hover:ring-boa-ink/25",
-                                    ].join(" ")}
-                                >
-                                    {c === "all" ? "Todas" : c}
-                                </button>
-                            ))}
+
+                        <div className="flex flex-col md:flex-row gap-3 md:gap-4 md:items-center md:justify-start">
+                            {/* Búsqueda */}
+                            <div className="relative w-full md:w-[360px]">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
+                                <Input
+                                    value={term}
+                                    onChange={(e) => setTerm(e.target.value)}
+                                    placeholder="Buscar artículos, temas…"
+                                    className="pl-9 h-11 bg-white border-neutral-200 w-full"
+                                />
+                            </div>
+
+                            {/* Select de categorías */}
+                            <div className="w-full xs:w-auto md:w-auto">
+                                <Select value={cat} onValueChange={setCat}>
+                                    <SelectTrigger
+                                        className="w-full h-10 md:h-11 rounded-full border border-boa-ink/15 bg-white text-sm text-boa-ink px-6 mr-2 shadow-sm focus:ring-2 focus:ring-boa-green/40 focus:border-boa-green cursor-pointer hover:border-boa-green/60 hover:bg-boa-cream/70"
+                                    >
+                                        <SelectValue placeholder="Todas las categorías" />
+                                    </SelectTrigger>
+
+                                    <SelectContent className="rounded-2xl border border-boa-ink/10 bg-white shadow-xl">
+                                        {categories.map((c) => (
+                                            <SelectItem
+                                                key={c}
+                                                value={c}
+                                                className="py-2.5 px-3 text-sm font-medium text-boa-ink/90 data-[highlighted]:bg-boa-cream/80 data-[highlighted]:text-boa-ink"
+                                            >
+                                                {c === "all" ? "Todas las categorías" : c}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
                         </div>
                     </div>
                 </section>
 
-                {/* ======================= LISTA (row cards – experiencia de lectura) ======================= */}
-                <RevealOnScroll className="py-16 bg-white">
+                {/* ======================= LISTA (artículos) ======================= */}
+                <section className="py-16 bg-white">
                     <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         {posts.length === 0 ? (
                             <div className="text-center py-20 text-neutral-500">
                                 No se encontraron artículos. Probá otra búsqueda.
                             </div>
                         ) : (
-                            <ul className="space-y-6">
+                            <motion.ul
+                                className="space-y-6"
+                                variants={container}
+                                initial="hidden"
+                                whileInView="visible"
+                                viewport={{ once: true, amount: 0.2 }}
+                            >
                                 {posts.map((p) => (
-                                    <li key={p.id}>
+                                    <motion.li key={p.id} variants={item}>
                                         <Link
                                             href={`/blog/${p.slug}`}
                                             className="group grid md:grid-cols-12 gap-4 md:gap-6 p-2 rounded-3xl ring-1 ring-boa-ink/10 hover:ring-boa-ink/20 transition"
@@ -354,9 +449,10 @@ export default function BlogPage() {
                                                 <h3 className="text-xl sm:text-2xl font-extrabold text-boa-ink leading-snug">
                                                     {p.title}
                                                 </h3>
-                                                <p className="mt-2 text-neutral-700 line-clamp-3">{p.excerpt}</p>
+                                                <p className="mt-2 text-neutral-700 line-clamp-3">
+                                                    {p.excerpt}
+                                                </p>
                                                 <div className="mt-4 flex items-center gap-4 text-sm text-neutral-600">
-                                                    {/* quitado: tiempo de lectura */}
                                                     <span className="inline-flex items-center">
                                                         <Heart className="h-4 w-4 mr-1" /> Guardar
                                                     </span>
@@ -367,12 +463,12 @@ export default function BlogPage() {
                                                 </div>
                                             </div>
                                         </Link>
-                                    </li>
+                                    </motion.li>
                                 ))}
-                            </ul>
+                            </motion.ul>
                         )}
                     </div>
-                </RevealOnScroll>
+                </section>
 
                 {/* ======================= CTA NEWSLETTER ======================= */}
                 <RevealOnScroll variant="tiltUp" className="relative pt-24 overflow-hidden">
@@ -388,22 +484,30 @@ export default function BlogPage() {
                                         <Coffee className="h-8 w-8 text-emerald-300" />
                                     </div>
                                     <div>
-                                        <h3 className="text-emerald-300 text-lg font-semibold">Newsletter BOA</h3>
-                                        <p className="text-emerald-200/80 text-sm">Únite a nuestra comunidad</p>
+                                        <h3 className="text-emerald-300 text-lg font-semibold">
+                                            Newsletter BOA
+                                        </h3>
+                                        <p className="text-emerald-200/80 text-sm">
+                                            Únite a nuestra comunidad
+                                        </p>
                                     </div>
                                 </div>
                                 <h2 className="text-4xl sm:text-5xl font-extrabold text-white leading-tight">
-                                    Ideas ricas cada <span className="text-emerald-300">semana</span>
+                                    Ideas ricas cada{" "}
+                                    <span className="text-emerald-300">semana</span>
                                 </h2>
                                 <p className="text-emerald-100/90">
-                                    Recibí recetas, prácticas de bienestar y agenda de talleres en tu mail.
+                                    Recibí recetas, prácticas de bienestar y agenda de talleres en
+                                    tu mail.
                                 </p>
                             </div>
 
                             <div className="lg:pl-8">
                                 <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-2xl shadow-emerald-900/20">
                                     <CardHeader className="text-center pb-1">
-                                        <h3 className="text-2xl font-bold text-neutral-900">Suscribite</h3>
+                                        <h3 className="text-2xl font-bold text-neutral-900">
+                                            Suscribite
+                                        </h3>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
                                         <div className="relative">
@@ -430,9 +534,12 @@ export default function BlogPage() {
                                             </svg>
                                         </div>
                                         <Button className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-base font-semibold">
-                                            Suscribirme <ArrowRight className="ml-2 h-4 w-4" />
+                                            Suscribirme{" "}
+                                            <ArrowRight className="ml-2 h-4 w-4" />
                                         </Button>
-                                        <p className="text-center text-xs text-neutral-500">Podés cancelar cuando quieras.</p>
+                                        <p className="text-center text-xs text-neutral-500">
+                                            Podés cancelar cuando quieras.
+                                        </p>
                                     </CardContent>
                                 </Card>
                             </div>
@@ -440,13 +547,6 @@ export default function BlogPage() {
                     </div>
                 </RevealOnScroll>
             </main>
-
-            {/* util local */}
-            <style jsx>{`
-        :global(.boa-cream) {
-          background-color: #faf8f2;
-        }
-      `}</style>
         </section>
     );
 }
