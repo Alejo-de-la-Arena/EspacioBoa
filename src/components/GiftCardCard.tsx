@@ -1,7 +1,7 @@
 // src/components/GiftCardCard.tsx
 "use client";
-import * as React from "react";
 import type { GiftCard } from "@/types";
+import { mediaUrl } from "@/lib/mediaUrl";
 
 type Mode = "public" | "admin";
 
@@ -61,8 +61,7 @@ export function GiftCardCard({
                         style={{
                             position: "absolute",
                             inset: 0,
-                            backgroundImage:
-                                "url('https://res.cloudinary.com/dasch1s5i/image/upload/v1755904587/logo-boa_1_gf2bhl.svg')",
+                            backgroundImage: `url('${mediaUrl("boa-logo/logo-boa.svg")}')`,
                             backgroundRepeat: "no-repeat",
                             backgroundPosition: "center",
                             backgroundSize: "min(76%, 520px)",

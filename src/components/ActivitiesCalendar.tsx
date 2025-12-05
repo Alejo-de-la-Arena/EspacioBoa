@@ -104,7 +104,7 @@ function activitiesForDay(all: Activity[], day: Date) {
 /* ===================================================================== */
 
 export default function ActivitiesCalendar({ activities }: { activities: Activity[] }) {
-    const [view, setView] = useState<ViewMode>("week");
+    const [view, setView] = useState<ViewMode>("month");
     const [anchor, setAnchor] = useState<Date>(new Date());
     const [selected, setSelected] = useState<Date>(new Date());
 
@@ -113,9 +113,7 @@ export default function ActivitiesCalendar({ activities }: { activities: Activit
     const MAX_WEEK_ITEMS = isSmall ? 2 : BASE_MAX_WEEK_ITEMS;
     const MAX_MONTH_ITEMS = isSmall ? 1 : BASE_MAX_MONTH_ITEMS;
 
-    // vistas disponibles según tamaño
     const views: ViewMode[] = isSmall ? ["day", "week"] : ["day", "week", "month"];
-    // si estoy en mobile y quedó "month", pasar a "week"
     useEffect(() => {
         if (isSmall && view === "month") setView("week");
     }, [isSmall, view]);

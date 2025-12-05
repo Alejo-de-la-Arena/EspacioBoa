@@ -20,6 +20,7 @@ import {
     Users,
 } from "lucide-react";
 import type { Activity } from "@/types";
+import Image from "next/image";
 import { motion, useInView } from "framer-motion";
 
 const DAYS_ORDER = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -47,6 +48,22 @@ const cardVariants = {
         transition: { duration: 0.35, ease: "easeOut" },
     },
 };
+
+function formatActivityDayWithDate(a: Activity) {
+    if (!a.start_at) return a.schedule.day;
+
+    const d = new Date(a.start_at);
+    if (Number.isNaN(d.getTime())) return a.schedule.day;
+
+    const weekday = d.toLocaleDateString("es-AR", { weekday: "long" }) || a.schedule.day;
+    const prettyWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+
+    return `${prettyWeekday} ${day}/${month}`; // Ej: "Miércoles 27/12"
+}
+
 
 export default function Activities({ activities }: { activities: Activity[] }) {
     const [search, setSearch] = useState("");
@@ -219,12 +236,13 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                                 variants={cardVariants}
                                 className="group relative rounded-[28px] overflow-hidden ring-1 ring-[#EEDCC9] bg-[#FFF9F0] shadow-[0_16px_48px_rgba(82,47,0,.10)] md:cursor-pointer"
                             >
-                                <img
+                                <Image
                                     src={a.images?.[0] ?? a.image}
                                     alt={a.title}
+                                    fill
                                     loading="lazy"
-                                    decoding="async"
                                     className="absolute inset-0 w-full h-full object-cover"
+                                    sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                                 />
 
                                 <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_10%,rgba(0,0,0,0)_0%,rgba(0,0,0,.18)_60%,rgba(0,0,0,.55)_100%)]" />
@@ -275,7 +293,7 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                                         <div className="grid grid-cols-1 gap-1.5 text-[13px] text-white/90 sm:hidden">
                                             <div className="flex items-center">
                                                 <Calendar className="h-4 w-4 mr-2" />
-                                                {a.schedule.day}
+                                                {formatActivityDayWithDate(a)}
                                             </div>
                                             <div className="flex items-center">
                                                 <Clock className="h-4 w-4 mr-2" />
@@ -296,7 +314,7 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                                         <div className="hidden sm:grid grid-cols-[1fr_auto_1fr] items-center text-[13px] text-white/90">
                                             <div className="flex items-center justify-start">
                                                 <Calendar className="h-4 w-4 mr-2" />
-                                                {a.schedule.day}
+                                                {formatActivityDayWithDate(a)}
                                             </div>
                                             <div className="flex items-center justify-center text-center">
                                                 <Clock className="h-4 w-4 mr-2" />

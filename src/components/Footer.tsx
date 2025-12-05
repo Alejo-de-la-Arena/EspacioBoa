@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Instagram, Mail, Phone, MapPin, Clock } from "lucide-react";
+import Image from "next/image";
+import { mediaUrl } from "@/lib/mediaUrl";
 
 export default function Footer() {
     return (
@@ -26,11 +28,15 @@ export default function Footer() {
                     {/* Brand */}
                     <div className="lg:col-span-1">
                         <div className="flex items-center gap-3 mb-6">
-                            <img
-                                src="https://res.cloudinary.com/dasch1s5i/image/upload/v1755904587/logo-boa_1_gf2bhl.svg"
+
+                            <Image
+                                src={mediaUrl("boa-logo/logo-boa.svg")}
+                                width={16}
+                                height={16}
                                 alt="Logo BOA"
-                                className="w-16 rounded-full"
+                                className="w-16 rounded-full border-boa-green border-2"
                             />
+
                             <div className="hidden sm:block">
                                 <div className="text-xl font-semibold tracking-tight">Espacio BOA</div>
                                 <div className="text-xs text-neutral-400 -mt-0.5">Martínez · Buenos Aires</div>
@@ -76,6 +82,7 @@ export default function Footer() {
                                 { name: "Gift Cards", href: "/giftcards" },
                                 { name: "Blog", href: "/blog" },
                                 { name: "Nosotros", href: "/about" },
+                                { name: "Contacto", href: "/contact" },
                             ].map((item) => (
                                 <li key={item.name}>
                                     <Link
@@ -100,7 +107,7 @@ export default function Footer() {
                         </h3>
                         <div className="space-y-3 text-sm text-neutral-300">
                             <a
-                                href="https://maps.google.com/?q=Juncal%20399,%20Mart%C3%ADnez,%20Buenos%20Aires"
+                                href="https://maps.app.goo.gl/b9MYB259ovmYWrrv7"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-start gap-3 hover:text-white transition"
@@ -114,7 +121,7 @@ export default function Footer() {
                             </a>
                             <a href="mailto:hola@espacioboa.com" className="flex items-center gap-3 hover:text-white transition">
                                 <Mail className="h-4 w-4 text-boa-green flex-shrink-0" />
-                                <span>hola@espacioboa.com</span>
+                                <span>espacioboa@gmail..com</span>
                             </a>
                         </div>
                     </div>

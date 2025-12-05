@@ -91,7 +91,7 @@ function CinematicSlider({
     images,
     alt = "Espacio BOA",
     sizes = "(min-width:1024px) 50vw, 100vw",
-    aspectClass = "h-[74vw] sm:h-[60vw] lg:h-[clamp(520px,64vh,620px)] xl:h-[clamp(540px,66vh,640px)] 2xl:h-[clamp(500px,60vh,600px)]",
+    aspectClass = "h-[74vw] sm: h - [60vw] lg:h-[clamp(460px,58vh,520px)] xl:h-[clamp(460px,54vh,500px)] 2xl:h-[clamp(460px,50vh,500px)]"
 }: SliderProps) {
     const [index, setIndex] = useState(0);
     const [paused, setPaused] = useState(false);
@@ -415,14 +415,17 @@ export default function SpacesPage() {
     }, [activeSpace]);
 
     // Alturas compartidas (slider y card) — mantener sync con CinematicSlider.aspectClass
-    const sharedHeight = "h-[74vw] sm:h-[60vw] lg:h-[clamp(520px,64vh,620px)] xl:h-[clamp(520px,64vh,500px)] 2xl:h-[clamp(550px,55vh,540px)]";
-
+    const sharedHeight =
+        "h-[74vw] sm:h-[60vw] " +
+        "lg:h-[clamp(460px,58vh,520px)] " +
+        "xl:h-[clamp(460px,54vh,500px)] " +
+        "2xl:h-[clamp(460px,50vh,500px)]";
 
     return (
         <section>
             <section
                 id="espacios"
-                className="relative pt-14 pb-52 sm:py-16" 
+                className="relative pt-14 pb-52 sm:py-16"
             >
 
 
@@ -618,22 +621,7 @@ export default function SpacesPage() {
                                         </div>
                                     )}
 
-                                    <div className="mt-auto flex flex-col sm:flex-row gap-2.5 sm:gap-3">
-                                        <a href="#espacios" className="contents">
-                                            <Button className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-6 sm:px-7 py-3 rounded-2xl text-sm sm:text-base">
-                                                Ver todos los espacios
-                                            </Button>
-                                        </a>
-                                        <Link href="/contact">
-                                            <Button
-                                                variant="outline"
-                                                className="w-full sm:w-auto bg-white hover:bg-neutral-50 px-6 sm:px-7 py-3 rounded-2xl border-neutral-300 hover:border-emerald-300 hover:text-emerald-600 text-sm sm:text-base"
-                                            >
-                                                <Clock className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                                                Agendar visita
-                                            </Button>
-                                        </Link>
-                                    </div>
+
                                 </CardContent>
                             </Card>
                         </div>

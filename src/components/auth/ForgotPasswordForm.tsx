@@ -133,7 +133,7 @@ export default function ForgotPasswordForm() {
             const site =
                 typeof window !== "undefined"
                     ? window.location.origin
-                    : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+                    : process.env.NEXT_PUBLIC_SITE_URL || "http://espacioboa.com";
 
             const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
                 redirectTo: `${site}/reset-password`,

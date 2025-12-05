@@ -77,14 +77,30 @@ type UiActivity = {
 
 function toDayTime(iso?: string | null) {
     if (!iso) return { day: "", time: "" };
+
     const d = new Date(iso);
-    return {
-        day: new Intl.DateTimeFormat("es-AR", { weekday: "long" })
-            .format(d)
-            .replace(/^\w/, (c) => c.toUpperCase()),
-        time: new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(d),
-    };
+    if (Number.isNaN(d.getTime())) return { day: "", time: "" };
+
+    // Día de la semana en es-AR
+    const weekday = d.toLocaleDateString("es-AR", { weekday: "long" }) || "";
+    const prettyWeekday = weekday
+        ? weekday.charAt(0).toUpperCase() + weekday.slice(1)
+        : "";
+
+    // dd/mm
+    const dayNum = String(d.getDate()).padStart(2, "0");
+    const monthNum = String(d.getMonth() + 1).padStart(2, "0");
+
+    const dayWithDate = `${prettyWeekday} ${dayNum}/${monthNum}`; // Ej: "Jueves 27/12"
+
+    const time = new Intl.DateTimeFormat("es-AR", {
+        hour: "2-digit",
+        minute: "2-digit",
+    }).format(d);
+
+    return { day: dayWithDate, time };
 }
+
 
 function mapDbToUi(row: ActivityDb, enrolled = 0): UiActivity {
     const galleryArr: string[] = Array.isArray(row.gallery)

@@ -124,13 +124,6 @@ export default function EventsHero({ events }: { events: any[] }) {
                                 </strong>
                             </div>
 
-                            <div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1.5 text-neutral-700 backdrop-blur ring-1 ring-neutral-200">
-                                <Users className="h-4 w-4 text-boa-green" />
-                                Cupos libres:
-                                <strong className="ml-1 text-neutral-900 font-sans">
-                                    {freeSeats}
-                                </strong>
-                            </div>
                         </div>
 
                         <div className="mt-8 flex flex-col sm:flex-row gap-3">
