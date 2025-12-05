@@ -128,9 +128,14 @@ export default function ActivitiesCalendar({ activities }: { activities: Activit
     );
 
     const monthGrid = useMemo(() => {
-        const start = startOfCalendarMonthGrid(anchor);
-        return Array.from({ length: 42 }, (_, i) => addDays(start, i));
+        const first = startOfMonth(anchor);
+        const year = anchor.getFullYear();
+        const month = anchor.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        return Array.from({ length: daysInMonth }, (_, i) => addDays(first, i));
     }, [anchor]);
+
 
     // Navegación
     const goPrev = () => {
@@ -429,8 +434,6 @@ function MonthView({
     MAX_MONTH_ITEMS: number;
     isSmall: boolean;
 }) {
-    const month = anchor.getMonth();
-
     // estado modal mobile
     const [open, setOpen] = useState(false);
     const [modalDate, setModalDate] = useState<Date | null>(null);
@@ -444,17 +447,21 @@ function MonthView({
 
     return (
         <div className="rounded-2xl bg-[#FFFDF8] ring-1 ring-[#EEDCC9] p-2.5 sm:p-3 shadow-[0_12px_28px_rgba(82,47,0,.07)]">
-            {/* cabecera días */}
+            {/* cabecera días (se mantiene solo como referencia visual) */}
             <div className="grid grid-cols-7 gap-2 px-1 pb-2">
                 {DAYS_SHORT.map((d) => (
-                    <div key={d} className="text-[11px] sm:text-[12px] font-semibold text-boa-ink/70 uppercase tracking-wide">{d}</div>
+                    <div
+                        key={d}
+                        className="text-[11px] sm:text-[12px] font-semibold text-boa-ink/70 uppercase tracking-wide"
+                    >
+                        {d}
+                    </div>
                 ))}
             </div>
 
-            {/* celdas 6x7 */}
+            {/* celdas: sólo días del mes actual, empezando el 1 arriba a la izquierda */}
             <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
                 {monthGrid.map((d, i) => {
-                    const inMonth = d.getMonth() === month;
                     const all = activitiesForDay(activities, d);
                     const items = all.slice(0, MAX_MONTH_ITEMS);
                     const extra = all.length - items.length;
@@ -464,29 +471,38 @@ function MonthView({
                         <div
                             key={i}
                             className={[
-                                "min-h-[86px] sm:min-h-[112px] rounded-xl p-2 ring-1 relative",
-                                inMonth ? "bg-[#FFFCF7] ring-[#EEDCC9]" : "bg-white ring-[#EEDCC9]/60 opacity-70",
-                                today ? "outline outline-2 outline-boa-green/60" : ""
+                                "min-h-[86px] sm:min-h-[112px] rounded-xl p-2 ring-1 relative transition-colors",
+                                today
+                                    ? "bg-boa-green/5 ring-boa-green/50 shadow-[0_0_0_1px_rgba(0,0,0,0.02)]"
+                                    : "bg-[#FFFCF7] ring-[#EEDCC9] hover:bg-white",
                             ].join(" ")}
                         >
                             <div className="flex items-center justify-between mb-1">
-                                <span className="text-[12px] sm:text-sm font-medium text-boa-ink/80">{d.getDate()}</span>
-                                {/* Indicadores de cantidad */}
+                                <span className="text-[12px] sm:text-sm font-medium text-boa-ink/80">
+                                    {d.getDate()}
+                                </span>
+
+                                {/* indicadores de cantidad (desktop) */}
                                 {all.length > 0 && (
                                     <div className="hidden sm:flex gap-1">
                                         {Array.from({ length: Math.min(all.length, 3) }).map((_, idx) => (
-                                            <span key={idx} className="h-1.5 w-1.5 rounded-full bg-boa-green/70" />
+                                            <span
+                                                key={idx}
+                                                className="h-1.5 w-1.5 rounded-full bg-boa-green/70"
+                                            />
                                         ))}
                                     </div>
                                 )}
                             </div>
 
-                            {/* Desktop / tablet: chips como siempre */}
+                            {/* Desktop / tablet: chips de actividades */}
                             <div className="hidden sm:block space-y-1.5">
                                 {items.map((a) => (
                                     <Link key={a.id} href={`/activities/${a.id}`} className="block">
                                         <div className="rounded-lg px-2 py-1.5 bg-boa-green/10 ring-1 ring-boa-green/30 text-[12px]">
-                                            <div className="font-semibold text-boa-ink leading-tight line-clamp-1">{a.title}</div>
+                                            <div className="font-semibold text-boa-ink leading-tight line-clamp-1">
+                                                {a.title}
+                                            </div>
                                             <div className="flex items-center justify-between text-boa-ink/70">
                                                 <span className="tabular-nums">{a.schedule.time}</span>
                                                 <span className="inline-flex items-center">
@@ -502,7 +518,7 @@ function MonthView({
                                 )}
                             </div>
 
-                            {/* Mobile: puntos + botón para abrir lista del día */}
+                            {/* Mobile: botón para abrir lista del día */}
                             <div className="sm:hidden">
                                 {all.length === 0 ? (
                                     <div className="text-[11px] text-boa-ink/40 mt-2">—</div>
@@ -514,7 +530,10 @@ function MonthView({
                                     >
                                         <div className="flex -space-x-1">
                                             {Array.from({ length: Math.min(all.length, 4) }).map((_, idx) => (
-                                                <span key={idx} className="h-1.5 w-1.5 rounded-full bg-boa-green relative inline-block" />
+                                                <span
+                                                    key={idx}
+                                                    className="h-1.5 w-1.5 rounded-full bg-boa-green relative inline-block"
+                                                />
                                             ))}
                                         </div>
                                         Ver {all.length}
@@ -527,7 +546,13 @@ function MonthView({
             </div>
 
             {/* Modal mobile con lista del día */}
-            <DayModal open={open} onClose={() => setOpen(false)} date={modalDate} items={modalItems} />
+            <DayModal
+                open={open}
+                onClose={() => setOpen(false)}
+                date={modalDate}
+                items={modalItems}
+            />
         </div>
     );
 }
+

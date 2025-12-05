@@ -213,18 +213,19 @@ export default function GiftCardBuyModal({ open, onClose, gift }: Props) {
                                 reset();
                                 onClose();
                             }}
-                            className="rounded-full border px-4 py-2 text-sm"
+                            className="h-11 flex-1 sm:flex-none rounded-full border px-4 text-sm"
                         >
                             Cancelar
                         </button>
                         <button
                             type="submit"
                             disabled={submitting}
-                            className="rounded-full bg-boa-green px-5 py-2 text-sm font-bold text-white disabled:opacity-60"
+                            className="h-11 flex-1 sm:flex-none rounded-full bg-boa-green px-5 text-sm font-bold text-white disabled:opacity-60"
                         >
                             {submitting ? "Creando orden…" : "Continuar por WhatsApp"}
                         </button>
                     </div>
+
                 </form>
             </div>
         </div>
