@@ -4,9 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Image from "next/image";
-
-import { RevealOnScroll, REVEAL_PRESET_CYCLE } from "@/components/RevealOnScroll";
-
 import {
     Coffee,
     Users,
@@ -20,17 +17,16 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-
-/* ===== Anim helpers ===== */
 const fadeUp = { hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } };
 const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } };
-
+const sectionFade = {
+    hidden: { opacity: 0, y: 16 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+};
 
 export default function AboutPage() {
-    /* ========== GALERÍA (tabs + más imágenes + lightbox) ========== */
-    /* ========== GALERÍA (una sola, curada BOA) ========== */
+
     const galleryBoa = [
-        // Usá tus fotos BOA acá (mantengo algunas temporales)
         "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5183.webp",
         "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5435.webp",
         "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5585.webp",
@@ -40,46 +36,34 @@ export default function AboutPage() {
         "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5400.webp"
     ];
 
-    /* Lightbox */
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
     const openLightbox = (i: number) => {
         setLightboxIndex(i);
         setLightboxOpen(true);
     };
-    /* ===== Testimonios (mismo formato que en “Espacios”) ===== */
+
     const testimonials = [
         {
             id: 1,
-            name: "María González",
-            role: "Freelancer",
-            avatar:
-                "https://images.unsplash.com/photo-1494790108755-2616b4b12eb1?w=200&auto=format&fit=crop",
             text:
-                "BOA se siente como casa: luz linda, café rico y un ritmo que inspira a enfocarse sin aislarse.",
+                "Un lugar unico...un cafe de especialidad en el que tambien se pueden hacer diferentes actividades holisticas. El lugar es una construccion de 100 años reciclada. Los panificados, buenisimos. Se venden libros y otros productos tipo wellness",
             rating: 5,
         },
         {
             id: 2,
-            name: "Carlos Mendez",
-            role: "Organizador de eventos",
-            avatar:
-                "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop",
             text:
-                "Hicimos un workshop y la energía del lugar sumó muchísimo. Equipo atento y espacio súper adaptable.",
+                "Excelente espacio para compartir con amigos. Te podes acomodar con tu grupo en uno de los living privados y tomarte un buen cafe con alguna cosa rica de la pasteleria que ofrecen. Tambien tiene otros espacios para hacer meditacion o yoga. Todos los ambientes estan muy bien ambientados!",
             rating: 5,
         },
         {
             id: 3,
-            name: "Ana Rodríguez",
-            role: "Instructora de yoga",
-            avatar:
-                "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&auto=format&fit=crop",
             text:
-                "La terraza, al sol de la tarde, es mágica. Mis alumnos salen renovados, yo también.",
+                "Un espacio precioso que no solo invita sino que puede adaptarse a lo que necesites en el momento, con diferentes propuestas para sentarse adentro y afuera, todas igual de lindas. El menú riquísimo y la atención puesta en cada detalle terminan de cerrar esta experiencia hermosa.",
             rating: 5,
         },
     ];
+
 
 
     return (
@@ -90,9 +74,12 @@ export default function AboutPage() {
                     <div className="container mx-auto max-w-6xl px-4">
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-10 items-start">
                             {/* Texto */}
-                            <RevealOnScroll
-                                variant="tiltUp" amount={0.3}
+                            <motion.section
                                 className="md:col-span-2"
+                                variants={stagger}
+                                initial="hidden"
+                                whileInView="visible"
+                                viewport={{ once: true, amount: 0.25 }}
                             >
                                 <motion.div variants={fadeUp} className="flex items-center gap-2">
                                     <span className="inline-block h-2 w-2 rounded-full bg-emerald-600" />
@@ -114,16 +101,21 @@ export default function AboutPage() {
                                 </motion.p>
                                 <motion.p variants={fadeUp} className="mt-3 text-neutral-700">
                                     Cuidamos el café de origen, proponemos talleres y hábitos
-                                    suaves de bienestar y abrimos la mesa para compartir.{" "}
+                                    suaves de bienestar y abrimos la mesa para compartir{" "}
                                     <span className="text-neutral-900 font-semibold">
                                         Todo en uno, sin pose.
                                     </span>
                                 </motion.p>
-                            </RevealOnScroll>
-
+                            </motion.section>
 
                             {/* Galería */}
-                            <RevealOnScroll variant="zoomRotate" amount={0.3} className="md:col-span-3">
+                            <motion.section
+                                className="md:col-span-3"
+                                variants={sectionFade}
+                                initial="hidden"
+                                whileInView="visible"
+                                viewport={{ once: true, amount: 0.25 }}
+                            >
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-2">
                                         <Camera className="h-5 w-5 text-emerald-700" />
@@ -132,12 +124,61 @@ export default function AboutPage() {
                                     <span className="text-xs text-neutral-500">Momentos BOA</span>
                                 </div>
 
+                                {/* --- Mobile: slider horizontal mejorado --- */}
                                 <motion.div
                                     variants={stagger}
-                                    initial="hidden"
-                                    whileInView="visible"
-                                    viewport={{ once: true, amount: 0.2 }}
-                                    className="grid grid-cols-2 md:grid-cols-4 gap-3"
+                                    className="md:hidden mt-1"
+                                >
+                                    <div className="relative -mx-4 px-3 py-3 rounded-3xl bg-neutral-50 border border-neutral-100 shadow-[0_18px_40px_rgba(15,23,42,0.07)]">
+                                        {/* etiqueta sutil arriba del carrusel */}
+                                        <div className="flex items-center justify-between px-1 mb-2">
+                                            <span className="text-[10px] text-neutral-400">
+                                                Deslizá para ver más
+                                            </span>
+                                        </div>
+
+                                        {/* fades laterales suaves */}
+                                        <div className="pointer-events-none absolute left-0 top-0 h-full w-10 bg-gradient-to-r from-white/90 to-transparent rounded-3xl" />
+                                        <div className="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-white/90 to-transparent rounded-3xl" />
+
+                                        <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-3 pl-1 pr-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                                            {galleryBoa.map((src, i) => (
+                                                <motion.button
+                                                    key={`boa-mobile-${i}`}
+                                                    variants={fadeUp}
+                                                    whileHover={{ scale: 1.03, y: -2 }}
+                                                    whileTap={{ scale: 0.98 }}
+                                                    onClick={() => openLightbox(i)}
+                                                    className="relative snap-center shrink-0 w-[88%] max-w-[360px] h-[270px] rounded-[24px] border border-neutral-200/80 bg-neutral-100 overflow-hidden cursor-zoom-in shadow-sm"
+                                                    aria-label={`Abrir foto ${i + 1}`}
+                                                >
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img
+                                                        src={src}
+                                                        alt={`Galería BOA ${i + 1}`}
+                                                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-[1.05]"
+                                                        loading="lazy"
+                                                        decoding="async"
+                                                    />
+                                                    {/* vignette suave */}
+                                                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+
+                                                    {/* chip abajo a la izquierda */}
+                                                    <div className="absolute left-3 bottom-3">
+                                                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-white/95 bg-black/40 backdrop-blur-sm px-2.5 py-1 rounded-full">
+                                                            BOA · Casa & Café
+                                                        </span>
+                                                    </div>
+                                                </motion.button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </motion.div>
+
+                                {/* --- Desktop / tablet: grid original (sin tocar diseño) --- */}
+                                <motion.div
+                                    variants={stagger}
+                                    className="hidden md:grid grid-cols-4 gap-3"
                                 >
                                     {galleryBoa.map((src, i) => {
                                         const wide = i % 7 === 0 || i % 11 === 0;
@@ -147,7 +188,7 @@ export default function AboutPage() {
                                                 variants={fadeUp}
                                                 whileHover={{ y: -3, rotate: i % 2 === 0 ? -0.4 : 0.4 }}
                                                 onClick={() => openLightbox(i)}
-                                                className={`relative overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 cursor-zoom-in ${wide ? "md:col-span-2 aspect-[3/2]" : "aspect-[4/5]"
+                                                className={`relative overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 cursor-zoom-in ${wide ? "col-span-2 aspect-[3/2]" : "aspect-[4/5]"
                                                     }`}
                                                 aria-label={`Abrir foto ${i + 1}`}
                                             >
@@ -164,58 +205,89 @@ export default function AboutPage() {
                                         );
                                     })}
                                 </motion.div>
-                            </RevealOnScroll>
+                            </motion.section>
 
                         </div>
                     </div>
                 </SectionSurface>
 
 
+
                 {/* ===== 2) FILOSOFÍA Y PROPÓSITO  ===== */}
                 <SectionSurface className="py-20">
                     <div className="container mx-auto max-w-6xl px-4">
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-10 items-center">
-                            {/* Texto izquierdo (lead + pilares + micro-manifiesto) */}
-                            <RevealOnScroll
-                                variant="blurRise" amount={0.3}
+                            {/* Texto izquierdo */}
+                            <motion.section
                                 className="md:col-span-3"
+                                variants={stagger}
+                                initial="hidden"
+                                whileInView="visible"
+                                viewport={{ once: true, amount: 0.25 }}
                             >
                                 <motion.div variants={fadeUp} className="flex items-center gap-2">
                                     <span className="inline-block h-2 w-2 rounded-full bg-emerald-600" />
                                     <p className="text-sm font-medium text-neutral-900">Historia de BOA</p>
                                 </motion.div>
 
-                                <motion.h2 variants={fadeUp} className="mt-2 text-3xl md:text-4xl font-extrabold text-neutral-900">
+                                <motion.h2
+                                    variants={fadeUp}
+                                    className="mt-2 text-3xl md:text-4xl font-extrabold text-neutral-900"
+                                >
                                     Filosofía y propósito
                                 </motion.h2>
                                 <BrushUnderline className="mt-2" />
 
-                                <motion.p variants={fadeUp} className="mt-4 text-neutral-700 text-lg leading-relaxed">
-                                    En BOA creemos en <strong className="text-neutral-900">la simpleza bien hecha</strong>:
+                                <motion.p
+                                    variants={fadeUp}
+                                    className="mt-4 text-neutral-700 text-lg leading-relaxed"
+                                >
+                                    En BOA creemos en{" "}
+                                    <strong className="text-neutral-900">la simpleza bien hecha</strong>:
                                     una taza honesta, un encuentro que suma y un hábito que podés sostener.
                                     Somos un lugar para <em>bajar un cambio</em> sin perder el pulso creativo.
                                 </motion.p>
 
                                 {/* Pilares */}
-                                <motion.div variants={fadeUp} className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <motion.div
+                                    variants={fadeUp}
+                                    className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3"
+                                >
                                     {[
-                                        { icon: Coffee, title: "Café bien hecho", desc: "Origen, trazabilidad y cariño en la barra." },
-                                        { icon: Users, title: "Encuentros reales", desc: "Charlas, talleres y comunidad que se cuida." },
-                                        { icon: Leaf, title: "Bienestar sencillo", desc: "Rutinas amables que encajan en tu día." },
+                                        {
+                                            icon: Coffee,
+                                            title: "Café bien hecho",
+                                            desc: "Origen, trazabilidad y cariño en la barra.",
+                                        },
+                                        {
+                                            icon: Users,
+                                            title: "Encuentros reales",
+                                            desc: "Charlas, talleres y comunidad que se cuida.",
+                                        },
+                                        {
+                                            icon: Leaf,
+                                            title: "Bienestar sencillo",
+                                            desc: "Rutinas amables que encajan en tu día.",
+                                        },
                                     ].map(({ icon: Icon, title, desc }, i) => (
-                                        <div key={i} className="flex gap-3 p-3 rounded-xl border border-emerald-100 bg-emerald-50/40">
+                                        <div
+                                            key={i}
+                                            className="flex gap-3 p-3 rounded-xl border border-emerald-100 bg-emerald-50/40"
+                                        >
                                             <div className="w-9 h-9 rounded-lg bg-white text-emerald-700 flex items-center justify-center ring-1 ring-emerald-100">
                                                 <Icon className="h-5 w-5" />
                                             </div>
                                             <div>
-                                                <div className="text-sm font-semibold text-neutral-900">{title}</div>
+                                                <div className="text-sm font-semibold text-neutral-900">
+                                                    {title}
+                                                </div>
                                                 <div className="text-sm text-neutral-600">{desc}</div>
                                             </div>
                                         </div>
                                     ))}
                                 </motion.div>
 
-                                {/* Micro-manifiesto con quote */}
+                                {/* Micro-manifiesto */}
                                 <motion.div
                                     variants={fadeUp}
                                     className="mt-8 p-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-amber-50/50 border border-neutral-100"
@@ -225,90 +297,90 @@ export default function AboutPage() {
                                         <span className="text-sm font-medium">Nuestro manifiesto</span>
                                     </div>
                                     <p className="text-neutral-700 leading-relaxed">
-                                        “Elegimos el camino largo y atento: <strong>cosas ricas, tiempos humanos y vínculos reales</strong>.
-                                        Si te vas con el corazón un poco más liviano, hicimos bien nuestro trabajo.”
+                                        “Elegimos el camino largo y atento:{" "}
+                                        <strong>cosas ricas, tiempos humanos y vínculos reales</strong>.
+                                        Si te vas con el corazón un poco más liviano, hicimos bien nuestro
+                                        trabajo.”
                                     </p>
                                 </motion.div>
-                            </RevealOnScroll>
+                            </motion.section>
 
-
-                            <RevealOnScroll
-                                as="div"
-                                variant="pop"
-                                amount={0.28}
+                            {/* Imagen / collage */}
+                            <motion.section
                                 className="md:col-span-2"
+                                variants={sectionFade}
+                                initial="hidden"
+                                whileInView="visible"
+                                viewport={{ once: true, amount: 0.3 }}
                                 style={{ overflow: "visible", contain: "none" }}
                             >
-                                <motion.div
-                                    className="md:col-span-2"
-                                    initial={{ opacity: 0, y: 8 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true, amount: 0.3 }}
-                                >
-                                    <div className="relative">
-                                        {/* marco principal */}
-                                        <div className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
-                                            <Image
-                                                src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5407.webp"
-                                                alt="Mesa larga con café y plantas"
-                                                width={1200}
-                                                height={900}
-                                                className="object-cover w-full h-[360px]"
-                                                priority
-                                            />
-                                            {/* velo suave */}
-                                            <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/10 to-transparent" />
-                                        </div>
+                                <div className="relative">
+                                    <div className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
+                                        <Image
+                                            src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5407.webp"
+                                            alt="Mesa larga con café y plantas"
+                                            width={1200}
+                                            height={900}
+                                            className="object-cover w-full h-[360px]"
+                                            priority
+                                        />
+                                        <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/10 to-transparent" />
+                                    </div>
 
-                                        {/* tarjetita flotante */}
-                                        <div className="absolute -bottom-5 -left-4 sm:-left-6">
-                                            <div className="rounded-2xl bg-white shadow-lg border border-neutral-200 px-4 py-3 flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center ring-1 ring-emerald-100">
-                                                    <Coffee className="h-5 w-5" />
-                                                </div>
-                                                <div className="leading-tight">
-                                                    <div className="text-sm font-semibold text-neutral-900">Desde 2025</div>
-                                                    <div className="text-xs text-neutral-500">Martínez, Buenos Aires</div>
-                                                </div>
+                                    {/* tarjetita flotante */}
+                                    <div className="absolute -bottom-5 -left-4 sm:-left-6">
+                                        <div className="rounded-2xl bg-white shadow-lg border border-neutral-200 px-4 py-3 flex items-center gap-3">
+                                            <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center ring-1 ring-emerald-100">
+                                                <Coffee className="h-5 w-5" />
                                             </div>
-                                        </div>
-
-                                        {/* mini collage lateral */}
-                                        <div className="hidden sm:flex flex-col gap-3 absolute -right-6 top-6 w-28">
-                                            <div className="rounded-2xl overflow-hidden border border-neutral-200 shadow-sm">
-                                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img
-                                                    src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5327.webp"
-                                                    alt="Detalle en barra"
-                                                    className="w-full h-28 object-cover"
-                                                    loading="lazy"
-                                                />
-                                            </div>
-                                            <div className="rounded-2xl overflow-hidden border border-neutral-200 shadow-sm">
-                                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img
-                                                    src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5284.webp"
-                                                    alt="Plantas y luz"
-                                                    className="w-full h-28 object-cover"
-                                                    loading="lazy"
-                                                />
+                                            <div className="leading-tight">
+                                                <div className="text-sm font-semibold text-neutral-900">
+                                                    Desde 2025
+                                                </div>
+                                                <div className="text-xs text-neutral-500">
+                                                    Martínez, Buenos Aires
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </motion.div>
-                            </RevealOnScroll>
+
+                                    {/* mini collage lateral */}
+                                    <div className="hidden sm:flex flex-col gap-3 absolute -right-6 top-6 w-28">
+                                        <div className="rounded-2xl overflow-hidden border border-neutral-200 shadow-sm">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                                src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5327.webp"
+                                                alt="Detalle en barra"
+                                                className="w-full h-28 object-cover"
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                        <div className="rounded-2xl overflow-hidden border border-neutral-200 shadow-sm">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                                src="https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5284.webp"
+                                                alt="Plantas y luz"
+                                                className="w-full h-28 object-cover"
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.section>
                         </div>
                     </div>
                 </SectionSurface>
 
 
 
+
                 {/* ===== (NUEVO) VOCES DE LA COMUNIDAD — Testimonios ===== */}
-                <RevealOnScroll
-                    as="section"
-                    variant="zoomRotate"
-                    amount={0.22}
+                <motion.section
                     className="py-16 bg-neutral-50"
+                    variants={sectionFade}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.2 }}
                 >
                     <div className="container max-w-6xl mx-auto px-4">
                         <div className="text-center max-w-3xl mx-auto mb-10">
@@ -320,7 +392,6 @@ export default function AboutPage() {
                                 que cuentan quienes ya pasaron por BOA.
                             </p>
                         </div>
-
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {testimonials.map((t) => (
@@ -335,14 +406,16 @@ export default function AboutPage() {
                                         </p>
                                         <div className="flex items-center">
                                             <Avatar className="w-12 h-12 mr-3">
-                                                <AvatarImage src={t.avatar} alt={t.name} />
-                                                <AvatarFallback>{t.name[0]}</AvatarFallback>
+                                                {/* Avatar genérico / anónimo */}
+                                                <AvatarFallback>BOA</AvatarFallback>
                                             </Avatar>
                                             <div className="flex-1">
                                                 <div className="font-semibold text-neutral-900">
-                                                    {t.name}
+                                                    Reseña
                                                 </div>
-                                                <div className="text-sm text-neutral-500">{t.role}</div>
+                                                <div className="text-sm text-neutral-500">
+                                                    Visita real
+                                                </div>
                                             </div>
                                             <div className="flex">
                                                 {[...Array(t.rating)].map((_, i) => (
@@ -358,9 +431,8 @@ export default function AboutPage() {
                             ))}
                         </div>
                     </div>
-                </RevealOnScroll>
+                </motion.section>
             </div>
-
 
             {/* LIGHTBOX */}
             <AnimatePresence>
@@ -372,7 +444,6 @@ export default function AboutPage() {
                     />
                 )}
             </AnimatePresence>
-
         </section>
     );
 }

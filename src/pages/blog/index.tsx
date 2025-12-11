@@ -3,7 +3,6 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { RevealOnScroll } from "@/components/RevealOnScroll";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,6 +28,10 @@ const container = {
 const item = {
     hidden: { opacity: 0, y: 16 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
+};
+const sectionFade = {
+    hidden: { opacity: 0, y: 16 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
 };
 
 /* ================= Hero images ================= */
@@ -174,9 +177,11 @@ export default function BlogPage() {
         <section>
             <main className="font-sans">
                 {/* ======================= HERO (texto + imágenes) ======================= */}
-                <RevealOnScroll
-                    variant="tiltUp"
-                    className="relative isolate overflow-hidden"
+                <motion.section
+                    className="relative isolate overflow-hidden py-16 sm:py-20 lg:py-24"
+                    variants={sectionFade}
+                    initial="hidden"
+                    animate="visible"
                 >
                     <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="grid lg:grid-cols-12 gap-2 items-stretch">
@@ -256,14 +261,16 @@ export default function BlogPage() {
                     {/* halos suaves */}
                     <div className="pointer-events-none absolute -left-24 -bottom-24 w-[28rem] h-[28rem] rounded-full bg-boa-green/10 blur-3xl" />
                     <div className="pointer-events-none absolute -right-24 -top-24 w-[24rem] h-[24rem] rounded-full bg-boa-terra/12 blur-3xl" />
-                </RevealOnScroll>
+                </motion.section>
 
                 {/* ======================= DESTACADOS ======================= */}
                 {featured.length > 0 && (
-                    <RevealOnScroll
-                        variant="zoomRotate"
-                        amount={0.2}
-                        className="relative  overflow-hidden"
+                    <motion.section
+                        className="relative overflow-hidden py-16 sm:py-20 lg:py-24"
+                        variants={sectionFade}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, amount: 0.2 }}
                     >
                         <div className="absolute inset-0 bg-[linear-gradient(180deg,#FEFCF7_0%,#FFFFFF_78%)]" />
                         <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -356,7 +363,7 @@ export default function BlogPage() {
                                 </div>
                             </div>
                         </div>
-                    </RevealOnScroll>
+                    </motion.section>
                 )}
 
                 {/* ======================= FILTROS + BUSCADOR ======================= */}
@@ -407,7 +414,7 @@ export default function BlogPage() {
                 </section>
 
                 {/* ======================= LISTA (artículos) ======================= */}
-                <section className="py-16 bg-white">
+                <section className="py-8 bg-white">
                     <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         {posts.length === 0 ? (
                             <div className="text-center py-20 text-neutral-500">
@@ -471,7 +478,13 @@ export default function BlogPage() {
                 </section>
 
                 {/* ======================= CTA NEWSLETTER ======================= */}
-                <RevealOnScroll variant="tiltUp" className="relative pt-24 overflow-hidden">
+                <motion.section
+                    className="relative pt-24 pb-20 overflow-hidden"
+                    variants={sectionFade}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.2 }}
+                    >
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-neutral-900 to-emerald-800" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(16,185,129,0.1)_0%,transparent_50%)]" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(34,197,94,0.08)_0%,transparent_50%)]" />
@@ -545,7 +558,7 @@ export default function BlogPage() {
                             </div>
                         </div>
                     </div>
-                </RevealOnScroll>
+                </motion.section>
             </main>
         </section>
     );
