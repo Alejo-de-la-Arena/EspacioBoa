@@ -1,8 +1,7 @@
-import { useInView, motion as m } from "framer-motion";
+import { useEffect, useRef, useState, useMemo, type CSSProperties } from "react";
+import { motion } from "framer-motion"; // solo para hero, hover, etc.
 import { useApp } from "@/contexts/AppContext";
 import { useActivitiesLive } from "@/hooks/useActivitiesLive";
-import { useEffect, useRef, useState, useMemo } from "react";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import GiftCardBuyModal from "@/components/GiftCardBuyModal";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,8 +28,8 @@ type ExpItem = {
     image?: string;
     href?: string;
     date?: string;
-    time?: string; 
-    schedule?: { day?: string; time?: string }; 
+    time?: string;
+    schedule?: { day?: string; time?: string };
     capacity?: number;
     enrolled?: number;
     price?: number | string;
@@ -86,8 +85,6 @@ function isUpcomingActivity(a: any) {
     return true;
 }
 
-
-
 type RevealVariant = "fadeUp" | "slideLeft" | "pop" | "tiltUp";
 
 function RevealOnScroll({
@@ -103,36 +100,61 @@ function RevealOnScroll({
     delay?: number;
     variant?: RevealVariant;
 }) {
-    const ref = useRef<HTMLDivElement | null>(null);
-    const inView = useInView(ref, { amount, margin: "0px 0px -10% 0px" });
-    const state = inView ? "visible" : "hidden";
+    const ref = useRef<HTMLElement | null>(null);
+    const [isVisible, setIsVisible] = useState(false);
 
-    const variants: Record<RevealVariant, { hidden: any; visible: any }> = {
-        fadeUp: { hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0 } },
-        slideLeft: { hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } },
-        pop: { hidden: { opacity: 0, scale: 0.97 }, visible: { opacity: 1, scale: 1 } },
-        tiltUp: { hidden: { opacity: 0, y: 18, rotateX: -6 }, visible: { opacity: 1, y: 0, rotateX: 0 } },
+    useEffect(() => {
+        const el = ref.current;
+        if (!el || isVisible) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsVisible(true); // animación de entrada UNA sola vez
+                    observer.disconnect();
+                }
+            },
+            {
+                threshold: amount,
+                rootMargin: "0px 0px -10% 0px",
+            }
+        );
+
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [amount, isVisible]);
+
+    // Estado inicial según variante
+    let hiddenTransform = "translateY(18px)";
+    if (variant === "slideLeft") hiddenTransform = "translateX(20px)";
+    if (variant === "pop") hiddenTransform = "scale(0.97)";
+    if (variant === "tiltUp") hiddenTransform = "translateY(18px) rotateX(-5deg)";
+
+    const style: CSSProperties = {
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? "none" : hiddenTransform,
+        transformOrigin: "center bottom",
+        transitionProperty: "opacity, transform",
+        transitionDuration: "520ms",
+        transitionTimingFunction: "cubic-bezier(0.22, 0.61, 0.36, 1)",
+        transitionDelay: `${delay}s`,
+        willChange: "opacity, transform",
     };
 
     return (
         <section
             ref={ref}
-            className={["relative isolate", className || ""].join(" ")}
-            style={{ overflow: "hidden", contain: "paint", willChange: "transform" }}
+            className={["relative isolate overflow-hidden", className || ""].join(" ")}
+            style={{ contain: "paint" }}
         >
-            <m.div
-                initial="hidden"
-                animate={state}
-                variants={variants[variant]}
-                transition={{ duration: 0.55, ease: "easeOut", delay }}
-                className="relative z-10 will-change-transform"
-                style={{ transformStyle: "preserve-3d", backfaceVisibility: "hidden" }}
-            >
+            <div style={style} className="relative z-10">
                 <div className="py-16 sm:py-18 md:py-20 lg:py-24">{children}</div>
-            </m.div>
+            </div>
         </section>
     );
+
 }
+
 
 function HeroTitle() {
     const STEP = 0.08;

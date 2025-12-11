@@ -613,7 +613,7 @@ export default function ActivityDetailPage() {
             </section>
 
             {/* Lo que vas a vivir */}
-            <section className="pb-6">
+            {/* <section className="pb-6">
                 <div className="container max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                         <Feature
@@ -633,7 +633,7 @@ export default function ActivityDetailPage() {
                         />
                     </div>
                 </div>
-            </section>
+            </section> */}
 
             {/* Relacionadas */}
             <section className="py-12">
