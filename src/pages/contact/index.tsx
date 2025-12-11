@@ -17,9 +17,7 @@ import {
     MapPin,
     ArrowUpRight,
     Mail,
-    Phone,
     Instagram,
-    MessageCircle,
 } from "lucide-react";
 
 // ======= Defaults =======
@@ -28,9 +26,7 @@ const DEFAULT_BG_URL =
 const DEFAULT_BG_OPACITY = 0.06;
 
 const DEFAULT_ICON_URLS = {
-    phone: "",
     gmail: "https://cdn.simpleicons.org/gmail",
-    whatsapp: "https://cdn.simpleicons.org/whatsapp",
     instagram: "https://cdn.simpleicons.org/instagram",
 } as const;
 
@@ -63,6 +59,7 @@ export default function ContactPage() {
 
     const validate = (data: FormData): FormErrors => {
         const e: FormErrors = {};
+
         if (!data.name?.trim() || data.name.trim().length < 2)
             e.name = "Decinos tu nombre (mín. 2 caracteres).";
 
@@ -73,6 +70,16 @@ export default function ContactPage() {
 
         if (!data.message?.trim() || data.message.trim().length < 10)
             e.message = "Contanos un poco más (mín. 10 caracteres).";
+
+        // Teléfono opcional: si viene algo, validamos formato básico
+        if (data.phone && data.phone.trim() !== "") {
+            const phoneClean = data.phone.trim();
+            const phoneOk = /^[0-9+()\s-]{7,}$/.test(phoneClean);
+            if (!phoneOk) {
+                e.phone =
+                    "Ingresá un teléfono válido (solo números, espacios y +).";
+            }
+        }
 
         // Honeypot: si viene con algo, es bot
         if (data.website && data.website.trim() !== "")
@@ -136,40 +143,18 @@ export default function ContactPage() {
         }
     };
 
-    // ======= Cards estáticas =======
+    // ======= Cards estáticas (solo Gmail + Instagram) =======
     const contactMethods = [
-        {
-            key: "tel",
-            iconImg: DEFAULT_ICON_URLS.phone,
-            Icon: Phone,
-            title: "Teléfono",
-            details: "+54 9 11 3245 5628",
-            description: "Lunes a Domingo, 8:00 – 22:00",
-            action: "Llamar ahora",
-            href: "tel:+5491132455628",
-            span: "lg:col-span-3 md:col-span-2",
-        },
         {
             key: "mail",
             iconImg: DEFAULT_ICON_URLS.gmail,
             Icon: Mail,
             title: "Email",
-            details: "espacio.boa@gmail.com",
+            details: "boa.espacio@gmail.com",
             description: "Respuesta en 24 horas",
             action: "Enviar email",
-            href: "mailto:espacio.boa@gmail.com",
-            span: "lg:col-span-3 md:col-span-2",
-        },
-        {
-            key: "wa",
-            iconImg: DEFAULT_ICON_URLS.whatsapp,
-            Icon: MessageCircle,
-            title: "WhatsApp",
-            details: "+54 9 11 8765 4321",
-            description: "Chat directo y rápido",
-            action: "Abrir chat",
-            href: "https://wa.me/5491187654321",
-            span: "lg:col-span-3 md:col-span-2",
+            target: "_blank",
+            href: "https://mail.google.com/mail/?view=cm&fs=1&to=boa.espacio@gmail.com",
         },
         {
             key: "ig",
@@ -179,8 +164,8 @@ export default function ContactPage() {
             details: "@espacio.boa",
             description: "Novedades y comunidad",
             action: "Ver perfil",
+            target: "_blank",
             href: "https://instagram.com/espacio.boa",
-            span: "lg:col-span-3 md:col-span-2",
         },
     ] as const;
 
@@ -207,63 +192,7 @@ export default function ContactPage() {
                     }}
                 />
 
-                {/* ======== CARDS DE CONTACTO ======== */}
-                <section className="relative py-12 sm:py-14">
-                    <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-6">
-                            {contactMethods.map((m) => {
-                                const IconComp = m.Icon;
-                                return (
-                                    <a
-                                        key={m.key}
-                                        href={m.href}
-                                        target={m.key === "ig" ? "_blank" : undefined}
-                                        rel={
-                                            m.key === "ig" ? "noopener noreferrer" : undefined
-                                        }
-                                        className={`no-underline ${m.span} group`}
-                                    >
-                                        <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-200">
-                                            <CardContent className="p-6 text-center">
-                                                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/75 text-emerald-700 flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden">
-                                                    {m.iconImg ? (
-                                                        <img
-                                                            src={m.iconImg}
-                                                            alt={`${m.title} icon`}
-                                                            className="h-8 w-8 object-contain"
-                                                            loading="lazy"
-                                                        />
-                                                    ) : (
-                                                        <IconComp className="h-8 w-8" />
-                                                    )}
-                                                </div>
-                                                <h3 className="font-semibold text-neutral-900 mb-1">
-                                                    {m.title}
-                                                </h3>
-                                                <p className="text-lg font-medium text-emerald-700">
-                                                    {m.details}
-                                                </p>
-                                                <p className="text-sm text-neutral-600 mt-1">
-                                                    {m.description}
-                                                </p>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="mt-4 rounded-xl bg-white/70 backdrop-blur border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                                                >
-                                                    {m.action}{" "}
-                                                    <ArrowUpRight className="ml-1 h-4 w-4" />
-                                                </Button>
-                                            </CardContent>
-                                        </Card>
-                                    </a>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </section>
-
-                {/* ======== FORM + MAPA ======== */}
+                {/* ======== FORM + MAPA (ARRIBA) ======== */}
                 <section className="py-12 bg-neutral-50">
                     <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-12">
                         {/* FORM */}
@@ -375,7 +304,7 @@ export default function ContactPage() {
                                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
                                         <div className="sm:col-span-6">
                                             <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                                Teléfono
+                                                Teléfono (opcional)
                                             </label>
                                             <Input
                                                 type="tel"
@@ -384,8 +313,21 @@ export default function ContactPage() {
                                                     handleInputChange("phone", e.target.value)
                                                 }
                                                 placeholder="+54 9 11 1234 5678"
-                                                className="rounded-xl"
+                                                className={`rounded-xl ${errors.phone ? "ring-2 ring-rose-300" : ""
+                                                    }`}
+                                                aria-invalid={!!errors.phone}
+                                                aria-describedby={
+                                                    errors.phone ? "err-phone" : undefined
+                                                }
                                             />
+                                            {errors.phone && (
+                                                <p
+                                                    id="err-phone"
+                                                    className="mt-1 text-xs text-rose-600"
+                                                >
+                                                    {errors.phone}
+                                                </p>
+                                            )}
                                         </div>
                                         <div className="sm:col-span-6">
                                             <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -398,11 +340,15 @@ export default function ContactPage() {
                                                 }
                                             >
                                                 <SelectTrigger
-                                                    className={`rounded-xl ${errors.subject ? "ring-2 ring-rose-300" : ""
+                                                    className={`rounded-xl ${errors.subject
+                                                            ? "ring-2 ring-rose-300"
+                                                            : ""
                                                         }`}
                                                     aria-invalid={!!errors.subject}
                                                     aria-describedby={
-                                                        errors.subject ? "err-subject" : undefined
+                                                        errors.subject
+                                                            ? "err-subject"
+                                                            : undefined
                                                     }
                                                 >
                                                     <SelectValue placeholder="Seleccioná un tema" />
@@ -425,6 +371,9 @@ export default function ContactPage() {
                                                     </SelectItem>
                                                     <SelectItem value="Sugerencias">
                                                         Sugerencias
+                                                    </SelectItem>
+                                                    <SelectItem value="Otros">
+                                                        Otros
                                                     </SelectItem>
                                                 </SelectContent>
                                             </Select>
@@ -452,11 +401,15 @@ export default function ContactPage() {
                                                 placeholder="¿Qué te gustaría hacer en BOA? Compartinos fecha, cantidad de personas y necesidades especiales."
                                                 rows={5}
                                                 required
-                                                className={`rounded-xl ${errors.message ? "ring-2 ring-rose-300" : ""
+                                                className={`rounded-xl ${errors.message
+                                                        ? "ring-2 ring-rose-300"
+                                                        : ""
                                                     }`}
                                                 aria-invalid={!!errors.message}
                                                 aria-describedby={
-                                                    errors.message ? "err-message" : undefined
+                                                    errors.message
+                                                        ? "err-message"
+                                                        : undefined
                                                 }
                                             />
                                             {errors.message && (
@@ -467,10 +420,6 @@ export default function ContactPage() {
                                                     {errors.message}
                                                 </p>
                                             )}
-                                            <p className="mt-2 text-xs text-neutral-500">
-                                                Si es urgente, escribinos por WhatsApp y te
-                                                respondemos más rápido.
-                                            </p>
                                         </div>
                                     </div>
 
@@ -512,7 +461,13 @@ export default function ContactPage() {
                                     </div>
                                 </div>
 
-                                <div className="w-full h-full rounded-xl overflow-hidden border border-neutral-200">
+                                {/* Contenedor clickeable que abre Maps en otra pestaña */}
+                                <a
+                                    href="https://maps.app.goo.gl/HB9MPeM84q3GqV4NA"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block w-full h-full rounded-xl overflow-hidden border border-neutral-200"
+                                >
                                     <iframe
                                         title="Mapa BOA - Juncal 399, Martínez"
                                         src="https://www.google.com/maps?q=Juncal+399,+Mart%C3%ADnez,+Provincia+de+Buenos+Aires&z=16&output=embed"
@@ -520,11 +475,65 @@ export default function ContactPage() {
                                         height="300"
                                         loading="lazy"
                                         referrerPolicy="no-referrer-when-downgrade"
-                                        style={{ border: 0 }}
+                                        style={{ border: 0, pointerEvents: "none" }}
                                     />
-                                </div>
+                                </a>
                             </CardContent>
                         </Card>
+                    </div>
+                </section>
+
+                {/* ======== CARDS DE CONTACTO (ABAJO: EMAIL + IG) ======== */}
+                <section className="relative py-10 sm:py-12">
+                    <div className="container max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            {contactMethods.map((m) => {
+                                const IconComp = m.Icon;
+                                return (
+                                    <a
+                                        key={m.key}
+                                        href={m.href}
+                                        target={m.target}
+                                        rel="noopener noreferrer"
+                                        className="no-underline group"
+                                    >
+                                        <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-200">
+                                            <CardContent className="p-6 text-center">
+                                                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/75 text-emerald-700 flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden">
+                                                    {m.iconImg ? (
+                                                        <img
+                                                            src={m.iconImg}
+                                                            alt={`${m.title} icon`}
+                                                            className="h-8 w-8 object-contain"
+                                                            loading="lazy"
+                                                        />
+                                                    ) : (
+                                                        <IconComp className="h-8 w-8" />
+                                                    )}
+                                                </div>
+                                                <h3 className="font-semibold text-neutral-900 mb-1">
+                                                    {m.title}
+                                                </h3>
+                                                <p className="text-lg font-medium text-emerald-700">
+                                                    {m.details}
+                                                </p>
+                                                <p className="text-sm text-neutral-600 mt-1">
+                                                    {m.description}
+                                                </p>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="mt-4 rounded-xl bg-white/70 backdrop-blur border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                                                >
+                                                    {m.action}{" "}
+                                                    <ArrowUpRight className="ml-1 h-4 w-4" />
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    </a>
+                                );
+                            })}
+                        </div>
                     </div>
                 </section>
             </div>

@@ -136,6 +136,56 @@ export default function BlogPage() {
     const [cat, setCat] = useState("all");
     const [mounted, setMounted] = useState(false);
 
+    const [newsletterEmail, setNewsletterEmail] = useState("");
+    const [newsletterLoading, setNewsletterLoading] = useState(false);
+    const [newsletterStatus, setNewsletterStatus] = useState<
+        null | { type: "success" | "error"; msg: string }
+    >(null);
+
+    const handleNewsletterSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setNewsletterStatus(null);
+
+        const email = newsletterEmail.trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailRegex.test(email)) {
+            setNewsletterStatus({
+                type: "error",
+                msg: "Ingresá un email válido.",
+            });
+            return;
+        }
+
+        try {
+            setNewsletterLoading(true);
+            const res = await fetch("/api/newsletter", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
+            });
+
+            if (!res.ok) {
+                const j = await res.json().catch(() => ({}));
+                throw new Error(j?.message || "No pudimos suscribirte.");
+            }
+
+            setNewsletterStatus({
+                type: "success",
+                msg: "¡Listo! Te vamos a escribir cuando haya novedades ricas.",
+            });
+            setNewsletterEmail("");
+        } catch (err: any) {
+            setNewsletterStatus({
+                type: "error",
+                msg: err?.message || "Ocurrió un error. Probá de nuevo.",
+            });
+        } finally {
+            setNewsletterLoading(false);
+        }
+    };
+
+
     useEffect(() => setMounted(true), []);
 
     const featured = RAW_POSTS.filter((p) => p.featured);
@@ -163,6 +213,8 @@ export default function BlogPage() {
         );
     }
 
+
+
     /* ===== mapping de color por categoría (sutil) ===== */
     const catColor = (c: string) =>
         c === "Café"
@@ -172,6 +224,8 @@ export default function BlogPage() {
                 : c === "Bienestar"
                     ? "bg-emerald-100 text-emerald-900"
                     : "bg-sky-100 text-sky-900";
+
+
 
     return (
         <section>
@@ -192,7 +246,9 @@ export default function BlogPage() {
                             >
                                 <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-boa-ink">
                                     Historias que{" "}
-                                    <span className="text-boa-green">se saborean</span>
+                                    <span className="text-boa-green lg:block lg:mt-1">
+                                        se saborean
+                                    </span>
                                 </h1>
                                 <p className="mt-4 text-neutral-700 text-lg max-w-md">
                                     Bienestar, arte y café de especialidad. Lecturas cercanas, útiles
@@ -484,7 +540,7 @@ export default function BlogPage() {
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, amount: 0.2 }}
-                    >
+                >
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-neutral-900 to-emerald-800" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(16,185,129,0.1)_0%,transparent_50%)]" />
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(34,197,94,0.08)_0%,transparent_50%)]" />
@@ -523,37 +579,68 @@ export default function BlogPage() {
                                         </h3>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
-                                        <div className="relative">
-                                            <Input
-                                                type="email"
-                                                placeholder="tu@email.com"
-                                                className="h-12 pl-11 text-base border-neutral-200 focus:border-emerald-500 focus:ring-emerald-500/20"
-                                            />
-                                            <svg
-                                                className="absolute left-4 top-1/2 -translate-y-1/2"
-                                                width="16"
-                                                height="16"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                            >
-                                                <path d="M4 4h16v16H4z" fill="none" />
-                                                <path
-                                                    d="M4 8l8 5 8-5"
-                                                    stroke="#9ca3af"
-                                                    strokeWidth="1.6"
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
+                                        <form onSubmit={handleNewsletterSubmit} className="space-y-4">
+                                            <div className="relative">
+                                                <Input
+                                                    type="email"
+                                                    placeholder="tu@email.com"
+                                                    className="h-12 pl-11 text-base border-neutral-200 focus:border-emerald-500 focus:ring-emerald-500/20"
+                                                    value={newsletterEmail}
+                                                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                                                    disabled={newsletterLoading}
                                                 />
-                                            </svg>
-                                        </div>
-                                        <Button className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-base font-semibold">
-                                            Suscribirme{" "}
-                                            <ArrowRight className="ml-2 h-4 w-4" />
-                                        </Button>
+                                                <svg
+                                                    className="absolute left-4 top-1/2 -translate-y-1/2"
+                                                    width="16"
+                                                    height="16"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                >
+                                                    <path d="M4 4h16v16H4z" fill="none" />
+                                                    <path
+                                                        d="M4 8l8 5 8-5"
+                                                        stroke="#9ca3af"
+                                                        strokeWidth="1.6"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                    />
+                                                </svg>
+                                            </div>
+
+                                            <Button
+                                                type="submit"
+                                                className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-base font-semibold"
+                                                disabled={newsletterLoading}
+                                            >
+                                                {newsletterLoading ? (
+                                                    <span className="inline-flex items-center">
+                                                        <span className="mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                        Enviando...
+                                                    </span>
+                                                ) : (
+                                                    <>
+                                                        Suscribirme <ArrowRight className="ml-2 h-4 w-4" />
+                                                    </>
+                                                )}
+                                            </Button>
+                                        </form>
+
+                                        {newsletterStatus && (
+                                            <p
+                                                className={`text-center text-xs ${newsletterStatus.type === "success"
+                                                        ? "text-emerald-700"
+                                                        : "text-rose-600"
+                                                    }`}
+                                            >
+                                                {newsletterStatus.msg}
+                                            </p>
+                                        )}
+
                                         <p className="text-center text-xs text-neutral-500">
                                             Podés cancelar cuando quieras.
                                         </p>
                                     </CardContent>
+
                                 </Card>
                             </div>
                         </div>

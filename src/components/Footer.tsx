@@ -58,12 +58,15 @@ export default function Footer() {
                                 <Instagram className="h-5 w-5 text-white/90 group-hover:text-white" />
                             </a>
                             <a
-                                href="mailto:hola@espacioboa.com"
+                                href="https://mail.google.com/mail/?view=cm&fs=1&to=boa.espacio@gmail.com"
+                                target="_blank"
+                                rel="noreferrer"
                                 className="group inline-flex h-10 w-10 items-center justify-center rounded-full bg-neutral-900 ring-1 ring-white/10 hover:ring-boa-green/50 transition"
                                 aria-label="Email"
                             >
                                 <Mail className="h-5 w-5 text-white/90 group-hover:text-white" />
                             </a>
+
                         </div>
                     </div>
 
@@ -115,13 +118,22 @@ export default function Footer() {
                                 <MapPin className="mt-0.5 h-4 w-4 text-boa-green flex-shrink-0" />
                                 <span>Juncal 399, B1640 Martínez, Provincia de Buenos Aires</span>
                             </a>
-                            <a href="tel:+541112345678" className="flex items-center gap-3 hover:text-white transition">
+                            {/* <a href="tel:+541112345678" className="flex items-center gap-3 hover:text-white transition">
                                 <Phone className="h-4 w-4 text-boa-green flex-shrink-0" />
                                 <span>+54 11 1234-5678</span>
-                            </a>
-                            <a href="mailto:hola@espacioboa.com" className="flex items-center gap-3 hover:text-white transition">
+                            </a> */}
+                            <a href="https://mail.google.com/mail/?view=cm&fs=1&to=boa.espacio@gmail.com" target="_blank" className="flex items-center gap-3 hover:text-white transition">
                                 <Mail className="h-4 w-4 text-boa-green flex-shrink-0" />
-                                <span>espacioboa@gmail..com</span>
+                                <span>boa.espacio@gmail..com</span>
+                            </a>
+                            <a
+                                href="https://www.instagram.com/espacio.boa"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center gap-3 hover:text-white transition"
+                            >
+                                <Instagram className="h-4 w-4 text-boa-green flex-shrink-0" />
+                                <span>espacio.boa</span>
                             </a>
                         </div>
                     </div>
