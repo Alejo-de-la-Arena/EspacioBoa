@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, ArrowRight, Heart, Coffee } from "lucide-react";
+import { Search, ArrowRight, Coffee } from "lucide-react";
 import {
     Select,
     SelectTrigger,
@@ -14,6 +14,11 @@ import {
     SelectContent,
     SelectItem,
 } from "@/components/ui/select";
+import {
+    Dialog,
+    DialogContent,
+} from "@/components/ui/dialog";
+
 
 
 /* ================= Animations ================= */
@@ -131,10 +136,200 @@ const RAW_POSTS: Post[] = [
     },
 ];
 
+type Article = {
+    title: string;
+    subtitle: string;
+    sections: { heading: string; paragraphs: string[]; bullets?: string[] }[];
+};
+
+const POST_ARTICLES: Record<string, Article> = {
+    "que-es-cafe-especialidad": {
+        title: "¿Qué es el café de especialidad?",
+        subtitle:
+            "Una guía simple para entender por qué se habla tanto de “especialidad” y qué cambia realmente en la taza.",
+        sections: [
+            {
+                heading: "La idea central",
+                paragraphs: [
+                    "Café de especialidad no significa “caro” ni “snob”. Significa que el café fue producido, procesado y tostado con estándares muy altos, cuidando cada paso.",
+                    "En la práctica, se traduce en una taza más limpia, con aromas claros, acidez agradable y dulzor natural. No es magia: es trabajo bien hecho a lo largo de toda la cadena."
+                ],
+            },
+            {
+                heading: "Qué lo diferencia del café común",
+                paragraphs: [
+                    "El diferencial más grande es la trazabilidad: se conoce de dónde viene, quién lo produce y cómo se procesó. Eso permite consistencia y calidad.",
+                ],
+                bullets: [
+                    "Origen y lote identificables (trazabilidad).",
+                    "Procesos cuidados (lavado, natural, honey, etc.).",
+                    "Tostado pensado para resaltar el perfil del grano, no para taparlo.",
+                ],
+            },
+            {
+                heading: "Cómo lo disfrutás en BOA",
+                paragraphs: [
+                    "La misma bolsa puede cambiar muchísimo según molienda, método y receta. Por eso hay una búsqueda: encontrar el punto donde ese café brilla.",
+                    "Si querés empezar simple: pedí un filtro (V60 o similar) o un flat white bien calibrado y probá prestar atención a aromas y postgusto."
+                ],
+            },
+        ],
+    },
+
+    "yoga-matutino-20-minutos": {
+        title: "Rutina de Yoga Matutina de 20 minutos",
+        subtitle:
+            "Una secuencia corta para activar el cuerpo sin exigirte: movilidad, respiración y foco.",
+        sections: [
+            {
+                heading: "Por qué funciona",
+                paragraphs: [
+                    "A la mañana, el cuerpo suele estar rígido y la mente acelerada. Una rutina breve ordena la respiración, mejora movilidad y te deja con energía estable.",
+                    "La clave no es “hacer perfecto”, sino moverte con intención y salir del modo automático."
+                ],
+            },
+            {
+                heading: "Estructura sugerida (20 min)",
+                paragraphs: [
+                    "Podés repetirla 3–5 días por semana. Si estás muy duro, hacé menos rango, pero mantené la respiración."
+                ],
+                bullets: [
+                    "2 min: respiración nasal + estiramiento suave.",
+                    "6 min: movilidad de columna y caderas (gato-vaca, rotaciones).",
+                    "8 min: postura de pie + fuerza suave (guerreros, plancha modificada).",
+                    "4 min: relajación corta + intención para el día.",
+                ],
+            },
+            {
+                heading: "Tips para que se vuelva hábito",
+                paragraphs: [
+                    "Dejá la esterilla lista la noche anterior. Si dudás, hacé solo 5 minutos: la mayoría de las veces terminás haciendo más.",
+                    "Si te mareás o te agitás, bajá intensidad y volvé a respiración nasal."
+                ],
+            },
+        ],
+    },
+
+    "arteterapia-expresion-creativa": {
+        title: "El poder de la Arteterapia: cómo la expresión creativa sana",
+        subtitle:
+            "No se trata de talento: se trata de usar lo creativo como herramienta de regulación emocional.",
+        sections: [
+            {
+                heading: "Qué es (sin vueltas)",
+                paragraphs: [
+                    "La arteterapia usa procesos creativos (dibujar, pintar, collage, escritura) para explorar emociones, bajar estrés y generar claridad.",
+                    "No estás “produciendo arte”: estás procesando. La obra final es secundaria."
+                ],
+            },
+            {
+                heading: "Por qué ayuda tanto",
+                paragraphs: [
+                    "Cuando algo cuesta ponerlo en palabras, lo creativo habilita otra vía. Eso reduce rumiación y le da salida a lo que queda trabado.",
+                ],
+                bullets: [
+                    "Te saca del pensamiento repetitivo y te trae al cuerpo.",
+                    "Hace visible lo interno (y eso ordena).",
+                    "Baja activación: foco + repetición + presencia.",
+                ],
+            },
+            {
+                heading: "Una práctica BOA simple",
+                paragraphs: [
+                    "Probá 10 minutos: elegí 3 colores y dibujá sin objetivo. Después escribí una frase: “Esto se siente como…”.",
+                    "No busques lindo. Buscá honesto."
+                ],
+            },
+        ],
+    },
+
+    "alimentacion-consciente-mindful-eating": {
+        title: "Comer con atención plena: guía práctica de mindful eating",
+        subtitle:
+            "Herramientas concretas para comer más lento, registrar saciedad y disfrutar sin culpa.",
+        sections: [
+            {
+                heading: "Qué es (y qué no es)",
+                paragraphs: [
+                    "Mindful eating no es una dieta. Es una forma de comer con atención: registrar hambre, ritmo, sabor y saciedad.",
+                    "Te ayuda especialmente si comés apurado, ansioso o con distracciones constantes."
+                ],
+            },
+            {
+                heading: "Reglas simples que cambian todo",
+                paragraphs: [
+                    "No hace falta hacerlo perfecto. Con aplicar 1 o 2 cosas por comida, ya cambia la experiencia."
+                ],
+                bullets: [
+                    "Primeros 3 bocados: comelos lento, notando sabor y textura.",
+                    "Pausa a mitad de plato: 30 segundos de respiración.",
+                    "Chequeo de saciedad: “¿seguiría comiendo esto si no estuviera tan rico?”",
+                ],
+            },
+            {
+                heading: "El objetivo real",
+                paragraphs: [
+                    "Que tu cuerpo vuelva a tener voz. Cuando comés con atención, es más fácil regular porciones sin pelearte con la comida.",
+                ],
+            },
+        ],
+    },
+
+    "mindfulness-vida-cotidiana": {
+        title: "Cómo practicar mindfulness en la vida cotidiana",
+        subtitle:
+            "Micro-hábitos que podés aplicar hoy: sin mística, con impacto real en estrés y foco.",
+        sections: [
+            {
+                heading: "Mindfulness aplicado",
+                paragraphs: [
+                    "Mindfulness es entrenar atención. No es dejar la mente en blanco: es notar cuándo te fuiste y volver.",
+                    "En la vida cotidiana, se traduce en menos ruido mental y decisiones más claras."
+                ],
+            },
+            {
+                heading: "Tres prácticas fáciles",
+                bullets: [
+                    "1 minuto de respiración nasal antes de abrir WhatsApp.",
+                    "Una sola tarea por 10 minutos (sin cambiar de pestaña).",
+                    "Caminar 2 minutos prestando atención al cuerpo (pies, postura, aire).",
+                ],
+                paragraphs: [
+                    "Elegí una y repetila. El poder está en la frecuencia, no en la duración."
+                ],
+            },
+            {
+                heading: "Cómo sostenerlo",
+                paragraphs: [
+                    "Pegalo a algo que ya hacés (café, ducha, computadora). Si esperás “tener tiempo”, no pasa.",
+                ],
+            },
+        ],
+    },
+};
+
+const getArticle = (slug: string): Article =>
+    POST_ARTICLES[slug] || {
+        title: "Artículo",
+        subtitle: "Una lectura breve para inspirarte en BOA.",
+        sections: [
+            {
+                heading: "Pronto",
+                paragraphs: ["Estamos preparando este contenido. Volvé en unos días 💚"],
+            },
+        ],
+    };
+
+
+
 export default function BlogPage() {
     const [term, setTerm] = useState("");
     const [cat, setCat] = useState("all");
     const [mounted, setMounted] = useState(false);
+
+    const [openPost, setOpenPost] = useState<Post | null>(null);
+    const isModalOpen = !!openPost;
+
 
     const [newsletterEmail, setNewsletterEmail] = useState("");
     const [newsletterLoading, setNewsletterLoading] = useState(false);
@@ -371,15 +566,6 @@ export default function BlogPage() {
                                             <p className="mt-2 text-boa-ink/80">
                                                 {featured[0].excerpt}
                                             </p>
-                                            <div className="mt-4">
-                                                <Link
-                                                    href={`/blog/${featured[0].slug}`}
-                                                    className="inline-flex items-center gap-2 rounded-full border border-boa-ink/20 bg-white px-4 py-2 text-sm font-medium text-boa-ink hover:bg-boa-cream"
-                                                >
-                                                    Leer ahora{" "}
-                                                    <ArrowRight className="h-4 w-4" />
-                                                </Link>
-                                            </div>
                                         </div>
                                     </div>
                                 </article>
@@ -486,9 +672,13 @@ export default function BlogPage() {
                             >
                                 {posts.map((p) => (
                                     <motion.li key={p.id} variants={item}>
-                                        <Link
+                                        <a
                                             href={`/blog/${p.slug}`}
-                                            className="group grid md:grid-cols-12 gap-4 md:gap-6 p-2 rounded-3xl ring-1 ring-boa-ink/10 hover:ring-boa-ink/20 transition"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                setOpenPost(p);
+                                            }}
+                                            className="group grid md:grid-cols-12 gap-4 md:gap-6 p-2 rounded-3xl ring-1 ring-boa-ink/10 hover:ring-boa-ink/20 transition cursor-pointer"
                                         >
                                             {/* thumb */}
                                             <div className="relative md:col-span-5 h-[220px] md:h-[180px] rounded-2xl overflow-hidden">
@@ -512,26 +702,116 @@ export default function BlogPage() {
                                                 <h3 className="text-xl sm:text-2xl font-extrabold text-boa-ink leading-snug">
                                                     {p.title}
                                                 </h3>
-                                                <p className="mt-2 text-neutral-700 line-clamp-3">
-                                                    {p.excerpt}
-                                                </p>
-                                                <div className="mt-4 flex items-center gap-4 text-sm text-neutral-600">
-                                                    <span className="inline-flex items-center">
-                                                        <Heart className="h-4 w-4 mr-1" /> Guardar
-                                                    </span>
-                                                    <span className="ml-auto inline-flex items-center gap-2 text-boa-green font-semibold">
+                                                <p className="mt-2 text-neutral-700 line-clamp-3">{p.excerpt}</p>
+
+                                                <div className="mt-4 flex items-center text-sm text-neutral-600">
+                                                    <span className="ml-auto mr-3 inline-flex items-center gap-2 text-boa-green font-semibold">
                                                         Leer{" "}
                                                         <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                                                     </span>
                                                 </div>
                                             </div>
-                                        </Link>
+                                        </a>
                                     </motion.li>
                                 ))}
                             </motion.ul>
                         )}
                     </div>
                 </section>
+
+                {openPost && (
+                    <Dialog open={isModalOpen} onOpenChange={(v) => !v && setOpenPost(null)}>
+                        <DialogContent className="w-[96vw] max-w-5xl p-0 overflow-hidden rounded-[28px]">
+                            {/* contenedor scrolleable */}
+                            <div className="h-[90vh] overflow-y-auto">
+                                {/* HERO del artículo */}
+                                <div className="relative h-[320px] sm:h-[380px]">
+                                    <Image
+                                        src={openPost.image}
+                                        alt={openPost.title}
+                                        fill
+                                        priority
+                                        className="object-cover"
+                                        sizes="(max-width: 640px) 96vw, 1024px"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
+
+                                    {/* info arriba */}
+                                    <div className="absolute left-6 right-6 bottom-6">
+                                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                                            <span className={`px-2 py-1 rounded-full text-xs ${catColor(openPost.category)}`}>
+                                                {openPost.category}
+                                            </span>
+                                            <span className="text-xs text-white/80">
+                                                {new Date(openPost.publishedAt).toLocaleDateString("es-AR", {
+                                                    year: "numeric",
+                                                    month: "long",
+                                                    day: "numeric",
+                                                })}
+                                            </span>
+                                        </div>
+
+                                        <h2 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight">
+                                            {getArticle(openPost.slug).title}
+                                        </h2>
+                                        <p className="mt-2 text-white/85 max-w-3xl">
+                                            {getArticle(openPost.slug).subtitle}
+                                        </p>
+                                    </div>
+
+                                    {/* botón cerrar flotante */}
+                                    <div className="absolute top-4 right-4">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setOpenPost(null)}
+                                            className="bg-white/90 hover:bg-white border-white/40 rounded-full"
+                                        >
+                                            Cerrar
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {/* CUERPO */}
+                                <div className="px-6 sm:px-10 py-8 bg-white">
+                                    <div className="prose prose-neutral max-w-none">
+                                        {getArticle(openPost.slug).sections.map((s) => (
+                                            <section key={s.heading} className="mb-8">
+                                                <h3 className="text-xl sm:text-2xl font-extrabold text-boa-ink mb-3">
+                                                    {s.heading}
+                                                </h3>
+
+                                                {s.paragraphs.map((p, idx) => (
+                                                    <p key={idx} className="text-neutral-700 leading-relaxed">
+                                                        {p}
+                                                    </p>
+                                                ))}
+
+                                                {s.bullets?.length ? (
+                                                    <ul className="mt-3 space-y-2">
+                                                        {s.bullets.map((b) => (
+                                                            <li key={b} className="text-neutral-700">
+                                                                {b}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                ) : null}
+                                            </section>
+                                        ))}
+
+                                        {/* mini cierre BOA */}
+                                        <div className="mt-10 rounded-2xl bg-boa-cream/60 ring-1 ring-boa-ink/10 p-5">
+                                            <p className="text-boa-ink/80">
+                                                Si querés, cuando vengas a BOA preguntanos por recomendaciones para acompañar esta lectura
+                                                (un café, una práctica o un taller).
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                )}
+
 
                 {/* ======================= CTA NEWSLETTER ======================= */}
                 <motion.section
@@ -628,8 +908,8 @@ export default function BlogPage() {
                                         {newsletterStatus && (
                                             <p
                                                 className={`text-center text-xs ${newsletterStatus.type === "success"
-                                                        ? "text-emerald-700"
-                                                        : "text-rose-600"
+                                                    ? "text-emerald-700"
+                                                    : "text-rose-600"
                                                     }`}
                                             >
                                                 {newsletterStatus.msg}

@@ -3,11 +3,11 @@ const nextConfig = {
     reactStrictMode: true,
     devIndicators: false,
     images: {
+        qualities: [75, 90],
         remotePatterns: [
             { protocol: "https", hostname: "res.cloudinary.com" },
             { protocol: "https", hostname: "images.unsplash.com" },
             { protocol: "https", hostname: "plus.unsplash.com" },
-
             {
                 protocol: "https",
                 hostname: "gzwgocdsdkamimxgmcue.supabase.co",
