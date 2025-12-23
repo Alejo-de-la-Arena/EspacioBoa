@@ -1,4 +1,4 @@
-// pages/api/giftcards/preorder.ts
+// pages/api/admin/giftcards/preorder.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
 
