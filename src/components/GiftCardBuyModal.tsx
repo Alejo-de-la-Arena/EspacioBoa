@@ -18,6 +18,12 @@ type PreorderPayload = {
     buyer_phone: string;
     buyer_email: string;
     message?: string;
+
+    // NUEVO
+    is_gift: boolean;
+    recipient_name?: string;
+    recipient_phone?: string;
+    gift_from_name?: string;
 };
 
 async function postJson(url: string, body: any) {
@@ -35,6 +41,12 @@ export default function GiftCardBuyModal({ open, onClose, gift }: Props) {
     const [phone, setPhone] = React.useState("");
     const [email, setEmail] = React.useState("");
     const [message, setMessage] = React.useState("");
+
+    // NUEVO: modo regalo
+    const [isGift, setIsGift] = React.useState(false);
+    const [recipientName, setRecipientName] = React.useState("");
+    const [recipientPhone, setRecipientPhone] = React.useState("");
+    const [giftFromName, setGiftFromName] = React.useState(""); // opcional
 
     const [submitting, setSubmitting] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
@@ -62,6 +74,10 @@ export default function GiftCardBuyModal({ open, onClose, gift }: Props) {
         setPhone("");
         setEmail("");
         setMessage("");
+        setIsGift(false);
+        setRecipientName("");
+        setRecipientPhone("");
+        setGiftFromName("");
         setError(null);
         setSubmitting(false);
     }
@@ -71,6 +87,11 @@ export default function GiftCardBuyModal({ open, onClose, gift }: Props) {
         if (!phone.trim()) return "Ingresá tu teléfono.";
         const em = email.trim();
         if (!em || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return "Ingresá un email válido.";
+
+        if (isGift) {
+            if (!recipientName.trim()) return "Ingresá el nombre del destinatario.";
+            if (!recipientPhone.trim()) return "Ingresá el teléfono del destinatario.";
+        }
         return null;
     }
 
@@ -92,6 +113,12 @@ export default function GiftCardBuyModal({ open, onClose, gift }: Props) {
             buyer_phone: phone.trim(),
             buyer_email: email.trim(),
             message: message.trim(),
+
+            // NUEVO
+            is_gift: isGift,
+            recipient_name: isGift ? recipientName.trim() : undefined,
+            recipient_phone: isGift ? recipientPhone.trim() : undefined,
+            gift_from_name: isGift ? (giftFromName.trim() || name.trim()) : undefined,
         };
 
         try {
@@ -110,17 +137,11 @@ export default function GiftCardBuyModal({ open, onClose, gift }: Props) {
                 throw new Error(reason);
             }
 
-            const link: string =
-                json?.data?.whatsapp_link || json?.whatsapp_link || "";
+            const link: string = json?.data?.whatsapp_link || json?.whatsapp_link || "";
+            if (!link) throw new Error("No llegó el enlace de WhatsApp desde el servidor.");
 
-            if (!link) {
-                throw new Error("No llegó el enlace de WhatsApp desde el servidor.");
-            }
-
-            // Redirección directa a WhatsApp (admin)
             window.location.href = link;
 
-            // opcionalmente cerramos y reseteamos
             reset();
             onClose();
         } catch (err: any) {
@@ -134,7 +155,7 @@ export default function GiftCardBuyModal({ open, onClose, gift }: Props) {
 
     return (
         <div className="fixed inset-0 z-[100] grid place-items-center bg-black/55 px-4 py-8">
-            <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl">
+            <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl max-h-[90vh] overflow-y-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between border-b px-5 py-4">
                     <h3 className="text-lg font-semibold">Comprar Gift Card</h3>
@@ -157,6 +178,26 @@ export default function GiftCardBuyModal({ open, onClose, gift }: Props) {
                         <div className="mt-0.5 text-emerald-800">
                             {gift.name} — <b>${Number(gift.value).toLocaleString("es-AR")}</b>
                         </div>
+                    </div>
+
+                    {/* NUEVO: toggle regalo */}
+                    <div className="mb-4 rounded-lg border p-3">
+                        <label className="flex items-center justify-between gap-3">
+                            <div>
+                                <div className="text-sm font-semibold text-neutral-900">¿Es un regalo?</div>
+                                <div className="text-xs text-neutral-500">
+                                    Si activás esto, te vamos a pedir los datos del destinatario.
+                                </div>
+                            </div>
+
+                            <input
+                                type="checkbox"
+                                checked={isGift}
+                                onChange={(e) => setIsGift(e.target.checked)}
+                                className="h-5 w-5 accent-boa-green"
+                                aria-label="Es un regalo"
+                            />
+                        </label>
                     </div>
 
                     <div className="grid grid-cols-1 gap-4">
@@ -190,6 +231,45 @@ export default function GiftCardBuyModal({ open, onClose, gift }: Props) {
                             />
                         </label>
 
+                        {/* NUEVO: campos destinatario */}
+                        {isGift && (
+                            <div className="rounded-lg bg-neutral-50 p-3 border">
+                                <div className="text-sm font-semibold mb-2">Datos del destinatario</div>
+
+                                <div className="grid grid-cols-1 gap-3">
+                                    <label className="grid gap-1 text-sm">
+                                        <span>Nombre del destinatario *</span>
+                                        <input
+                                            className="rounded-lg border px-3 py-2 bg-white"
+                                            value={recipientName}
+                                            onChange={(e) => setRecipientName(e.target.value)}
+                                            placeholder="Ej: Juan Pérez"
+                                        />
+                                    </label>
+
+                                    <label className="grid gap-1 text-sm">
+                                        <span>Teléfono del destinatario (WhatsApp) *</span>
+                                        <input
+                                            className="rounded-lg border px-3 py-2 bg-white"
+                                            value={recipientPhone}
+                                            onChange={(e) => setRecipientPhone(e.target.value)}
+                                            placeholder="Ej: 11 9876 5432"
+                                        />
+                                    </label>
+
+                                    <label className="grid gap-1 text-sm">
+                                        <span>De parte de (opcional)</span>
+                                        <input
+                                            className="rounded-lg border px-3 py-2 bg-white"
+                                            value={giftFromName}
+                                            onChange={(e) => setGiftFromName(e.target.value)}
+                                            placeholder="Si lo dejás vacío, usamos tu nombre"
+                                        />
+                                    </label>
+                                </div>
+                            </div>
+                        )}
+
                         <label className="grid gap-1 text-sm">
                             <span>Mensaje para el destinatario (opcional)</span>
                             <textarea
@@ -201,9 +281,7 @@ export default function GiftCardBuyModal({ open, onClose, gift }: Props) {
                         </label>
                     </div>
 
-                    {error && (
-                        <p className="mt-3 text-sm font-medium text-red-600">{error}</p>
-                    )}
+                    {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}
 
                     {/* Footer */}
                     <div className="mt-5 flex items-center justify-end gap-2 border-t pt-4">
@@ -225,7 +303,6 @@ export default function GiftCardBuyModal({ open, onClose, gift }: Props) {
                             {submitting ? "Creando orden…" : "Continuar por WhatsApp"}
                         </button>
                     </div>
-
                 </form>
             </div>
         </div>

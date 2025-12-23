@@ -1,10 +1,8 @@
-// pages/api/preorders.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 function normalizePhone(raw: string) {
-    // muy simple; si usás otro país/validaciones, lo vemos luego
-    return raw.replace(/[^\d]/g, "");
+    return String(raw || "").replace(/[^\d]/g, "");
 }
 
 function makeCode(len = 6) {
@@ -16,6 +14,12 @@ function makeCode(len = 6) {
 
 function waLink(number: string, text: string) {
     return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
+}
+
+function formatArs(value: any) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return "";
+    return n.toLocaleString("es-AR");
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -31,25 +35,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             buyer_phone,
             buyer_email,
             message,
+
+            // NUEVO
+            is_gift,
+            recipient_name,
+            recipient_phone,
+            gift_from_name,
         } = req.body || {};
 
-        // validaciones mínimas
-        if (!gift_id || !gift_name) return res.status(400).json({ ok: false, error: "gift_id y gift_name son requeridos" });
-        if (!buyer_name || !buyer_phone || !buyer_email)
+        if (!gift_id || !gift_name) {
+            return res.status(400).json({ ok: false, error: "gift_id y gift_name son requeridos" });
+        }
+        if (!buyer_name || !buyer_phone || !buyer_email) {
             return res.status(400).json({ ok: false, error: "Datos de contacto incompletos" });
+        }
 
-        const phone = normalizePhone(String(buyer_phone));
+        const isGift = Boolean(is_gift);
+        if (isGift) {
+            if (!recipient_name || !String(recipient_name).trim()) {
+                return res.status(400).json({ ok: false, error: "Falta el nombre del destinatario" });
+            }
+            if (!recipient_phone || !String(recipient_phone).trim()) {
+                return res.status(400).json({ ok: false, error: "Falta el teléfono del destinatario" });
+            }
+        }
+
+        const buyerPhone = normalizePhone(buyer_phone);
+        const recPhone = isGift ? normalizePhone(recipient_phone) : null;
+
         const ip =
             (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
             (req.socket?.remoteAddress as string) ||
             null;
 
-        // rate limit muy básico por teléfono (3 pedidos en 10 minutos)
+        // rate limit básico (3 pedidos en 10 minutos)
         {
             const { data: recent, error: recentErr } = await supabaseAdmin
                 .from("preorders")
                 .select("id, created_at")
-                .eq("buyer_phone", phone)
+                .eq("buyer_phone", buyerPhone)
                 .gte("created_at", new Date(Date.now() - 10 * 60 * 1000).toISOString());
 
             if (!recentErr && (recent?.length || 0) >= 3) {
@@ -63,17 +87,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const code = makeCode();
         const number = process.env.BOA_WHATSAPP_NUMBER || "5491170961318";
 
+        const ars = formatArs(gift_value);
+        const giftLabel = ars ? `${gift_name} — $${ars}` : String(gift_name);
+
+        const fromNameResolved = isGift
+            ? String(gift_from_name || buyer_name || "").trim()
+            : null;
+
         const msg =
-            `Hola! Quiero comprar la GiftCard *${gift_name}*.\n` +
+            `Hola! Quiero comprar la GiftCard *${giftLabel}*.\n` +
             `Preorder: ${code}\n` +
             `Nombre: ${buyer_name}\n` +
-            `Tel: ${phone}\n` +
+            `Tel: ${buyerPhone}\n` +
             `Email: ${buyer_email}\n` +
+            (isGift
+                ? `Regalo: Sí\n` +
+                `Destinatario: ${String(recipient_name).trim()}\n` +
+                `Tel destinatario: ${recPhone}\n` +
+                (fromNameResolved ? `De parte de: ${fromNameResolved}\n` : "")
+                : `Regalo: No\n`) +
             (message ? `Mensaje para destinatario: ${message}\n` : "");
 
         const link = waLink(number, msg);
 
-        // guardar en Supabase
         const { error: insErr, data: inserted } = await supabaseAdmin
             .from("preorders")
             .insert([
@@ -83,12 +119,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     gift_name,
                     gift_value: gift_value ?? null,
                     buyer_name,
-                    buyer_phone: phone,
+                    buyer_phone: buyerPhone,
                     buyer_email,
                     message: message ?? null,
                     status: "pending",
                     whatsapp_link: link,
                     ip,
+
+                    // NUEVO
+                    is_gift: isGift,
+                    recipient_name: isGift ? String(recipient_name).trim() : null,
+                    recipient_phone: isGift ? recPhone : null,
+                    gift_from_name: isGift ? fromNameResolved : null,
                 },
             ])
             .select()

@@ -36,7 +36,17 @@ type Preorder = {
     message: string | null;
     status: "pending" | "paid" | "sent" | "cancelled" | "used";
     created_at: string;
+
+    // NUEVO (regalos)
+    is_gift?: boolean | null;
+    recipient_name?: string | null;
+    recipient_phone?: string | null;
+    gift_from_name?: string | null;
+
+    // opcional si tu API lo manda
+    computed_status?: string | null;
 };
+
 
 /* =========================================================
    Helpers robustos
@@ -448,6 +458,7 @@ export default function AdminGiftcards() {
     const [poLoading, setPoLoading] = React.useState(true);
     const [poRows, setPoRows] = React.useState<Preorder[]>([]);
     const [issuing, setIssuing] = React.useState<string | null>(null);
+    const [sendingGift, setSendingGift] = React.useState<string | null>(null);
 
     // ---- Plantillas (giftcards) ----
     const [rows, setRows] = React.useState<GiftcardDb[]>([]);
@@ -571,6 +582,7 @@ export default function AdminGiftcards() {
         const { data, error } = await supabase
             .from("giftcards_issued")
             .select("id, preorder_id, code, status, redeemed_at")
+
             .order("created_at", { ascending: false });
 
         if (error) {
@@ -650,14 +662,16 @@ export default function AdminGiftcards() {
             setIssuing(po.id);
             try {
                 const headers = { ...(await authHeader()), "Content-Type": "application/json" };
+                const isGift = !!po.is_gift;
                 const body = JSON.stringify({
                     preorder_id: po.id,
                     template_gift_id: po.gift_id,
                     gift_name: po.gift_name,
                     gift_value: po.gift_value,
-                    recipient_name: po.buyer_name,
-                    recipient_email: po.buyer_email,
-                    recipient_phone: po.buyer_phone,
+
+                    recipient_name: isGift ? (po.recipient_name || po.buyer_name) : po.buyer_name,
+                    recipient_email: po.buyer_email, // (no tenés recipient_email en tu Preorder)
+                    recipient_phone: isGift ? (po.recipient_phone || po.buyer_phone) : po.buyer_phone,
                     // expires_at: new Date(Date.now()+31536000000).toISOString(), // opcional: +12 meses
                 });
                 const r = await fetch("/api/admin/giftcards/issue", { method: "POST", headers, body });
@@ -692,6 +706,92 @@ export default function AdminGiftcards() {
         },
         [authHeader, loadPreorders, toast]
     );
+
+    function toWaNumber(raw: string) {
+        let d = String(raw || "").replace(/[^\d]/g, "");
+
+        // ✅ sacar 00 / 0 inicial típico (011..., 0011...)
+        d = d.replace(/^00/, "");
+        d = d.replace(/^0+/, "");
+
+        if (d.startsWith("549") || d.startsWith("54")) return d;
+
+        return d ? `549${d}` : d;
+    }
+
+
+    async function sendGift(po: Preorder) {
+        try {
+            const isGift = Boolean(po.is_gift);
+            if (!isGift) return;
+
+            // SOLO si está pagada
+            if (po.status !== "paid") {
+                toast({ title: "Primero marcá la orden como pagada", variant: "destructive" });
+                return;
+            }
+
+            const recPhone = po.recipient_phone ? toWaNumber(po.recipient_phone) : "";
+            if (!recPhone) {
+                toast({ title: "Falta teléfono del destinatario", variant: "destructive" });
+                return;
+            }
+
+            const issued = issuedByPreorder[po.id];
+            if (!issued?.code) {
+                toast({ title: "Primero emití el código", description: "Esta orden todavía no tiene código emitido.", variant: "destructive" });
+                return;
+            }
+
+            setSendingGift(po.id);
+
+            // buscar plantilla para copiar imagen
+            const template = po.gift_id ? rows.find((r) => r.id === po.gift_id) : null;
+            if (template) {
+                await copyGiftcardImage(template); // 👈 usa tu función existente
+            }
+
+            const verifyUrl =
+                (issued as any)?.verify_url ||
+                (issued as any)?.verifyUrl ||
+                `${window.location.origin}/giftcards/verify?code=${encodeURIComponent(issued.code)}`;
+
+            const fromName = (po.gift_from_name || po.buyer_name || "").trim();
+            const recName = (po.recipient_name || "").trim();
+
+            const price = po.gift_value
+                ? ` $${Number(po.gift_value).toLocaleString("es-AR")}`
+                : "";
+
+            const text = `
+Hola${recName ? ` ${recName}` : ""}!
+Te regalaron una Gift Card de BOA (${po.gift_name}${price}).
+
+Código: ${issued.code}
+Link de canje/validación: ${verifyUrl}
+Mostrá este link en BOA al momento de pagar para que el staff valide la giftcard.
+
+${fromName ? `De parte de: ${fromName}` : ""}${po.message ? `\nMensaje: ${po.message}` : ""}
+`.trim();
+
+
+            // por si WhatsApp no toma bien el text, lo copiamos también
+            try {
+                await navigator.clipboard.writeText(text);
+            } catch { }
+
+            window.open(`https://wa.me/${recPhone}?text=${encodeURIComponent(text)}`, "_blank");
+
+            toast({
+                title: "Listo",
+                description: "Copié la imagen y abrí WhatsApp al destinatario.",
+            });
+        } catch (e: any) {
+            toast({ title: "No se pudo enviar el regalo", description: e?.message, variant: "destructive" });
+        } finally {
+            setSendingGift(null);
+        }
+    }
 
     /* =========================
        Carga de PLANTILLAS (giftcards)
@@ -1026,6 +1126,7 @@ export default function AdminGiftcards() {
     async function save() {
         if (!name) {
             toast({ title: "Campos requeridos", description: "El nombre es obligatorio.", variant: "destructive" });
+            return; // ✅ FALTABA
         }
         if (!value) {
             toast({ title: "Campos requeridos", description: "El valor es obligatorio.", variant: "destructive" });
@@ -1105,20 +1206,22 @@ export default function AdminGiftcards() {
                                 <th className="py-2 px-3">Fecha</th>
                                 <th className="py-2 px-3">Comprador</th>
                                 <th className="py-2 px-3">Gift</th>
+                                <th className="py-2 px-3">Regalo</th>
                                 <th className="py-2 px-3">Estado</th>
                                 <th className="py-2 px-3 text-right">Acciones</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             {poLoading ? (
                                 <tr>
-                                    <td className="py-6 px-3 text-neutral-500" colSpan={5}>
+                                    <td className="py-6 px-3 text-neutral-500" colSpan={6}>
                                         Cargando…
                                     </td>
                                 </tr>
                             ) : poRows.length === 0 ? (
                                 <tr>
-                                    <td className="py-6 px-3 text-neutral-500" colSpan={5}>
+                                    <td className="py-6 px-3 text-neutral-500" colSpan={6}>
                                         Sin órdenes por ahora.
                                     </td>
                                 </tr>
@@ -1150,7 +1253,10 @@ export default function AdminGiftcards() {
                                                 </div>
                                             </td>
 
-
+                                            {/* ======== REGALO (NUEVA COLUMNA) ======== */}
+                                            <td className="py-2 px-3">
+                                                {po.is_gift ? "Sí" : "No"}
+                                            </td>
 
                                             {/* ======== ESTADO ======== */}
                                             <td className="py-2 px-3">
@@ -1181,8 +1287,6 @@ export default function AdminGiftcards() {
                                                 })()}
                                             </td>
 
-
-
                                             {/* ======== ACCIONES ======== */}
                                             <td className="py-2 px-3 text-right space-x-2">
                                                 {/* Eliminar preorden */}
@@ -1201,20 +1305,36 @@ export default function AdminGiftcards() {
                                                     </Button>
                                                 )}
 
+                                                {/* Enviar regalo (NUEVO) → solo si paid + is_gift + no canjeada */}
+                                                {!!po.is_gift && !isRedeemed && (
+                                                    <Button
+                                                        variant="outline"
+                                                        onClick={() => sendGift(po)}
+                                                        disabled={sendingGift === po.id || po.status !== "paid"}
+                                                        title={po.status !== "paid" ? "Primero marcá la orden como pagada" : undefined}
+                                                    >
+                                                        {sendingGift === po.id ? "Enviando..." : "Enviar gift card por WhatsApp"}
+                                                    </Button>
+                                                )}
+
                                                 {/* Emitir código solo si NO está canjeada */}
                                                 <Button
                                                     className="bg-boa-green text-white"
                                                     onClick={() => issue(po)}
                                                     disabled={issuing === po.id || isRedeemed}
                                                 >
-                                                    {isRedeemed ? "Ya canjeada" : issuing === po.id ? "Emitiendo..." : (isActiveIssued ? "Re-emitir código" : "Emitir código")}
+                                                    {isRedeemed
+                                                        ? "Ya canjeada"
+                                                        : issuing === po.id
+                                                            ? "Emitiendo..."
+                                                            : isActiveIssued
+                                                                ? "Re-emitir código"
+                                                                : "Emitir código"}
                                                 </Button>
                                             </td>
                                         </tr>
                                     );
                                 })
-
-
                             )}
                         </tbody>
 
