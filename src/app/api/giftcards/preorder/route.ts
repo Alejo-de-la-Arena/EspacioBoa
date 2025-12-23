@@ -16,6 +16,13 @@ function waLink(number: string, text: string) {
     return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
 }
 
+function formatArs(value: any) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return "";
+    // 150000 -> "150.000"
+    return n.toLocaleString("es-AR");
+}
+
 export async function POST(req: Request) {
     try {
         const body = await req.json();
@@ -44,8 +51,7 @@ export async function POST(req: Request) {
         }
 
         const phone = normalizePhone(buyer_phone);
-        const ip =
-            req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
+        const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
 
         // rate limit básico (3 pedidos en 10 min)
         {
@@ -66,8 +72,11 @@ export async function POST(req: Request) {
         const code = makeCode();
         const number = process.env.BOA_WHATSAPP_NUMBER || "5491170961318";
 
+        const ars = formatArs(gift_value);
+        const giftLabel = ars ? `${gift_name} — $${ars}` : String(gift_name);
+
         const text =
-            `Hola! Quiero comprar la GiftCard *${gift_name}*.\n` +
+            `Hola! Quiero comprar la GiftCard *${giftLabel}*.\n` +
             `Preorder: ${code}\n` +
             `Nombre: ${buyer_name}\n` +
             `Tel: ${phone}\n` +
@@ -77,7 +86,7 @@ export async function POST(req: Request) {
         const link = waLink(number, text);
 
         const { data: inserted, error: insErr } = await supabaseAdmin
-            .from("preorders") // 👈 IMPORTANTE: esta tabla SÍ existe en tu flujo (redeem también la usa)
+            .from("preorders")
             .insert([{
                 preorder_code: code,
                 gift_id,
