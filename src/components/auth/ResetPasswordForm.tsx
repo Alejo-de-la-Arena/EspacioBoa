@@ -45,6 +45,7 @@ export default function ResetPasswordForm() {
     const [serverError, setServerError] = useState<string | null>(null);
     const [serverOk, setServerOk] = useState<string | null>(null);
     const [ready, setReady] = useState(false); // habilita inputs cuando hay sesión de recovery
+    const [sessionChecked, setSessionChecked] = useState(false);
 
     const {
         register,
@@ -71,22 +72,69 @@ export default function ResetPasswordForm() {
         return Math.min(3, s);
     }, [watch("password")]);
 
-    // 1) El link de recuperación crea una sesión temporal y emite PASSWORD_RECOVERY
     useEffect(() => {
-        const { data: sub } = supabase.auth.onAuthStateChange(async (event) => {
+        let alive = true;
+
+        const run = async () => {
+            try {
+                // 1) Si viene con ?code=... (PKCE), hay que intercambiarlo por sesión
+                const url = new URL(window.location.href);
+                const code = url.searchParams.get("code");
+
+                if (code) {
+                    const { error } = await supabase.auth.exchangeCodeForSession(code);
+                    if (error) {
+                        if (!alive) return;
+                        setReady(false);
+                        setSessionChecked(true);
+                        setServerError("El enlace de recuperación es inválido o venció. Pedí uno nuevo.");
+                        return;
+                    }
+
+                    // Limpieza opcional: sacar el code de la URL
+                    url.searchParams.delete("code");
+                    window.history.replaceState({}, "", url.toString());
+                }
+
+                // 2) Para links que llegan con hash (#access_token=...), detectSessionInUrl suele guardarla solo,
+                // pero igual confirmamos la sesión
+                const { data: s } = await supabase.auth.getSession();
+
+                if (!alive) return;
+
+                if (s?.session?.user) {
+                    setReady(true);
+                    setServerError(null);
+                } else {
+                    setReady(false);
+                    setServerError("El enlace de recuperación es inválido o venció. Pedí uno nuevo.");
+                }
+                setSessionChecked(true);
+            } catch {
+                if (!alive) return;
+                setReady(false);
+                setSessionChecked(true);
+                setServerError("No pudimos validar el enlace. Pedí uno nuevo.");
+            }
+        };
+
+        run();
+
+        // 3) Listener por si la sesión entra luego (hash parseado tarde)
+        const { data: sub } = supabase.auth.onAuthStateChange((event) => {
             if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
                 setReady(true);
+                setSessionChecked(true);
+                setServerError(null);
             }
         });
 
-        // fallback por si al llegar ya está logueado por el hash
-        (async () => {
-            const { data } = await supabase.auth.getUser();
-            if (data?.user) setReady(true);
-        })();
-
-        return () => sub.subscription.unsubscribe();
+        return () => {
+            alive = false;
+            sub.subscription.unsubscribe();
+        };
     }, []);
+
 
     async function onSubmit(values: Values) {
         setServerError(null);
@@ -98,6 +146,7 @@ export default function ResetPasswordForm() {
                 return;
             }
             setServerOk("¡Contraseña actualizada! Ya podés iniciar sesión.");
+            await supabase.auth.signOut();
         } catch {
             setServerError("Error inesperado. Intentá nuevamente.");
         }
@@ -105,6 +154,22 @@ export default function ResetPasswordForm() {
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+
+            {!sessionChecked && (
+                <div className="text-sm text-neutral-700">
+                    Validando enlace...
+                </div>
+            )}
+
+            {sessionChecked && !ready && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+                    {serverError ?? "El enlace de recuperación es inválido o venció."}{" "}
+                    <Link href="/forgot-password" className="underline underline-offset-4 font-medium">
+                        Pedir otro enlace
+                    </Link>
+                </div>
+            )}
+
             {/* Password */}
             <div className="space-y-2">
                 <label htmlFor="password" className="block text-[13px] text-neutral-700">
@@ -112,6 +177,7 @@ export default function ResetPasswordForm() {
                 </label>
                 <div className="relative">
                     <Lock className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-neutral-400" />
+
                     <input
                         id="password"
                         type={show1 ? "text" : "password"}
@@ -196,11 +262,12 @@ export default function ResetPasswordForm() {
                 )}
             </div>
 
-            {serverError && (
+            {serverError && ready && (
                 <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
                     {serverError}
                 </div>
             )}
+
             {serverOk && (
                 <div className="rounded-lg border bg-boa-green/10 border-boa-green/30 px-3 py-2.5 text-sm text-boa-green">
                     {serverOk}{" "}

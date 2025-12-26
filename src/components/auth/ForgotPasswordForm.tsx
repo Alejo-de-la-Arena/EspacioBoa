@@ -110,90 +110,47 @@ export default function ForgotPasswordForm() {
 
         if (cooldownLeft > 0) return;
 
-        try {
-            // 1) validar existencia (server)
-            const res = await fetch("/api/auth/exists", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: values.email }),
-            });
-            const j = await res.json();
-            if (!j.ok) {
-                setServerError(j.error || "No se pudo validar el email.");
-                return;
-            }
-            if (!j.exists) {
-                setServerError("Ese email no está registrado en BOA.");
-                try { localStorage.removeItem(keyFor(values.email)); } catch { }
-                setCooldownLeft(0);
-                return;
-            }
+        const site =
+            process.env.NEXT_PUBLIC_SITE_URL ||
+            (typeof window !== "undefined" ? window.location.origin : "https://www.espacioboa.com");
 
-            // 2) pedir reset a Supabase (correo)
-            const site =
-                typeof window !== "undefined"
-                    ? window.location.origin
-                    : process.env.NEXT_PUBLIC_SITE_URL || "http://espacioboa.com";
 
-            const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-                redirectTo: `${site}/reset-password`,
-            });
+        const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
+            redirectTo: `${site}/reset-password`,
+        });
 
-            if (error) {
-                if (process.env.NODE_ENV === "development") {
-                    console.log("[resetPasswordForEmail error]", {
-                        status: (error as any)?.status,
-                        code: (error as any)?.code,
-                        message: error.message,
-                    });
-                }
-
-                // 429: rate-limit
-                if (isRealRateLimit(error)) {
-                    // En DEV: mostrar el link (sin redirigir) si está habilitado
-                    if (process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_ALLOW_DEV_RECOVERY_LINK === "1") {
-                        try {
-                            const r = await fetch("/api/auth/dev-recovery", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ email: values.email }),
-                            });
-                            const jr = await r.json();
-                            if (jr.ok && jr.link) {
-                                setDevLink(jr.link);
-                                setServerOk("Modo DEV: usá el enlace de abajo para resetear la contraseña.");
-                                return;
-                            } else {
-                                setServerError(jr.error || "No se pudo generar el enlace de recuperación (DEV).");
-                                return;
-                            }
-                        } catch {
-                            setServerError("Fallo el fallback DEV de recuperación.");
-                            return;
-                        }
-                    }
-
-                    // En PROD (o si no habilitaste el fallback): cooldown normal
-                    const until = nowSec() + COOLDOWN_SEC;
-                    try { localStorage.setItem(keyFor(values.email), String(until)); } catch { }
-                    setCooldownLeft(COOLDOWN_SEC);
-                    setServerError(`Por seguridad, debés esperar ${COOLDOWN_SEC}s antes de pedir otro enlace.`);
-                    return;
-                }
-
-                // Otros errores: sin cooldown
-                setServerError(error.message || "No pudimos enviar el email. Intentá de nuevo.");
-                return;
-            }
-
-            // 3) ÉXITO (mail enviado)
+        // ✅ Caso éxito: siempre el mismo mensaje (exista o no)
+        if (!error) {
             try { localStorage.removeItem(keyFor(values.email)); } catch { }
             setCooldownLeft(0);
-            setServerOk("¡Listo! Te enviamos un enlace para restablecer tu contraseña.");
-        } catch {
-            setServerError("Error inesperado. Intentá nuevamente.");
+            const until = nowSec() + COOLDOWN_SEC;
+            try { localStorage.setItem(keyFor(values.email), String(until)); } catch { }
+            setCooldownLeft(COOLDOWN_SEC);
+
+            setServerOk("Si el email está registrado, te vamos a enviar un enlace para restablecer tu contraseña.");
+            return;
         }
+
+        // ✅ 429: distinguir el tipo
+        if ((error as any)?.status === 429) {
+            const code = (error as any)?.code;
+            // over_email_send_rate_limit suele ser “límite global / por hora”
+            const sec = code === "over_email_send_rate_limit" ? 3600 : 60;
+            const msg =
+                code === "over_email_send_rate_limit"
+                    ? "Se alcanzó el límite de envío de emails. Probá de nuevo más tarde."
+                    : `Por seguridad, debés esperar ${sec}s antes de pedir otro enlace.`;
+
+            try { localStorage.setItem(keyFor(values.email), String(nowSec() + sec)); } catch { }
+            setCooldownLeft(sec);
+            setServerError(msg);
+            return;
+        }
+
+        // otros errores
+        setServerError(error.message || "No pudimos enviar el email. Intentá nuevamente.");
     }
+
 
     const cooldownText = useMemo(() => {
         if (cooldownLeft <= 0) return null;
