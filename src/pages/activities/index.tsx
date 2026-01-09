@@ -35,30 +35,6 @@ export default function ActivitiesPage() {
                 <title>Actividades | BOA</title>
             </Head>
 
-            {isLoading && !stuck ? (
-                <section>
-                    <div className="min-h-screen flex items-center justify-center">
-                        <div className="animate-pulse text-emerald-600">
-                            <Heart className="h-12 w-12" />
-                        </div>
-                    </div>
-                </section>
-            ) : stuck && isLoading ? (
-                <section className="min-h-screen grid place-items-center">
-                    <div className="text-center space-y-3">
-                        <p className="text-neutral-700">Tardó demasiado en cargar. Podés reintentar.</p>
-                        <button
-                            onClick={() => {
-                                setStuck(false);
-                                router.reload();
-                            }}
-                            className="px-4 py-2 rounded-lg ring-1 ring-emerald-300 hover:bg-emerald-50"
-                        >
-                            Reintentar
-                        </button>
-                    </div>
-                </section>
-            ) : (
                 <section>
                     <section className="relative min-h-[80vh] sm:min-h-[100vh] pt-28 pb-16 font-sans overflow-hidden grid place-items-center">
                         <div className="absolute inset-0 -z-10">
@@ -150,7 +126,6 @@ export default function ActivitiesPage() {
                     <Activities activities={activities} />
                     <ActivitiesCalendar activities={activities} />
                 </section>
-            )}
         </>
     );
 }
