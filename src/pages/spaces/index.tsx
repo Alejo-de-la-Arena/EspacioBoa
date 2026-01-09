@@ -287,21 +287,32 @@ export default function SpacesPage() {
     const spaces: Readonly<SpaceItem[]> = [
         {
             id: "cafeteria-panaderia",
-            name: "Caféteria/Panadería",
+            name: "Cafetería/Panadería",
             description:
-                "Nuestro café con barra y vitrina. Ideal para encuentros casuales y breaks de eventos.",
-            capacity: 45,
-            features: ["WiFi", "Enchufes", "Música ambiente", "Vitrina de panadería"],
+                "Café de especialidad, menú casero y panadería del día en un espacio cómodo y social.",
+            capacity: 15,
+            features: [
+                "Café de especialidad",
+                "Menú casero",
+                "WiFi",
+                "Enchufes",
+            ],
             atmosphere: "Cálido y social",
-            bestFor: ["Trabajo remoto", "Reuniones informales", "Breaks", "Lectura"],
+            bestFor: [
+                "Trabajo remoto",
+                "Reuniones informales",
+                "Breaks",
+                "Lectura",
+            ],
             images: [
                 "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5450.webp",
                 "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5457.webp",
-                "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5420.webp",
+                "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5420.webp"
             ],
             tag: "Espacio principal",
             icon: Coffee,
         },
+
         {
             id: "biblioteca-libreria",
             name: "Biblioteca/Librería",
@@ -319,30 +330,52 @@ export default function SpacesPage() {
             id: "habitacion-holistica",
             name: "Habitación Holística",
             description:
-                "Espacio íntimo para terapias y sesiones 1:1, con aromas suaves y texturas cálidas.",
-            capacity: 4,
-            features: ["Camilla/sillones", "Aromaterapia", "Iluminación cálida", "Privacidad"],
-            atmosphere: "Íntimo y armónico",
-            bestFor: ["Terapias 1:1", "Masajes", "Reiki", "Meditación guiada"],
+                "Un living tranquilo y luminoso para sesiones 1:1 o grupos pequeños, con sillones cómodos y una atmósfera cálida.",
+            capacity: 7,
+            features: [
+                "Sofá + sillones",
+                "Luz natural",
+                "Iluminación ambiental cálida",
+                "Arte en paredes"
+            ],
+            atmosphere: "Cálido, relajado y acogedor",
+            bestFor: [
+                "Terapias 1:1",
+                "Coaching / mentorías",
+                "Círculos pequeños"
+            ],
             images: [
                 "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5400.webp",
                 "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5407.webp",
                 "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5395.webp",
             ],
-            tag: "Intimidad",
+            tag: "Calma",
             icon: HeartHandshake,
         },
         {
             id: "living",
             name: "Living",
             description:
-                "Similar a la holística clásica, con más cuadros y espíritu creativo — ideal para terapias y procesos expresivos.",
-            capacity: 4,
-            features: ["Camilla/sillones", "Aromaterapia", "Luz cálida", "Decoración artística"],
-            atmosphere: "Creativo y sereno",
-            bestFor: ["Terapias 1:1", "Arteterapia", "Reiki", "Meditación guiada"],
-            images: ["https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5284.webp", "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5290.webp", "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5287.webp"],
-            tag: "Atmósfera artística",
+                "Living amplio y luminoso. Un espacio cómodo para conversar y hacer reuniones pequeñas.",
+            capacity: 6,
+            features: [
+                "Mesas y sillones",
+                "Luz natural",
+                "Ventilación",
+                "Decoración artística"
+            ],
+            atmosphere: "Relajado y acogedor",
+            bestFor: [
+                "Terapias 1:1",
+                "Reuniones pequeñas",
+                "Lectura / journaling"
+            ],
+            images: [
+                "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5284.webp",
+                "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5290.webp",
+                "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5287.webp"
+            ],
+            tag: "Luz natural",
             icon: Paintbrush,
         },
         {
@@ -388,19 +421,29 @@ export default function SpacesPage() {
             id: "sala-meditacion-y-silencio",
             name: "Sala de Meditación y Silencio",
             description:
-                "Sala para prácticas de yoga suave, círculos y lecturas. Piso de madera y luz tenue.",
+                "Sala dedicada a meditación y prácticas de silencio.",
             capacity: 12,
-            features: ["Esterillas", "Iluminación regulable", "Aislación sonora", "Aromas"],
-            atmosphere: "Calmo y místico",
-            bestFor: ["Yoga suave", "Círculos", "Lecturas", "Meditación"],
+            features: [
+                "Alfombra amplia",
+                "Luz cálida tenue",
+                "Ambientación zen",
+                "Introspección"
+            ],
+            atmosphere: "Silencioso y zen",
+            bestFor: [
+                "Meditación guiada",
+                "Meditación en silencio",
+                "Respiración / mindfulness"
+            ],
             images: [
                 "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5237.webp",
                 "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5242.webp",
                 "https://gzwgocdsdkamimxgmcue.supabase.co/storage/v1/object/public/boa-media/1200/img-5251.webp",
             ],
-            tag: "Movimiento",
+            tag: "Silencio",
             icon: Moon,
         },
+
     ] as const;
 
     const active = spaces[activeSpace] ?? {};
