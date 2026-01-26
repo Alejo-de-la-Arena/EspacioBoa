@@ -22,7 +22,6 @@ type EventDb = {
     category: string | null;
     location: string | null;
     hero_image: string | null;
-    gallery: any | null;
     featured: boolean | null;
     created_by: string | null;
     created_at?: string | null;
@@ -209,7 +208,6 @@ export default function AdminEvents() {
     const [location, setLocation] = React.useState("");
     const [category, setCategory] = React.useState("");
     const [heroImage, setHeroImage] = React.useState("");
-    const [gallery, setGallery] = React.useState("");
     const [featured, setFeatured] = React.useState(false);
 
     // === guards / refs ===
@@ -360,7 +358,6 @@ export default function AdminEvents() {
         setLocation("");
         setCategory("");
         setHeroImage("");
-        setGallery("");
         setFeatured(false);
     }
 
@@ -382,7 +379,6 @@ export default function AdminEvents() {
         setLocation(r.location ?? "");
         setCategory(r.category ?? "");
         setHeroImage(r.hero_image ?? "");
-        setGallery(Array.isArray(r.gallery) ? r.gallery.join(", ") : (r.gallery ?? ""));
         setFeatured(Boolean(r.featured));
         setOpen(true);
     }
@@ -489,7 +485,6 @@ export default function AdminEvents() {
             category: category || null,
             location: location || null,
             hero_image: heroImage || null,
-            gallery: gallery ? gallery.split(",").map(s => s.trim()).filter(Boolean) : [],
             featured: !!featured,
         };
 
@@ -619,11 +614,6 @@ export default function AdminEvents() {
                                 <div className="grid gap-1">
                                     <label className="text-sm">Hero image (URL)</label>
                                     <Input value={heroImage} onChange={(e) => setHeroImage(e.target.value)} />
-                                </div>
-
-                                <div className="sm:col-span-2 grid gap-1">
-                                    <label className="text-sm">Galería (URLs separadas por coma)</label>
-                                    <Input value={gallery} onChange={(e) => setGallery(e.target.value)} placeholder="https://... , https://..." />
                                 </div>
 
                                 <div className="flex items-center gap-4">
