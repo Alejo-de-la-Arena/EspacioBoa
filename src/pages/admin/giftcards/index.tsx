@@ -1380,9 +1380,6 @@ ${fromName ? `De parte de: ${fromName}` : ""}${po.message ? `\nMensaje: ${po.mes
                                         <Button variant="outline" onClick={() => openEdit(r)}>
                                             Editar
                                         </Button>
-                                        <Button variant="secondary" onClick={() => shareWhatsApp(r)}>
-                                            Enviar por WhatsApp
-                                        </Button>
                                         <Button variant="outline" onClick={() => copyGiftcardImage(r)}>
                                             Copiar imagen
                                         </Button>
