@@ -8,9 +8,9 @@ import {
     ChevronLeft,
     ChevronRight,
     Users,
-    X
+    X,
 } from "lucide-react";
-import type { Activity } from "@/types";
+import type { Activity, Event } from "@/types";
 
 type ViewMode = "day" | "week" | "month";
 
@@ -29,12 +29,20 @@ function useMediaQuery(query: string) {
 }
 
 /* ---------- Configuración visual ---------- */
-const BASE_MAX_WEEK_ITEMS = 2;   // desktop
-const BASE_MAX_MONTH_ITEMS = 2;  // desktop
+const BASE_MAX_WEEK_ITEMS = 2; // desktop
+const BASE_MAX_MONTH_ITEMS = 2; // desktop
 
 /* ---------- Utilidades de fechas ---------- */
 const DAYS_SHORT = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
-const DAYS_FULL = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const DAYS_FULL = [
+    "Lunes",
+    "Martes",
+    "Miércoles",
+    "Jueves",
+    "Viernes",
+    "Sábado",
+    "Domingo",
+];
 
 function startOfWeek(date: Date): Date {
     const d = new Date(date);
@@ -53,22 +61,23 @@ function startOfMonth(d: Date) {
     x.setHours(0, 0, 0, 0);
     return x;
 }
-function startOfCalendarMonthGrid(d: Date) {
-    const first = startOfMonth(d);
-    return startOfWeek(first);
-}
 function formatMonthYear(d: Date) {
-    return new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(d);
+    return new Intl.DateTimeFormat("es-AR", {
+        month: "long",
+        year: "numeric",
+    }).format(d);
 }
 function sameDay(a: Date, b: Date) {
-    return a.getFullYear() === b.getFullYear()
-        && a.getMonth() === b.getMonth()
-        && a.getDate() === b.getDate();
+    return (
+        a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate()
+    );
 }
 
 function parseStartMinutes(range: string) {
-    // toma sólo HH:mm aunque venga con “a. m.” / “p. m.”
-    const left = range.split("-")[0].trim();
+    // toma sólo HH:mm aunque venga con “a. m.” / “p. m.” o venga solo “19:00”
+    const left = String(range || "").split("-")[0].trim();
     const m = left.match(/(\d{1,2}):(\d{2})/);
     if (!m) return 0;
     const hh = parseInt(m[1], 10) || 0;
@@ -81,29 +90,123 @@ function dateOnlyLocal(x: Date | string | number) {
     return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-/* ---------- Rango: ¿la actividad está vigente este día? ---------- */
-function isInDateRange(day: Date, a: Activity) {
+/* ===================================================================== */
+/* =============== NUEVO: Normalización Activities + Events ============== */
+
+type Kind = "activity" | "event";
+
+type CalendarItem = {
+    kind: Kind;
+    id: string;
+    title: string;
+    href: string;
+
+    // para rango calendario
+    start_at?: string;
+    end_at?: string;
+
+    // label de horario que se muestra + orden
+    timeLabel: string;
+
+    // capacidad
+    capacity: number;
+    enrolled: number;
+
+    // opcional para futuras mejoras
+    category?: string;
+};
+
+function normalizeActivities(activities: Activity[]): CalendarItem[] {
+    return (activities || []).map((a) => ({
+        kind: "activity",
+        id: String(a.id),
+        title: a.title,
+        href: `/activities/${a.id}`,
+        start_at: a.start_at,
+        end_at: a.end_at,
+        timeLabel: a?.schedule?.time || "",
+        capacity: Number(a.capacity ?? 0),
+        enrolled: Number(a.enrolled ?? 0),
+        category: a.category,
+    }));
+}
+
+function normalizeEvents(
+    events: Event[],
+    eventCounts?: Record<string, number>
+): CalendarItem[] {
+    return (events || []).map((e: any) => {
+        const id = String(e.id);
+
+        // soporta ambos formatos:
+        // - si viene start_at/end_at (como en DB), lo usa
+        // - si viene date (como tu Event actual), lo usa
+        const start = e.start_at ?? e.startAt ?? e.date;
+        const end = e.end_at ?? e.endAt ?? e.date;
+
+        const enrolled =
+            eventCounts && eventCounts[id] != null
+                ? Number(eventCounts[id])
+                : Number(e.enrolled ?? 0);
+
+        const timeLabel =
+            String(e.time || "").trim() ||
+            (() => {
+                // si no hay time, intentamos derivarlo del start_at
+                if (!start) return "";
+                const d = new Date(start);
+                const hh = String(d.getHours()).padStart(2, "0");
+                const mm = String(d.getMinutes()).padStart(2, "0");
+                return `${hh}:${mm}`;
+            })();
+
+        return {
+            kind: "event",
+            id,
+            title: e.title,
+            href: `/events/${id}`,
+            start_at: start,
+            end_at: end,
+            timeLabel,
+            capacity: Number(e.capacity ?? 0),
+            enrolled,
+            category: e.category,
+        };
+    });
+}
+
+/* ---------- Rango: ¿el item está vigente este día? ---------- */
+function isInDateRange(day: Date, it: CalendarItem) {
     const d = dateOnlyLocal(day);
-    const start = a.start_at ? dateOnlyLocal(a.start_at) : undefined;
-    const end = a.end_at ? dateOnlyLocal(a.end_at) : undefined;
+    const start = it.start_at ? dateOnlyLocal(it.start_at) : undefined;
+    const end = it.end_at ? dateOnlyLocal(it.end_at) : undefined;
 
     if (!start && !end) return false;
     const from = start ?? end!;
     const to = end ?? start!;
-
     return d.getTime() >= from.getTime() && d.getTime() <= to.getTime();
 }
 
 /* ---------- Filtrado/orden del día ---------- */
-function activitiesForDay(all: Activity[], day: Date) {
+function itemsForDay(all: CalendarItem[], day: Date) {
     return all
-        .filter(a => isInDateRange(day, a)) // ← sólo rango (muestra todos los días intermedios)
-        .sort((a, b) => parseStartMinutes(a.schedule.time) - parseStartMinutes(b.schedule.time));
+        .filter((it) => isInDateRange(day, it))
+        .sort((a, b) => parseStartMinutes(a.timeLabel) - parseStartMinutes(b.timeLabel));
 }
 
 /* ===================================================================== */
 
-export default function ActivitiesCalendar({ activities }: { activities: Activity[] }) {
+export default function ActivitiesCalendar({
+    activities,
+    events,
+    eventCounts,
+    title = "Calendario BOA",
+}: {
+    activities: Activity[];
+    events?: Event[];
+    eventCounts?: Record<string, number>;
+    title?: string;
+}) {
     const [view, setView] = useState<ViewMode>("month");
     const [anchor, setAnchor] = useState<Date>(new Date());
     const [selected, setSelected] = useState<Date>(new Date());
@@ -118,6 +221,13 @@ export default function ActivitiesCalendar({ activities }: { activities: Activit
         if (isSmall && view === "month") setView("week");
     }, [isSmall, view]);
 
+    // ✅ unificamos items
+    const calendarItems = useMemo(() => {
+        const a = normalizeActivities(activities || []);
+        const e = normalizeEvents(events || [], eventCounts);
+        return [...a, ...e];
+    }, [activities, events, eventCounts]);
+
     // Fechas visibles
     const weekStart = startOfWeek(anchor);
     const weekDays = useMemo(
@@ -130,10 +240,8 @@ export default function ActivitiesCalendar({ activities }: { activities: Activit
         const year = anchor.getFullYear();
         const month = anchor.getMonth();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-
         return Array.from({ length: daysInMonth }, (_, i) => addDays(first, i));
     }, [anchor]);
-
 
     // Navegación
     const goPrev = () => {
@@ -158,7 +266,10 @@ export default function ActivitiesCalendar({ activities }: { activities: Activit
         if (view === "day") setSelected(now);
     };
 
-    const fade = { hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0, transition: { duration: 0.35 } } };
+    const fade = {
+        hidden: { opacity: 0, y: 8 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.35 } },
+    };
 
     return (
         <section className="relative py-10 md:py-12 overflow-hidden">
@@ -174,19 +285,31 @@ export default function ActivitiesCalendar({ activities }: { activities: Activit
             `,
                     }}
                 />
-                <div aria-hidden className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: "var(--boa-noise)", backgroundSize: "420px 420px" }} />
+                <div
+                    aria-hidden
+                    className="absolute inset-0 opacity-[0.05]"
+                    style={{
+                        backgroundImage: "var(--boa-noise)",
+                        backgroundSize: "420px 420px",
+                    }}
+                />
             </div>
 
             <div className="flex justify-center items-center text-center">
                 <h2 className="font-sans text-3xl sm:text-5xl font-extrabold tracking-tight text-boa-ink mb-4 text-center">
-                    Calendario <span className="text-boa-green">Actividades</span>
+                    {title}
                 </h2>
             </div>
 
             <div className="container max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
                 {/* Header calendario */}
-                <motion.div variants={fade} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }}
-                    className="mb-5 rounded-2xl bg-[#FFFCF7]/90 ring-1 ring-[#EEDCC9] backdrop-blur px-3 sm:px-4 py-2.5 sm:py-3">
+                <motion.div
+                    variants={fade}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.3 }}
+                    className="mb-5 rounded-2xl bg-[#FFFCF7]/90 ring-1 ring-[#EEDCC9] backdrop-blur px-3 sm:px-4 py-2.5 sm:py-3"
+                >
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                         <div className="flex items-center gap-2 text-boa-ink">
                             <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-boa-green/15 ring-1 ring-boa-green/30 text-boa-green">
@@ -230,19 +353,31 @@ export default function ActivitiesCalendar({ activities }: { activities: Activit
                 {view === "day" && (
                     <DayView
                         date={selected}
-                        setDate={(d) => { setSelected(d); setAnchor(d); }}
-                        activities={activities}
+                        setDate={(d) => {
+                            setSelected(d);
+                            setAnchor(d);
+                        }}
+                        items={calendarItems}
                     />
                 )}
 
                 {/* Semana */}
                 {view === "week" && (
-                    <WeekView weekDays={weekDays} activities={activities} MAX_WEEK_ITEMS={MAX_WEEK_ITEMS} isSmall={isSmall} />
+                    <WeekView
+                        weekDays={weekDays}
+                        items={calendarItems}
+                        MAX_WEEK_ITEMS={MAX_WEEK_ITEMS}
+                        isSmall={isSmall}
+                    />
                 )}
 
                 {/* Mes */}
                 {!isSmall && view === "month" && (
-                    <MonthView monthGrid={monthGrid} anchor={anchor} activities={activities} MAX_MONTH_ITEMS={MAX_MONTH_ITEMS} isSmall={isSmall} />
+                    <MonthView
+                        monthGrid={monthGrid}
+                        items={calendarItems}
+                        MAX_MONTH_ITEMS={MAX_MONTH_ITEMS}
+                    />
                 )}
             </div>
         </section>
@@ -251,26 +386,54 @@ export default function ActivitiesCalendar({ activities }: { activities: Activit
 
 /* -------------------- Subcomponentes -------------------- */
 
-function EventChip({ a }: { a: Activity }) {
-    const full = a.enrolled >= a.capacity;
+function CalendarChip({ it }: { it: CalendarItem }) {
+    const full = it.capacity > 0 ? it.enrolled >= it.capacity : false;
+
+    const isEvent = it.kind === "event";
+    const badge = isEvent ? "Evento" : "Actividad";
+
+    const shell = isEvent
+        ? full
+            ? "bg-boa-ink/5 ring-boa-ink/20"
+            : "bg-[#FFF1E6] ring-[#F2C7A8] group-hover:bg-[#FFE7D6]"
+        : full
+            ? "bg-boa-ink/5 ring-boa-ink/20"
+            : "bg-boa-green/10 ring-boa-green/30 group-hover:bg-boa-green/15";
+
+    const badgeCls = isEvent
+        ? "bg-[#F6C7A6]/60 text-[#6A3A1C] ring-1 ring-[#F2C7A8]"
+        : "bg-boa-green/15 text-boa-green ring-1 ring-boa-green/30";
+
     return (
-        <Link href={`/activities/${a.id}`} className="block group focus:outline-none focus-visible:ring-2 focus-visible:ring-boa-green/50 rounded-xl">
-            <div
-                className={[
-                    "rounded-xl px-3 py-2 ring-1 shadow-sm transition",
-                    full
-                        ? "bg-boa-ink/5 ring-boa-ink/20"
-                        : "bg-boa-green/10 ring-boa-green/30 group-hover:bg-boa-green/15",
-                ].join(" ")}
-            >
-                <div className="text-[13px] font-semibold text-boa-ink leading-tight line-clamp-1">
-                    {a.title}
+        <Link
+            href={it.href}
+            className="block group focus:outline-none focus-visible:ring-2 focus-visible:ring-boa-green/50 rounded-xl"
+            title={it.title} // por si es muy largo, hover muestra el nombre completo
+        >
+            <div className={["rounded-xl px-3 py-2 ring-1 shadow-sm transition", shell].join(" ")}>
+                {/* Badge arriba (más chico) */}
+                <div className="mb-1">
+                    <span
+                        className={[
+                            "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none",
+                            badgeCls,
+                        ].join(" ")}
+                    >
+                        {badge}
+                    </span>
                 </div>
-                <div className="mt-0.5 flex items-center justify-between text-[12px] text-boa-ink/70">
-                    <span className="tabular-nums">{a.schedule.time}</span>
+
+                {/* Título abajo, ocupa todo el ancho */}
+                <div className="text-[13px] font-semibold text-boa-ink leading-snug line-clamp-2">
+                    {it.title}
+                </div>
+
+                <div className="mt-1 flex items-center justify-between text-[12px] text-boa-ink/70">
+                    <span className="tabular-nums">{it.timeLabel}</span>
+
                     <span className="inline-flex items-center">
                         <Users className="h-3.5 w-3.5 mr-1 text-boa-green" />
-                        {a.enrolled}/{a.capacity}
+                        {it.enrolled}/{it.capacity}
                     </span>
                 </div>
             </div>
@@ -278,17 +441,18 @@ function EventChip({ a }: { a: Activity }) {
     );
 }
 
+
 function DayView({
     date,
     setDate,
-    activities,
+    items,
 }: {
     date: Date;
     setDate: (d: Date) => void;
-    activities: Activity[];
+    items: CalendarItem[];
 }) {
     const jsDay = date.getDay(); // 0..6
-    const items = activitiesForDay(activities, date);
+    const dayItems = itemsForDay(items, date);
     const isToday = sameDay(date, new Date());
 
     return (
@@ -299,19 +463,27 @@ function DayView({
                     <span className="text-boa-ink/60">{date.toLocaleDateString("es-AR")}</span>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" className="h-8 rounded-xl ring-1 ring-boa-green/30" onClick={() => setDate(addDays(date, -1))}>Anterior</Button>
+                    <Button variant="outline" className="h-8 rounded-xl ring-1 ring-boa-green/30" onClick={() => setDate(addDays(date, -1))}>
+                        Anterior
+                    </Button>
                     {!isToday && (
-                        <Button variant="outline" className="h-8 rounded-xl ring-1 ring-boa-green/30" onClick={() => setDate(new Date())}>Hoy</Button>
+                        <Button variant="outline" className="h-8 rounded-xl ring-1 ring-boa-green/30" onClick={() => setDate(new Date())}>
+                            Hoy
+                        </Button>
                     )}
-                    <Button variant="outline" className="h-8 rounded-xl ring-1 ring-boa-green/30" onClick={() => setDate(addDays(date, 1))}>Siguiente</Button>
+                    <Button variant="outline" className="h-8 rounded-xl ring-1 ring-boa-green/30" onClick={() => setDate(addDays(date, 1))}>
+                        Siguiente
+                    </Button>
                 </div>
             </div>
 
-            {items.length === 0 ? (
-                <div className="text-boa-ink/60 text-sm">No hay actividades programadas este día.</div>
+            {dayItems.length === 0 ? (
+                <div className="text-boa-ink/60 text-sm">No hay actividades ni eventos programados este día.</div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {items.map((a) => <EventChip key={a.id} a={a} />)}
+                    {dayItems.map((it) => (
+                        <CalendarChip key={`${it.kind}-${it.id}`} it={it} />
+                    ))}
                 </div>
             )}
         </div>
@@ -320,12 +492,12 @@ function DayView({
 
 function WeekView({
     weekDays,
-    activities,
+    items,
     MAX_WEEK_ITEMS,
     isSmall,
 }: {
     weekDays: Date[];
-    activities: Activity[];
+    items: CalendarItem[];
     MAX_WEEK_ITEMS: number;
     isSmall: boolean;
 }) {
@@ -333,10 +505,11 @@ function WeekView({
         <div className="rounded-2xl bg-[#FFFDF8] ring-1 ring-[#EEDCC9] p-3 sm:p-4 shadow-[0_12px_28px_rgba(82,47,0,.07)]">
             <div className={isSmall ? "flex flex-col gap-3" : "grid grid-cols-7 gap-2 sm:gap-3"}>
                 {weekDays.map((d, idx) => {
-                    const all = activitiesForDay(activities, d);
-                    const items = all.slice(0, MAX_WEEK_ITEMS);
-                    const extra = all.length - items.length;
+                    const all = itemsForDay(items, d);
+                    const dayItems = all.slice(0, MAX_WEEK_ITEMS);
+                    const extra = all.length - dayItems.length;
                     const today = sameDay(d, new Date());
+
                     return (
                         <div key={idx} className={isSmall ? "min-h-[0] border-b last:border-0 border-[#f1e6d9] pb-3" : "min-h-[128px]"}>
                             <div className={isSmall ? "flex items-center gap-2 mb-2" : "flex items-center justify-between mb-2"}>
@@ -344,22 +517,24 @@ function WeekView({
                                     {DAYS_SHORT[idx]} <span className="text-boa-ink/60">{d.getDate()}</span>
                                 </div>
                                 {!isSmall && (
-                                    <div className={[
-                                        "h-7 w-7 grid place-items-center rounded-full text-sm",
-                                        today ? "bg-boa-green text-white" : "text-boa-ink/70 ring-1 ring-[#EEDCC9]"].join(" ")}>
+                                    <div
+                                        className={[
+                                            "h-7 w-7 grid place-items-center rounded-full text-sm",
+                                            today ? "bg-boa-green text-white" : "text-boa-ink/70 ring-1 ring-[#EEDCC9]",
+                                        ].join(" ")}
+                                    >
                                         {d.getDate()}
                                     </div>
                                 )}
                             </div>
+
                             <div className="space-y-2">
-                                {items.length === 0 ? (
+                                {dayItems.length === 0 ? (
                                     <div className="text-[12px] text-boa-ink/50">—</div>
                                 ) : (
-                                    items.map((a) => <EventChip key={a.id} a={a} />)
+                                    dayItems.map((it) => <CalendarChip key={`${it.kind}-${it.id}`} it={it} />)
                                 )}
-                                {extra > 0 && (
-                                    <div className="text-[12px] text-boa-ink/60">+{extra} más</div>
-                                )}
+                                {extra > 0 && <div className="text-[12px] text-boa-ink/60">+{extra} más</div>}
                             </div>
                         </div>
                     );
@@ -379,9 +554,10 @@ function DayModal({
     open: boolean;
     onClose: () => void;
     date: Date | null;
-    items: Activity[];
+    items: CalendarItem[];
 }) {
     if (!open || !date) return null;
+
     return (
         <div className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-[1px] p-4 sm:hidden">
             <div className="mx-auto max-w-md rounded-2xl bg-white shadow-xl ring-1 ring-[#EEDCC9]">
@@ -394,23 +570,15 @@ function DayModal({
                         <X className="h-5 w-5" />
                     </button>
                 </div>
+
                 <div className="p-3 space-y-2">
                     {items.length === 0 ? (
-                        <div className="text-sm text-boa-ink/60">No hay actividades.</div>
+                        <div className="text-sm text-boa-ink/60">No hay actividades ni eventos.</div>
                     ) : (
-                        items.map((a) => (
-                            <Link key={a.id} href={`/activities/${a.id}`} onClick={onClose} className="block">
-                                <div className="rounded-xl px-3 py-2 ring-1 ring-boa-green/30 bg-boa-green/5">
-                                    <div className="text-[13px] font-semibold line-clamp-1">{a.title}</div>
-                                    <div className="mt-0.5 text-[12px] text-boa-ink/70 flex items-center justify-between">
-                                        <span className="tabular-nums">{a.schedule.time}</span>
-                                        <span className="inline-flex items-center">
-                                            <Users className="h-3.5 w-3.5 mr-1 text-boa-green" />
-                                            {a.enrolled}/{a.capacity}
-                                        </span>
-                                    </div>
-                                </div>
-                            </Link>
+                        items.map((it) => (
+                            <div key={`${it.kind}-${it.id}`} onClick={onClose}>
+                                <CalendarChip it={it} />
+                            </div>
                         ))
                     )}
                 </div>
@@ -421,48 +589,52 @@ function DayModal({
 
 function MonthView({
     monthGrid,
-    anchor,
-    activities,
+    items,
     MAX_MONTH_ITEMS,
-    isSmall,
 }: {
     monthGrid: Date[];
-    anchor: Date;
-    activities: Activity[];
+    items: CalendarItem[];
     MAX_MONTH_ITEMS: number;
-    isSmall: boolean;
 }) {
-    // estado modal mobile
+    // estado modal mobile (aunque MonthView no se usa en mobile hoy, lo dejamos coherente)
     const [open, setOpen] = useState(false);
     const [modalDate, setModalDate] = useState<Date | null>(null);
-    const [modalItems, setModalItems] = useState<Activity[]>([]);
+    const [modalItems, setModalItems] = useState<CalendarItem[]>([]);
 
-    const openDay = (date: Date, items: Activity[]) => {
+    const openDay = (date: Date, dayItems: CalendarItem[]) => {
         setModalDate(date);
-        setModalItems(items);
+        setModalItems(dayItems);
         setOpen(true);
     };
 
     return (
         <div className="rounded-2xl bg-[#FFFDF8] ring-1 ring-[#EEDCC9] p-2.5 sm:p-3 shadow-[0_12px_28px_rgba(82,47,0,.07)]">
-            {/* cabecera días (se mantiene solo como referencia visual) */}
             <div className="grid grid-cols-7 gap-2 px-1 pb-2">
                 {DAYS_SHORT.map((d) => (
-                    <div
-                        key={d}
-                        className="text-[11px] sm:text-[12px] font-semibold text-boa-ink/70 uppercase tracking-wide"
-                    >
+                    <div key={d} className="text-[11px] sm:text-[12px] font-semibold text-boa-ink/70 uppercase tracking-wide">
                         {d}
                     </div>
                 ))}
             </div>
 
-            {/* celdas: sólo días del mes actual, empezando el 1 arriba a la izquierda */}
             <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
                 {monthGrid.map((d, i) => {
-                    const all = activitiesForDay(activities, d);
-                    const items = all.slice(0, MAX_MONTH_ITEMS);
-                    const extra = all.length - items.length;
+                    const all = itemsForDay(items, d);
+                    const hasActivity = all.some((x) => x.kind === "activity");
+                    const hasEvent = all.some((x) => x.kind === "event");
+
+                    const dots = [
+                        ...(hasActivity ? ["activity"] : []),
+                        ...(hasEvent ? ["event"] : []),
+                    ];
+
+                    // si solo hay un tipo, y hay más de 1 item, completamos hasta 3 con el mismo tipo
+                    if (dots.length === 1 && all.length > 1) {
+                        while (dots.length < Math.min(all.length, 3)) dots.push(dots[0]);
+                    }
+
+                    const dayItems = all.slice(0, MAX_MONTH_ITEMS);
+                    const extra = all.length - dayItems.length;
                     const today = sameDay(d, new Date());
 
                     return (
@@ -470,53 +642,36 @@ function MonthView({
                             key={i}
                             className={[
                                 "min-h-[86px] sm:min-h-[112px] rounded-xl p-2 ring-1 relative transition-colors",
-                                today
-                                    ? "bg-boa-green/5 ring-boa-green/50 shadow-[0_0_0_1px_rgba(0,0,0,0.02)]"
-                                    : "bg-[#FFFCF7] ring-[#EEDCC9] hover:bg-white",
+                                today ? "bg-boa-green/5 ring-boa-green/50 shadow-[0_0_0_1px_rgba(0,0,0,0.02)]" : "bg-[#FFFCF7] ring-[#EEDCC9] hover:bg-white",
                             ].join(" ")}
                         >
                             <div className="flex items-center justify-between mb-1">
-                                <span className="text-[12px] sm:text-sm font-medium text-boa-ink/80">
-                                    {d.getDate()}
-                                </span>
+                                <span className="text-[12px] sm:text-sm font-medium text-boa-ink/80">{d.getDate()}</span>
 
-                                {/* indicadores de cantidad (desktop) */}
                                 {all.length > 0 && (
                                     <div className="hidden sm:flex gap-1">
-                                        {Array.from({ length: Math.min(all.length, 3) }).map((_, idx) => (
+                                        {dots.slice(0, 3).map((k, idx) => (
                                             <span
-                                                key={idx}
-                                                className="h-1.5 w-1.5 rounded-full bg-boa-green/70"
+                                                key={`${k}-${idx}`}
+                                                className={[
+                                                    "h-1.5 w-1.5 rounded-full",
+                                                    k === "activity" ? "bg-boa-green/70" : "bg-[#F2C7A8]",
+                                                ].join(" ")}
                                             />
                                         ))}
                                     </div>
                                 )}
+
                             </div>
 
-                            {/* Desktop / tablet: chips de actividades */}
                             <div className="hidden sm:block space-y-1.5">
-                                {items.map((a) => (
-                                    <Link key={a.id} href={`/activities/${a.id}`} className="block">
-                                        <div className="rounded-lg px-2 py-1.5 bg-boa-green/10 ring-1 ring-boa-green/30 text-[12px]">
-                                            <div className="font-semibold text-boa-ink leading-tight line-clamp-1">
-                                                {a.title}
-                                            </div>
-                                            <div className="flex items-center justify-between text-boa-ink/70">
-                                                <span className="tabular-nums">{a.schedule.time}</span>
-                                                <span className="inline-flex items-center">
-                                                    <Users className="h-3.5 w-3.5 mr-1 text-boa-green" />
-                                                    {a.enrolled}/{a.capacity}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </Link>
+                                {dayItems.map((it) => (
+                                    <CalendarChip key={`${it.kind}-${it.id}`} it={it} />
                                 ))}
-                                {extra > 0 && (
-                                    <div className="text-[12px] text-boa-ink/60">+{extra} más</div>
-                                )}
+                                {extra > 0 && <div className="text-[12px] text-boa-ink/60">+{extra} más</div>}
                             </div>
 
-                            {/* Mobile: botón para abrir lista del día */}
+                            {/* (si algún día querés month en mobile) */}
                             <div className="sm:hidden">
                                 {all.length === 0 ? (
                                     <div className="text-[11px] text-boa-ink/40 mt-2">—</div>
@@ -524,14 +679,11 @@ function MonthView({
                                     <button
                                         onClick={() => openDay(d, all)}
                                         className="mt-1.5 inline-flex items-center gap-2 rounded-full bg-boa-green/10 ring-1 ring-boa-green/30 px-2 py-1 text-[11px] text-boa-ink hover:bg-boa-green/15"
-                                        aria-label={`Ver ${all.length} actividades`}
+                                        aria-label={`Ver ${all.length} items`}
                                     >
                                         <div className="flex -space-x-1">
                                             {Array.from({ length: Math.min(all.length, 4) }).map((_, idx) => (
-                                                <span
-                                                    key={idx}
-                                                    className="h-1.5 w-1.5 rounded-full bg-boa-green relative inline-block"
-                                                />
+                                                <span key={idx} className="h-1.5 w-1.5 rounded-full bg-boa-green relative inline-block" />
                                             ))}
                                         </div>
                                         Ver {all.length}
@@ -543,14 +695,7 @@ function MonthView({
                 })}
             </div>
 
-            {/* Modal mobile con lista del día */}
-            <DayModal
-                open={open}
-                onClose={() => setOpen(false)}
-                date={modalDate}
-                items={modalItems}
-            />
+            <DayModal open={open} onClose={() => setOpen(false)} date={modalDate} items={modalItems} />
         </div>
     );
 }
-

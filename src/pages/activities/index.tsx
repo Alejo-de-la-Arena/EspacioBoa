@@ -8,14 +8,15 @@ import { useAuth } from "@/stores/useAuth";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
+import { useApp } from "@/contexts/AppContext";
 
 
 export default function ActivitiesPage() {
     const { initialized } = useAuth();
     const { activities, loading: dataLoading } = useActivitiesLive();
+    const { events, loading: eventsLoading } = useApp();
 
-
-    const isLoading = !initialized || dataLoading;
+    const isLoading = !initialized || dataLoading || eventsLoading;
 
     const [stuck, setStuck] = useState(false);
     const router = useRouter();
@@ -35,97 +36,103 @@ export default function ActivitiesPage() {
                 <title>Actividades | BOA</title>
             </Head>
 
-                <section>
-                    <section className="relative min-h-[80vh] sm:min-h-[100vh] pt-28 pb-16 font-sans overflow-hidden grid place-items-center">
-                        <div className="absolute inset-0 -z-10">
-                            <div
-                                className="absolute inset-0 hidden sm:block"
-                                style={{
-                                    backgroundImage: `url('${mediaUrl("hero-activities/activities-bg.webp")}')`,
-                                    backgroundSize: "cover",
-                                    backgroundPosition: "center",
-                                    backgroundRepeat: "no-repeat",
-                                    filter: "saturate(0.96) brightness(1) contrast(1.04)",
-                                }}
-                            />
-                            <div
-                                className="absolute inset-0 block sm:hidden"
-                                style={{
-                                    backgroundImage: `url('${mediaUrl(
-                                        "hero-activities/activities-bg-mobile.webp"
-                                    )}')`,
-                                    backgroundSize: "cover",
-                                    backgroundPosition: "center 18%",
-                                    backgroundRepeat: "no-repeat",
-                                    filter: "saturate(0.96) brightness(1) contrast(1.04)",
-                                }}
-                            />
-                            <div className="absolute inset-0 bg-[#FBF7EC]/60 mix-blend-multiply" />
-                            <div
-                                aria-hidden
-                                className="absolute inset-0 opacity-[0.06] pointer-events-none"
-                                style={{ backgroundImage: "var(--boa-noise)", backgroundSize: "420px 420px" }}
-                            />
-                        </div>
+            <section>
+                <section className="relative min-h-[80vh] sm:min-h-[100vh] pt-28 pb-16 font-sans overflow-hidden grid place-items-center">
+                    <div className="absolute inset-0 -z-10">
+                        <div
+                            className="absolute inset-0 hidden sm:block"
+                            style={{
+                                backgroundImage: `url('${mediaUrl("hero-activities/activities-bg.webp")}')`,
+                                backgroundSize: "cover",
+                                backgroundPosition: "center",
+                                backgroundRepeat: "no-repeat",
+                                filter: "saturate(0.96) brightness(1) contrast(1.04)",
+                            }}
+                        />
+                        <div
+                            className="absolute inset-0 block sm:hidden"
+                            style={{
+                                backgroundImage: `url('${mediaUrl(
+                                    "hero-activities/activities-bg-mobile.webp"
+                                )}')`,
+                                backgroundSize: "cover",
+                                backgroundPosition: "center 18%",
+                                backgroundRepeat: "no-repeat",
+                                filter: "saturate(0.96) brightness(1) contrast(1.04)",
+                            }}
+                        />
+                        <div className="absolute inset-0 bg-[#FBF7EC]/60 mix-blend-multiply" />
+                        <div
+                            aria-hidden
+                            className="absolute inset-0 opacity-[0.06] pointer-events-none"
+                            style={{ backgroundImage: "var(--boa-noise)", backgroundSize: "420px 420px" }}
+                        />
+                    </div>
 
-                        <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                            <div className="relative isolate max-w-3xl mx-auto text-center">
-                                <div className="relative z-10">
-                                    <motion.div
-                                        initial={{ opacity: 0, y: -8 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.35, ease: "easeOut" }}
-                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-boa-green/25 backdrop-blur-md ring-1 ring-boa-green/40 text-boa-green-foreground"
-                                    >
-                                        <Sparkles className="h-4 w-4 text-boa-green" />
-                                        <span className="text-[12px] font-semibold tracking-wide text-boa-green">
-                                            Cuerpo • Mente • Comunidad
-                                        </span>
-                                    </motion.div>
+                    <div className="container relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="relative isolate max-w-3xl mx-auto text-center">
+                            <div className="relative z-10">
+                                <motion.div
+                                    initial={{ opacity: 0, y: -8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.35, ease: "easeOut" }}
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-boa-green/25 backdrop-blur-md ring-1 ring-boa-green/40 text-boa-green-foreground"
+                                >
+                                    <Sparkles className="h-4 w-4 text-boa-green" />
+                                    <span className="text-[12px] font-semibold tracking-wide text-boa-green">
+                                        Cuerpo • Mente • Comunidad
+                                    </span>
+                                </motion.div>
 
-                                    <motion.h1
-                                        initial={{ opacity: 0, y: 14 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.4, ease: "easeOut", delay: 0.08 }}
-                                        className="mt-4 text-4xl sm:text-6xl font-extrabold tracking-tight text-neutral-900"
-                                    >
-                                        Actividades que te <span className="text-boa-green">hacen bien</span>
-                                    </motion.h1>
+                                <motion.h1
+                                    initial={{ opacity: 0, y: 14 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4, ease: "easeOut", delay: 0.08 }}
+                                    className="mt-4 text-4xl sm:text-6xl font-extrabold tracking-tight text-neutral-900"
+                                >
+                                    Actividades que te <span className="text-boa-green">hacen bien</span>
+                                </motion.h1>
 
-                                    <motion.svg
-                                        className="mt-3 mx-auto w-56 h-4 relative z-20"
-                                        viewBox="0 0 220 18"
-                                        fill="none"
-                                        aria-hidden="true"
-                                        initial={{ opacity: 0, y: 6 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.35, ease: "easeOut", delay: 0.16 }}
-                                    >
-                                        <path
-                                            d="M6 10C55 15 125 15 214 8"
-                                            stroke="hsl(var(--boa-green))"
-                                            strokeWidth="6"
-                                            strokeLinecap="round"
-                                        />
-                                    </motion.svg>
+                                <motion.svg
+                                    className="mt-3 mx-auto w-56 h-4 relative z-20"
+                                    viewBox="0 0 220 18"
+                                    fill="none"
+                                    aria-hidden="true"
+                                    initial={{ opacity: 0, y: 6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.35, ease: "easeOut", delay: 0.16 }}
+                                >
+                                    <path
+                                        d="M6 10C55 15 125 15 214 8"
+                                        stroke="hsl(var(--boa-green))"
+                                        strokeWidth="6"
+                                        strokeLinecap="round"
+                                    />
+                                </motion.svg>
 
-                                    <motion.p
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.4, ease: "easeOut", delay: 0.22 }}
-                                        className="mt-4 text-base sm:text-xl leading-relaxed relative z-20 text-neutral-800 max-w-[100%] mx-auto"
-                                    >
-                                        Movimiento, arte y bienestar en un mismo lugar. <br /> Descubrí tu próxima
-                                        clase y reservá en segundos.
-                                    </motion.p>
-                                </div>
+                                <motion.p
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.4, ease: "easeOut", delay: 0.22 }}
+                                    className="mt-4 text-base sm:text-xl leading-relaxed relative z-20 text-neutral-800 max-w-[100%] mx-auto"
+                                >
+                                    Movimiento, arte y bienestar en un mismo lugar. <br /> Descubrí tu próxima
+                                    clase y reservá en segundos.
+                                </motion.p>
                             </div>
                         </div>
-                    </section>
-
-                    <Activities activities={activities} />
-                    <ActivitiesCalendar activities={activities} />
+                    </div>
                 </section>
+
+                <Activities activities={activities} />
+                {!isLoading && (
+                    <ActivitiesCalendar
+                        activities={activities}
+                        events={events}
+                        title="Calendario BOA"
+                    />
+                )}
+            </section>
         </>
     );
 }

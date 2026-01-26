@@ -3,6 +3,8 @@ import { useApp } from "@/contexts/AppContext";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
+import ActivitiesCalendar from "@/components/ActivitiesCalendar";
+import { useActivitiesLive } from "@/hooks/useActivitiesLive";
 import {
   Select,
   SelectContent,
@@ -17,12 +19,15 @@ import { supabase } from "@/lib/supabaseClient";
 
 export default function EventsPage() {
   const { events, loading } = useApp();
+  const { activities, loading: activitiesLoading } = useActivitiesLive();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [onlyToday, setOnlyToday] = useState(false);
   const [onlyWeekend, setOnlyWeekend] = useState(false);
+
+  const calendarLoading = loading || activitiesLoading;
 
   useEffect(() => {
     let ignore = false;
@@ -567,6 +572,15 @@ export default function EventsPage() {
         </div>
       </section>
 
+      {!calendarLoading && (
+        <ActivitiesCalendar
+          activities={activities}
+          events={events}
+          eventCounts={counts} // ya lo tenés
+          title="Calendario BOA"
+        />
+      )}
+      
       <motion.section
         className="py-20 bg-white"
         initial={{ opacity: 0, y: 24 }}
