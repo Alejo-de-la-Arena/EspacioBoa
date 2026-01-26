@@ -1292,7 +1292,7 @@ ${fromName ? `De parte de: ${fromName}` : ""}${po.message ? `\nMensaje: ${po.mes
                                                 {/* Eliminar preorden */}
                                                 <Button
                                                     variant="outline"
-                                                    className="mr-2"
+                                                    className="mr-2 bg-red-500 text-white"
                                                     onClick={() => deletePreorder(po.id)}
                                                 >
                                                     Eliminar
