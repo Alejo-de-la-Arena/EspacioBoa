@@ -616,17 +616,21 @@ export default function AdminEvents() {
                                     <Input value={heroImage} onChange={(e) => setHeroImage(e.target.value)} />
                                 </div>
 
-                                <div className="flex items-center gap-4">
-                                    <label className="inline-flex items-center gap-2 text-sm">
-                                        <input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} />
-                                        Publicado
-                                    </label>
+                                <div className="sm:col-span-2 grid gap-1">
+                                    <div className="flex items-center gap-4">
+                                        <label className="inline-flex items-center gap-2 text-sm">
+                                            <input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} />
+                                            Publicado
+                                        </label>
 
-                                    <label className="inline-flex items-center gap-2 text-sm">
-                                        <input type="checkbox" checked={featured} onChange={(e) => setFeatured(e.target.checked)} />
-                                        Destacado
-                                    </label>
+                                        <label className="inline-flex items-center gap-2 text-sm">
+                                            <input type="checkbox" checked={featured} onChange={(e) => setFeatured(e.target.checked)} />
+                                            Destacado
+                                        </label>
+                                    </div>
                                 </div>
+
+
                             </div>
                         </div>
 
