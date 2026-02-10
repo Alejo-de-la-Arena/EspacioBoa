@@ -542,14 +542,13 @@ export default function ActivityDetailPage() {
 
                                 <div className="flex items-center">
                                     <Clock className="h-5 w-5 mr-3 text-boa-green" />
-                                    <div className="flex items-center">
-                                        <Clock className="h-5 w-5 mr-3 text-boa-green" />
-                                        {activity.is_recurring
-                                            ? (activity.recurrence as any)?.startTime && (activity.recurrence as any)?.endTime
-                                                ? `${(activity.recurrence as any).startTime} - ${(activity.recurrence as any).endTime}`
-                                                : activity.schedule.time
-                                            : activity.schedule.time}
-                                    </div>
+
+                                    {activity.is_recurring
+                                        ? (activity.recurrence as any)?.startTime && (activity.recurrence as any)?.endTime
+                                            ? `${(activity.recurrence as any).startTime} - ${(activity.recurrence as any).endTime}`
+                                            : activity.schedule.time
+                                        : activity.schedule.time}
+
 
                                 </div>
                                 <div className="flex items-center">
