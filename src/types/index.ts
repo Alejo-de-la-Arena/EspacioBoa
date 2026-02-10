@@ -16,27 +16,34 @@ export interface Person {
     phone?: number;
 }
 
+export type RecurrenceRule = {
+    byWeekday: number[]; // ej: [4] si usás JUE=4 (ver nota abajo)
+    until?: string | null; // ISO opcional
+};
+
 export interface Activity {
-    id: string;        
+    id: string;
     slug?: string;
     title: string;
     description: string;
-    images?: string[];               
+    images?: string[];
     image?: string;
     category: string;
     price?: number;
     featured?: boolean;
-    schedule: { day: string; time: string }; 
+    schedule: { day: string; time: string };
     location: string;
     enrolled: number;
     capacity: number;
-    seatsRemaining?: number; 
+    seatsRemaining?: number;
     instructor?: Person;
-    start_at?: string; 
-    end_at?: string;   
+    start_at?: string;
+    end_at?: string;
     is_published?: boolean;
     hero_image?: string;
     gallery?: string[] | any;
+    is_recurring?: boolean;
+    recurrence?: { byWeekday?: number[]; until?: string | null } | null;
 }
 
 
@@ -86,7 +93,7 @@ export interface GiftCard {
     value: number;
     benefits: string[];
     popular?: boolean;
-    image_url?: string | null; 
+    image_url?: string | null;
     is_active?: boolean | null;
 }
 

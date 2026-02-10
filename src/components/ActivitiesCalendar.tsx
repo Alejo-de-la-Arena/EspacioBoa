@@ -76,14 +76,24 @@ function sameDay(a: Date, b: Date) {
 }
 
 function parseStartMinutes(range: string) {
-    // toma sólo HH:mm aunque venga con “a. m.” / “p. m.” o venga solo “19:00”
-    const left = String(range || "").split("-")[0].trim();
+    const left = String(range || "").split("-")[0].trim().toLowerCase();
+
     const m = left.match(/(\d{1,2}):(\d{2})/);
     if (!m) return 0;
-    const hh = parseInt(m[1], 10) || 0;
+
+    let hh = parseInt(m[1], 10) || 0;
     const mm = parseInt(m[2], 10) || 0;
+
+    const isPM = left.includes("p");
+    const isAM = left.includes("a");
+
+    // si viene con am/pm, convertimos a 24h
+    if (isPM && hh < 12) hh += 12;
+    if (isAM && hh === 12) hh = 0;
+
     return hh * 60 + mm;
 }
+
 
 function dateOnlyLocal(x: Date | string | number) {
     const d = new Date(x);
@@ -114,22 +124,40 @@ type CalendarItem = {
 
     // opcional para futuras mejoras
     category?: string;
+
+    is_recurring?: boolean;
+    recurrence?: { byWeekday?: number[]; until?: string | null } | null;
+
+    metaLabel?: string; // ej “Todos los Jueves”
+
 };
 
 function normalizeActivities(activities: Activity[]): CalendarItem[] {
-    return (activities || []).map((a) => ({
-        kind: "activity",
-        id: String(a.id),
-        title: a.title,
-        href: `/activities/${a.id}`,
-        start_at: a.start_at,
-        end_at: a.end_at,
-        timeLabel: a?.schedule?.time || "",
-        capacity: Number(a.capacity ?? 0),
-        enrolled: Number(a.enrolled ?? 0),
-        category: a.category,
-    }));
+    return (activities || []).map((a) => {
+        const isRec = !!a.is_recurring && !!a.recurrence?.byWeekday?.length;
+        const recLabel = isRec ? recurrenceLabel(a.recurrence?.byWeekday) : "";
+
+        return {
+            kind: "activity",
+            id: String(a.id),
+            title: a.title,
+            href: `/activities/${a.id}`,
+            start_at: a.start_at,
+            end_at: a.end_at,
+            timeLabel: a?.schedule?.time || "",
+            capacity: Number(a.capacity ?? 0),
+            enrolled: Number(a.enrolled ?? 0),
+            category: a.category,
+
+            is_recurring: !!a.is_recurring,
+            recurrence: (a.recurrence ?? null) as any,
+
+            // ✅ ahora sí existe
+            metaLabel: recLabel || undefined,
+        };
+    });
 }
+
 
 function normalizeEvents(
     events: Event[],
@@ -175,17 +203,65 @@ function normalizeEvents(
     });
 }
 
-/* ---------- Rango: ¿el item está vigente este día? ---------- */
+function normalizeByWeekday(raw?: number[]) {
+    if (!raw?.length) return [];
+
+    const arr = raw.filter((n) => Number.isFinite(n)) as number[];
+    const min = Math.min(...arr);
+    const max = Math.max(...arr);
+
+    // Caso A: viene 1..7 (Lun=1..Dom=7)
+    if (min >= 1 && max <= 7) {
+        return arr.map((v) => (v + 6) % 7); // 1->0 ... 7->6
+    }
+
+    // Caso B: viene 0..6
+    // Si incluye 0 y 6, es ambiguo; si NO incluye 1 suele ser Monday0 (Lun=0)
+    const has0 = arr.includes(0);
+    const has1 = arr.includes(1);
+
+    // Si parece Monday0, no tocamos
+    if (has0 && !has1) return arr;
+
+    // Si parece JS getDay() (Dom=0), convertimos a Monday0
+    return arr.map((v) => (v + 6) % 7);
+}
+
+
+function weekdayMonday0(date: Date) {
+    // Lun=0 ... Dom=6
+    return (date.getDay() + 6) % 7;
+}
+
 function isInDateRange(day: Date, it: CalendarItem) {
     const d = dateOnlyLocal(day);
+
     const start = it.start_at ? dateOnlyLocal(it.start_at) : undefined;
     const end = it.end_at ? dateOnlyLocal(it.end_at) : undefined;
 
+    // --- Recurrencia ---
+    if (it.kind === "activity" && it.is_recurring && it.recurrence?.byWeekday?.length) {
+        const untilISO = it.recurrence?.until ?? null;
+        const until = untilISO ? dateOnlyLocal(untilISO) : null;
+
+        if (!start) return false;
+        if (d.getTime() < start.getTime()) return false;
+        if (until && d.getTime() > until.getTime()) return false;
+
+        const wd = weekdayMonday0(d);
+        const norm = normalizeByWeekday(it.recurrence.byWeekday);
+
+        return norm.includes(wd);
+    }
+
+
+    // --- Caso normal por rango ---
     if (!start && !end) return false;
     const from = start ?? end!;
     const to = end ?? start!;
     return d.getTime() >= from.getTime() && d.getTime() <= to.getTime();
 }
+
 
 /* ---------- Filtrado/orden del día ---------- */
 function itemsForDay(all: CalendarItem[], day: Date) {
@@ -193,6 +269,21 @@ function itemsForDay(all: CalendarItem[], day: Date) {
         .filter((it) => isInDateRange(day, it))
         .sort((a, b) => parseStartMinutes(a.timeLabel) - parseStartMinutes(b.timeLabel));
 }
+
+const WEEKDAYS_FULL = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
+function recurrenceLabel(byWeekday?: number[]) {
+    const norm = normalizeByWeekday(byWeekday);
+    if (!norm.length) return "";
+
+    const days = [...norm].sort((a, b) => a - b).map((i) => WEEKDAYS_FULL[i]);
+    if (days.length === 1) return `Todos los ${days[0]}`;
+
+    const last = days.pop();
+    return `Todos los ${days.join(", ")} y ${last}`;
+}
+
+
 
 /* ===================================================================== */
 
@@ -240,8 +331,22 @@ export default function ActivitiesCalendar({
         const year = anchor.getFullYear();
         const month = anchor.getMonth();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        return Array.from({ length: daysInMonth }, (_, i) => addDays(first, i));
+
+        const firstW = weekdayMonday0(first); // 0..6 (Lun..Dom)
+        const cells: (Date | null)[] = [];
+
+        // padding inicial
+        for (let i = 0; i < firstW; i++) cells.push(null);
+
+        // días del mes
+        for (let i = 0; i < daysInMonth; i++) cells.push(addDays(first, i));
+
+        // padding final para completar filas de 7
+        while (cells.length % 7 !== 0) cells.push(null);
+
+        return cells;
     }, [anchor]);
+
 
     // Navegación
     const goPrev = () => {
@@ -429,7 +534,15 @@ function CalendarChip({ it }: { it: CalendarItem }) {
                 </div>
 
                 <div className="mt-1 flex items-center justify-between text-[12px] text-boa-ink/70">
-                    <span className="tabular-nums">{it.timeLabel}</span>
+                    <div className="flex flex-col leading-tight">
+                        {it.metaLabel ? (
+                            <span className="text-[11px] font-medium text-boa-ink/70">
+                                {it.metaLabel}
+                            </span>
+                        ) : null}
+                        <span className="tabular-nums">{it.timeLabel}</span>
+                    </div>
+
 
                     <span className="inline-flex items-center">
                         <Users className="h-3.5 w-3.5 mr-1 text-boa-green" />
@@ -592,7 +705,7 @@ function MonthView({
     items,
     MAX_MONTH_ITEMS,
 }: {
-    monthGrid: Date[];
+    monthGrid: (Date | null)[];
     items: CalendarItem[];
     MAX_MONTH_ITEMS: number;
 }) {
@@ -619,6 +732,14 @@ function MonthView({
 
             <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
                 {monthGrid.map((d, i) => {
+                    if (!d) {
+                        return (
+                            <div
+                                key={i}
+                                className="min-h-[86px] sm:min-h-[112px] rounded-xl p-2 ring-1 bg-transparent ring-transparent"
+                            />
+                        );
+                    }
                     const all = itemsForDay(items, d);
                     const hasActivity = all.some((x) => x.kind === "activity");
                     const hasEvent = all.some((x) => x.kind === "event");

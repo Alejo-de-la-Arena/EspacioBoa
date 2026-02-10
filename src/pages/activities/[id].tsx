@@ -58,6 +58,8 @@ type ActivityDb = {
     hero_image: string | null;
     gallery: any | null; // jsonb
     featured: boolean | null;
+    is_recurring?: boolean | null;
+    recurrence?: { byWeekday?: number[]; until?: string | null } | null;
 };
 
 type UiActivity = {
@@ -73,6 +75,11 @@ type UiActivity = {
     location: string | null;
     enrolled: number;
     capacity: number;
+    is_recurring?: boolean;
+    recurrence?: { byWeekday?: number[]; until?: string | null } | null;
+    start_at?: string | null;
+    end_at?: string | null;
+
 };
 
 function toDayTime(iso?: string | null) {
@@ -101,6 +108,40 @@ function toDayTime(iso?: string | null) {
     return { day: dayWithDate, time };
 }
 
+const WEEKDAYS_FULL = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
+function normalizeByWeekday(raw?: number[]) {
+    if (!raw?.length) return [];
+
+    const arr = raw.filter((n) => Number.isFinite(n)) as number[];
+
+    const min = Math.min(...arr);
+    const max = Math.max(...arr);
+
+    // Caso A: viene 1..7 (Lun=1, Dom=7)
+    if (min >= 1 && max <= 7) {
+        return arr.map((v) => (v + 6) % 7); // 1->0 ... 7->6
+    }
+
+    // Caso B: viene 0..6 pero Dom=0 (JS getDay)
+    // Convertimos a Monday0: Dom0->6, Lun1->0, ... Sáb6->5
+    return arr.map((v) => (v + 6) % 7);
+}
+
+
+function recurrenceLabel(byWeekday?: number[]) {
+    const norm = normalizeByWeekday(byWeekday);
+    if (!norm.length) return "";
+
+    const days = [...norm].sort((a, b) => a - b).map((i) => WEEKDAYS_FULL[i]);
+    if (days.length === 1) return `Todos los ${days[0]}`;
+
+    const last = days.pop();
+    return `Todos los ${days.join(", ")} y ${last}`;
+}
+
+
+
 
 function mapDbToUi(row: ActivityDb, enrolled = 0): UiActivity {
     const galleryArr: string[] = Array.isArray(row.gallery)
@@ -108,9 +149,14 @@ function mapDbToUi(row: ActivityDb, enrolled = 0): UiActivity {
         : row.gallery
             ? [String(row.gallery)]
             : [];
+
     const hero = row.hero_image || galleryArr[0] || null;
     const images = hero ? [hero, ...galleryArr.filter((u) => u !== hero)] : galleryArr;
+
     const { day, time } = toDayTime(row.start_at);
+
+    const is_recurring = !!row.is_recurring;
+    const recurrence = (row.recurrence ?? null) as any;
 
     return {
         id: row.id,
@@ -125,8 +171,13 @@ function mapDbToUi(row: ActivityDb, enrolled = 0): UiActivity {
         location: row.location,
         enrolled,
         capacity: row.capacity ?? 0,
+        is_recurring,
+        recurrence,
+        start_at: row.start_at,
+        end_at: row.end_at,
     };
 }
+
 
 /* ---------- hook: cargar y escuchar un detalle ---------- */
 function useActivityDetail(activityId?: string) {
@@ -151,7 +202,7 @@ function useActivityDetail(activityId?: string) {
         const { data, error } = await supabase
             .from("activities")
             .select(
-                "id,title,description,start_at,end_at,capacity,price,is_published,category,location,hero_image,gallery,featured"
+                "id,title,description,start_at,end_at,capacity,price,is_published,category,location,hero_image,gallery,featured,is_recurring,recurrence"
             )
             .eq("id", activityId)
             .maybeSingle();
@@ -473,11 +524,33 @@ export default function ActivityDetailPage() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6 text-boa-ink/80">
                                 <div className="flex items-center">
                                     <Calendar className="h-5 w-5 mr-3 text-boa-green" />
-                                    {activity.schedule.day}
+
+                                    {activity.is_recurring && activity.recurrence?.byWeekday?.length ? (
+                                        <div className="flex flex-col leading-tight">
+                                            <span className="font-semibold">{recurrenceLabel(activity.recurrence.byWeekday)}</span>
+                                            {/* opcional: mostrar desde cuándo arranca */}
+                                            {activity.start_at ? (
+                                                <span className="text-[12px] text-boa-ink/60">
+                                                    Desde {new Date(activity.start_at).toLocaleDateString("es-AR")}
+                                                </span>
+                                            ) : null}
+                                        </div>
+                                    ) : (
+                                        activity.schedule.day
+                                    )}
                                 </div>
+
                                 <div className="flex items-center">
                                     <Clock className="h-5 w-5 mr-3 text-boa-green" />
-                                    {activity.schedule.time}
+                                    <div className="flex items-center">
+                                        <Clock className="h-5 w-5 mr-3 text-boa-green" />
+                                        {activity.is_recurring
+                                            ? (activity.recurrence as any)?.startTime && (activity.recurrence as any)?.endTime
+                                                ? `${(activity.recurrence as any).startTime} - ${(activity.recurrence as any).endTime}`
+                                                : activity.schedule.time
+                                            : activity.schedule.time}
+                                    </div>
+
                                 </div>
                                 <div className="flex items-center">
                                     <MapPin className="h-5 w-5 mr-3 text-boa-green" />

@@ -25,6 +25,31 @@ import { motion, useInView } from "framer-motion";
 
 const DAYS_ORDER = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
+const WEEKDAYS_FULL = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
+function normalizeByWeekday(raw?: number[]) {
+    if (!raw?.length) return [];
+
+    const arr = raw.filter((n) => Number.isFinite(n)) as number[];
+    const min = Math.min(...arr);
+    const max = Math.max(...arr);
+
+    if (min >= 1 && max <= 7) return arr.map((v) => (v + 6) % 7);
+    return arr.map((v) => (v + 6) % 7);
+}
+
+function recurrenceLabel(byWeekday?: number[]) {
+    const norm = normalizeByWeekday(byWeekday);
+    if (!norm.length) return "";
+
+    const days = [...norm].sort((a, b) => a - b).map((i) => WEEKDAYS_FULL[i]);
+    if (days.length === 1) return `Todos los ${days[0]}`;
+
+    const last = days.pop();
+    return `Todos los ${days.join(", ")} y ${last}`;
+}
+
+
 const headerVariants = {
     hidden: { opacity: 0, y: 8 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
@@ -50,6 +75,13 @@ const cardVariants = {
 };
 
 function formatActivityDayWithDate(a: Activity) {
+    // ✅ Si es recurrente, mostramos "Todos los X"
+    const byWeekday = (a as any)?.recurrence?.byWeekday as number[] | undefined;
+    const isRec = Boolean((a as any)?.is_recurring) && Array.isArray(byWeekday) && byWeekday.length > 0;
+
+    if (isRec) return recurrenceLabel(byWeekday);
+
+    // ✅ Si no es recurrente, usamos fecha real (como ya hacías)
     if (!a.start_at) return a.schedule.day;
 
     const d = new Date(a.start_at);
@@ -61,8 +93,9 @@ function formatActivityDayWithDate(a: Activity) {
     const day = String(d.getDate()).padStart(2, "0");
     const month = String(d.getMonth() + 1).padStart(2, "0");
 
-    return `${prettyWeekday} ${day}/${month}`; // Ej: "Miércoles 27/12"
+    return `${prettyWeekday} ${day}/${month}`;
 }
+
 
 
 export default function Activities({ activities }: { activities: Activity[] }) {
@@ -311,7 +344,7 @@ export default function Activities({ activities }: { activities: Activity[] }) {
                                             </div>
                                         </div>
 
-                                        <div className="hidden sm:grid grid-cols-[1fr_auto_1fr] items-center text-[13px] text-white/90">
+                                        <div className="hidden sm:grid grid-cols-[1fr_auto_1fr] items-center gap-x-6 text-[12px] text-white/90">
                                             <div className="flex items-center justify-start">
                                                 <Calendar className="h-4 w-4 mr-2" />
                                                 {formatActivityDayWithDate(a)}

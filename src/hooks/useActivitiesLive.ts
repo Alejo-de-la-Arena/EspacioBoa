@@ -28,6 +28,10 @@ type Row = {
     hero_image?: string | null;
     gallery?: any;
     featured?: boolean | null;
+
+    is_recurring?: boolean | null;
+    recurrence?: { byWeekday?: number[]; until?: string | null } | null;
+
 };
 
 function deriveScheduleFromStart(startISO?: string | null) {
@@ -91,6 +95,9 @@ function mapRow(r: Row): Activity {
         is_published: r.is_published ?? undefined,
         hero_image: r.hero_image ?? undefined,
         gallery,
+        is_recurring: !!r.is_recurring,
+        recurrence: (r.recurrence ?? null) as any,
+
     };
 }
 
@@ -122,8 +129,9 @@ async function fetchActivitiesOnce(publishedOnly: boolean): Promise<Activity[]> 
 
     const { data: extraData, error: extraError } = await supabase
         .from("activities")
-        .select("id, category, location, hero_image, gallery, featured")
+        .select("id, category, location, hero_image, gallery, featured, is_recurring, recurrence")
         .in("id", ids);
+
 
     if (extraError) {
         // no rompemos todo si falla, solo logueamos y seguimos con lo básico

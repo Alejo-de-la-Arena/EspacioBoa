@@ -60,6 +60,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(400).json({ error: "title is required", request_id });
         }
 
+        // Recurrencia (validación mínima)
+        const is_recurring = !!p.is_recurring;
+        const recurrence =
+            p.recurrence && typeof p.recurrence === "object" ? p.recurrence : null;
+
+        if (is_recurring) {
+            const by = Array.isArray(recurrence?.byWeekday) ? recurrence.byWeekday : [];
+            if (!by.length) {
+                return res.status(400).json({
+                    error: "recurrence.byWeekday is required when is_recurring=true",
+                    request_id,
+                });
+            }
+        }
+
+
         const row = {
             slug: p.slug ?? null,
             title: String(p.title).trim(),
@@ -74,6 +90,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             hero_image: p.hero_image ?? null,
             gallery: Array.isArray(p.gallery) ? p.gallery : [],
             featured: !!p.featured,
+            is_recurring: !!p.is_recurring,
+            recurrence: p.recurrence ?? null,
             created_by: userId,
         };
 

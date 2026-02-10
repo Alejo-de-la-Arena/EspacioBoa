@@ -27,6 +27,8 @@ type ActivityDb = {
     created_by: string | null;
     created_at?: string | null;
     updated_at?: string | null;
+    is_recurring: boolean | null;
+    recurrence: any | null;
 };
 
 function slugify(s: string) {
@@ -211,6 +213,13 @@ export default function AdminActivities() {
     const [gallery, setGallery] = React.useState("");
     const [featured, setFeatured] = React.useState(false);
 
+    const [isRecurring, setIsRecurring] = React.useState(false);
+    const [recurringDays, setRecurringDays] = React.useState<number[]>([]);
+    const [recurringUntil, setRecurringUntil] = React.useState(""); // yyyy-mm-dd
+    const [recurringStartTime, setRecurringStartTime] = React.useState("09:00");
+    const [recurringEndTime, setRecurringEndTime] = React.useState("10:00");
+
+
     // === guards / refs ===
     const subscribedRef = React.useRef(false);
     const unWireAuthRef = React.useRef<null | (() => void)>(null);
@@ -377,6 +386,11 @@ export default function AdminActivities() {
         setHeroImage("");
         setGallery("");
         setFeatured(false);
+        setIsRecurring(false);
+        setRecurringDays([]);
+        setRecurringUntil("");
+        setRecurringStartTime("09:00");
+        setRecurringEndTime("10:00");
     }
 
     function openCreate() {
@@ -400,6 +414,11 @@ export default function AdminActivities() {
         setGallery(Array.isArray(r.gallery) ? r.gallery.join(", ") : (r.gallery ?? ""));
         setFeatured(Boolean(r.featured));
         setOpen(true);
+        setIsRecurring(Boolean(r.is_recurring));
+        setRecurringDays(Array.isArray(r.recurrence?.byWeekday) ? r.recurrence.byWeekday : []);
+        setRecurringUntil(r.recurrence?.until ?? "");
+        setRecurringStartTime(r.recurrence?.startTime ?? "09:00");
+        setRecurringEndTime(r.recurrence?.endTime ?? "10:00");
     }
 
     // ===== Cola: drain =====
@@ -475,20 +494,61 @@ export default function AdminActivities() {
             toast({ title: "Campos requeridos", description: "El título es obligatorio.", variant: "destructive" });
             return;
         }
-        if (!startAt) {
-            toast({ title: "Campos requeridos", description: "El inicio es obligatorio.", variant: "destructive" });
-            return;
+        if (!isRecurring) {
+            if (!startAt) {
+                toast({ title: "Campos requeridos", description: "El inicio es obligatorio.", variant: "destructive" });
+                return;
+            }
+            if (!endAt) {
+                toast({ title: "Campos requeridos", description: "El fin es obligatorio.", variant: "destructive" });
+                return;
+            }
+            if (new Date(endAt) < new Date(startAt)) {
+                toast({ title: "Fechas inválidas", description: "El fin no puede ser anterior al inicio.", variant: "destructive" });
+                return;
+            }
         }
-        if (!endAt) {
-            toast({ title: "Campos requeridos", description: "El fin es obligatorio.", variant: "destructive" });
-            return;
+
+        if (isRecurring && recurringStartTime && recurringEndTime) {
+            if (recurringEndTime <= recurringStartTime) {
+                toast({
+                    title: "Horas inválidas",
+                    description: "La hora fin debe ser posterior a la hora inicio.",
+                    variant: "destructive",
+                });
+                return;
+            }
         }
-        if (new Date(endAt) < new Date(startAt)) {
-            toast({ title: "Fechas inválidas", description: "El fin no puede ser anterior al inicio.", variant: "destructive" });
+
+        if (isRecurring && recurringDays.length === 0) {
+            toast({
+                title: "Recurrencia incompleta",
+                description: "Seleccioná al menos un día de la semana.",
+                variant: "destructive",
+            });
             return;
         }
 
+
         setSaving(true);
+
+        const now = new Date();
+
+        function isoFromDateAndTime(d: Date, hhmm: string) {
+            const [hh, mm] = (hhmm || "00:00").split(":").map(Number);
+            const x = new Date(d);
+            x.setHours(hh || 0, mm || 0, 0, 0);
+            return x.toISOString();
+        }
+
+        const anchorStartISO = isRecurring
+            ? isoFromDateAndTime(startAt ? new Date(startAt) : now, recurringStartTime)
+            : new Date(startAt).toISOString();
+
+        const anchorEndISO = isRecurring
+            ? isoFromDateAndTime(startAt ? new Date(startAt) : now, recurringEndTime)
+            : new Date(endAt).toISOString();
+
 
         const request_id = crypto.randomUUID();
         const payload = {
@@ -497,8 +557,8 @@ export default function AdminActivities() {
             slug: (slug || slugify(title)) || null,
             title,
             description: description || null,
-            start_at: new Date(startAt).toISOString(),
-            end_at: new Date(endAt).toISOString(),
+            start_at: anchorStartISO,
+            end_at: anchorEndISO,
             capacity: capacity ? Number(capacity) : null,
             price: price ? Number(price) : null,
             is_published: !!isPublished,
@@ -507,6 +567,16 @@ export default function AdminActivities() {
             hero_image: heroImage || null,
             gallery: gallery ? gallery.split(",").map((s) => s.trim()).filter(Boolean) : [],
             featured: !!featured,
+            is_recurring: !!isRecurring,
+            recurrence: isRecurring
+                ? {
+                    freq: "weekly",
+                    byWeekday: recurringDays.slice().sort((a, b) => a - b), // Monday0
+                    until: recurringUntil || null,
+                    startTime: recurringStartTime,
+                    endTime: recurringEndTime,
+                }
+                : null,
         };
 
         // encolo y proceso
@@ -660,20 +730,107 @@ export default function AdminActivities() {
                                     <label className="text-sm">Inicio *</label>
                                     <input
                                         type="datetime-local"
-                                        className="border rounded px-3 py-2"
+                                        className={`border rounded px-3 py-2 ${isRecurring ? "bg-neutral-100 text-neutral-500" : ""}`}
                                         value={startAt}
                                         onChange={(e) => setStartAt(e.target.value)}
+                                        disabled={isRecurring}
                                     />
                                 </div>
                                 <div className="grid gap-1">
                                     <label className="text-sm">Fin</label>
                                     <input
                                         type="datetime-local"
-                                        className="border rounded px-3 py-2"
+                                        className={`border rounded px-3 py-2 ${isRecurring ? "bg-neutral-100 text-neutral-500" : ""}`}
                                         value={endAt}
                                         onChange={(e) => setEndAt(e.target.value)}
+                                        disabled={isRecurring}
                                     />
                                 </div>
+
+                                <div className="sm:col-span-2 rounded-xl border p-3">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            id="rec"
+                                            type="checkbox"
+                                            checked={isRecurring}
+                                            onChange={(e) => setIsRecurring(e.target.checked)}
+                                        />
+                                        <label htmlFor="rec" className="text-sm font-medium">
+                                            Repetir semanalmente
+                                        </label>
+                                    </div>
+
+                                    {isRecurring && (
+                                        <div className="mt-3 grid gap-3">
+                                            <div className="flex flex-wrap gap-2">
+                                                {[
+                                                    { k: 1, l: "Lun" },
+                                                    { k: 2, l: "Mar" },
+                                                    { k: 3, l: "Mié" },
+                                                    { k: 4, l: "Jue" },
+                                                    { k: 5, l: "Vie" },
+                                                    { k: 6, l: "Sáb" },
+                                                    { k: 0, l: "Dom" },
+                                                ].map((d) => {
+                                                    const active = recurringDays.includes(d.k);
+                                                    return (
+                                                        <button
+                                                            key={d.k}
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setRecurringDays((prev) =>
+                                                                    active ? prev.filter((x) => x !== d.k) : [...prev, d.k]
+                                                                )
+                                                            }
+                                                            className={[
+                                                                "h-9 px-3 rounded-full text-sm ring-1 transition",
+                                                                active
+                                                                    ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
+                                                                    : "bg-white text-neutral-700 ring-neutral-200 hover:bg-neutral-50",
+                                                            ].join(" ")}
+                                                        >
+                                                            {d.l}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-[340px]">
+                                                <div className="grid gap-1">
+                                                    <label className="text-sm">Hora inicio</label>
+                                                    <input
+                                                        type="time"
+                                                        className="border rounded px-3 py-2"
+                                                        value={recurringStartTime}
+                                                        onChange={(e) => setRecurringStartTime(e.target.value)}
+                                                    />
+                                                </div>
+
+                                                <div className="grid gap-1">
+                                                    <label className="text-sm">Hora fin</label>
+                                                    <input
+                                                        type="time"
+                                                        className="border rounded px-3 py-2"
+                                                        value={recurringEndTime}
+                                                        onChange={(e) => setRecurringEndTime(e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+
+
+                                            <div className="grid gap-1 max-w-[220px]">
+                                                <label className="text-sm">Hasta (opcional)</label>
+                                                <input
+                                                    type="date"
+                                                    className="border rounded px-3 py-2"
+                                                    value={recurringUntil}
+                                                    onChange={(e) => setRecurringUntil(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
 
                                 <div className="grid gap-1">
                                     <label className="text-sm">Cupo</label>
@@ -747,7 +904,15 @@ export default function AdminActivities() {
                                 <Button variant="outline" onClick={() => { setOpen(false); resetForm(); }}>
                                     Cancelar
                                 </Button>
-                                <Button onClick={save} disabled={saving || !title || !startAt}>
+                                <Button
+                                    onClick={save}
+                                    disabled={
+                                        saving ||
+                                        !title ||
+                                        (!isRecurring && !startAt) ||
+                                        (isRecurring && recurringDays.length === 0)
+                                    }
+                                >
                                     {saving ? "Guardando…" : "Guardar"}
                                 </Button>
                             </div>
