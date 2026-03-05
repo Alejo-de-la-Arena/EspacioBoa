@@ -153,6 +153,33 @@ async function postUpsertEvent(body: any) {
 }
 
 
+const LOCK_KEY = "boa_event_queue_lock_v1";
+
+function tryAcquireLock(tabId: string, ttlMs = 15_000) {
+    const now = Date.now();
+    try {
+        const raw = localStorage.getItem(LOCK_KEY);
+        const cur = raw ? JSON.parse(raw) : null;
+
+        // si hay lock vigente de otro tab, no tomarlo
+        if (cur?.until && cur.until > now && cur.tabId && cur.tabId !== tabId) return false;
+
+        // tomar lock
+        localStorage.setItem(LOCK_KEY, JSON.stringify({ tabId, until: now + ttlMs }));
+        return true;
+    } catch {
+        return true; // si falla localStorage, mejor intentar igual
+    }
+}
+
+function releaseLock(tabId: string) {
+    try {
+        const raw = localStorage.getItem(LOCK_KEY);
+        const cur = raw ? JSON.parse(raw) : null;
+        if (cur?.tabId === tabId) localStorage.removeItem(LOCK_KEY);
+    } catch { }
+}
+
 type QueueItem = {
     request_id: string;
     payload: any;
@@ -213,6 +240,8 @@ export default function AdminEvents() {
     // === guards / refs ===
     const subscribedRef = React.useRef(false); // evita suscripciones duplicadas en StrictMode
     const unWireAuthRef = React.useRef<null | (() => void)>(null);
+
+    const tabIdRef = React.useRef<string>(crypto.randomUUID());
 
     // bloquear scroll de fondo con modal abierto
     React.useEffect(() => {
@@ -387,6 +416,7 @@ export default function AdminEvents() {
 
     const drainQueue = React.useCallback(async () => {
         if (drainingRef.current) return;
+        if (!tryAcquireLock(tabIdRef.current)) return;
         drainingRef.current = true;
         try {
             // procesar de a 1 para mantener orden
@@ -403,6 +433,18 @@ export default function AdminEvents() {
                 }
                 const item = q[idx];
 
+                const MAX_AGE_MS = 2 * 60_000; // 2 minutos
+                const createdAt = item.payload?.__createdAt || now;
+                if (now - createdAt > MAX_AGE_MS) {
+                    dequeueById(item.request_id);
+                    toast({
+                        title: "Un evento quedó trabado",
+                        description: "Lo descarté para que no bloquee los siguientes. Volvé a guardarlo.",
+                        variant: "destructive",
+                    });
+                    continue;
+                }
+
                 try {
                     const res = await postUpsertEvent(item.payload);
                     // éxito
@@ -411,11 +453,27 @@ export default function AdminEvents() {
                     toast({ title: "Evento guardado" });
                     await loadList();
                 } catch (e: any) {
-                    // si es 401/403 intento refrescar sesión y repito una vez
-                    if (e?.status === 401 || e?.status === 403) {
+                    const status = e?.status;
+
+                    // ✅ errores definitivos: no reintentar
+                    if (status === 400 || status === 409) {
+                        dequeueById(item.request_id);
+
+                        toast({
+                            title: "No se pudo guardar el evento",
+                            description: e?.message || "Error de validación",
+                            variant: "destructive",
+                        });
+
+                        // seguir con el resto de la cola
+                        continue;
+                    }
+
+                    // 🔁 auth: reintento con refresh
+                    if (status === 401 || status === 403) {
                         try {
                             await supabase.auth.refreshSession();
-                            const res2 = await postUpsertEvent(item.payload);
+                            await postUpsertEvent(item.payload);
                             dequeueById(item.request_id);
                             toast({ title: "Evento guardado" });
                             await loadList();
@@ -423,18 +481,24 @@ export default function AdminEvents() {
                         } catch { }
                     }
 
-                    // calcular próximo backoff (máximo 5 min entre intentos)
+                    // 🌐 transitorio: backoff
                     const attempt = (item.attempt || 0) + 1;
-                    const backoffMs = Math.min(5 * 60_000, 2000 * Math.pow(2, attempt - 1)); // 2s,4s,8s,…
+                    const backoffMs = Math.min(5 * 60_000, 2000 * Math.pow(2, attempt - 1));
                     const next: QueueItem = { ...item, attempt, nextAt: Date.now() + backoffMs };
                     updateQueueItem(next);
 
-                    // no seguimos en este loop si falló: dejamos que el backoff corra
+                    toast({
+                        title: "No se pudo guardar en este intento",
+                        description: `${e?.message || "Error"} (${e?.status || "sin status"})`,
+                        variant: "destructive",
+                    });
+
                     break;
                 }
             }
         } finally {
             drainingRef.current = false;
+            releaseLock(tabIdRef.current);
         }
     }, [loadList, toast]);
 
@@ -457,6 +521,14 @@ export default function AdminEvents() {
         return () => clearInterval(t);
     }, [drainQueue]);
 
+    function toIsoFromDatetimeLocal(v: string) {
+        // v: "YYYY-MM-DDTHH:mm"
+        const [d, t] = v.split("T");
+        const [y, m, day] = d.split("-").map(Number);
+        const [hh, mm] = t.split(":").map(Number);
+        const x = new Date(y, (m || 1) - 1, day || 1, hh || 0, mm || 0, 0, 0);
+        return x.toISOString();
+    }
 
     async function save() {
         // validaciones
@@ -470,32 +542,45 @@ export default function AdminEvents() {
 
         setSaving(true);
 
-        const request_id = crypto.randomUUID();
-        const payload = {
-            request_id,
-            id: editingId ?? null,
-            slug: (slug || slugify(title)) || null,
-            title,
-            description: description || null,
-            start_at: new Date(startAt).toISOString(),
-            end_at: new Date(endAt).toISOString(),
-            capacity: capacity ? Number(capacity) : null,
-            price: price ? Number(price) : null,
-            is_published: !!isPublished,
-            category: category || null,
-            location: location || null,
-            hero_image: heroImage || null,
-            featured: !!featured,
-        };
+        try {
+            const request_id = crypto.randomUUID();
+            const payload = {
+                request_id,
+                id: editingId ?? null,
+                slug: (slug || slugify(title)) || null,
+                title,
+                description: description || null,
+                start_at: toIsoFromDatetimeLocal(startAt),
+                end_at: toIsoFromDatetimeLocal(endAt),
+                capacity: capacity ? Number(capacity) : null,
+                price: price ? Number(price) : null,
+                is_published: !!isPublished,
+                category: category || null,
+                location: location || null,
+                hero_image: heroImage || null,
+                featured: !!featured,
+                __createdAt: Date.now(),
+            };
 
-        // encolo y proceso
-        enqueue({ request_id, payload, attempt: 0, nextAt: Date.now() });
-        setOpen(false);
-        resetForm();
-        toast({ title: "Guardando…", description: "Se está enviando. Si hay cortes o cambiás de pestaña, lo reintento automáticamente." });
+            enqueue({ request_id, payload, attempt: 0, nextAt: Date.now() });
+            setOpen(false);
+            resetForm();
 
-        await drainQueue(); // primer intento inmediato
-        setSaving(false);
+            toast({
+                title: "Guardando…",
+                description: "Se está enviando. Si hay cortes o cambiás de pestaña, lo reintento automáticamente.",
+            });
+
+            await drainQueue();
+        } catch (err: any) {
+            toast({
+                title: "Error al guardar",
+                description: err?.message || "No se pudo guardar el evento.",
+                variant: "destructive",
+            });
+        } finally {
+            setSaving(false);
+        }
     }
 
 
