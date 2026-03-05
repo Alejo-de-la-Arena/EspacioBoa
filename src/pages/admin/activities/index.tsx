@@ -443,8 +443,25 @@ export default function AdminActivities() {
                     toast({ title: "Actividad guardada" });
                     await loadList();
                 } catch (e: any) {
-                    // reintento tras refresh si es auth
-                    if (e?.status === 401 || e?.status === 403) {
+                    const status = e?.status;
+
+                    // ✅ Errores "definitivos": payload inválido / constraint DB / etc.
+                    // No tiene sentido reintentar: avisamos, sacamos de la cola y seguimos.
+                    if (status === 400 || status === 409) {
+                        dequeueById(item.request_id);
+
+                        toast({
+                            title: "No se pudo guardar la actividad",
+                            description: e?.message || "Error de validación",
+                            variant: "destructive",
+                        });
+
+                        // importante: seguimos para que otras actividades en cola no queden trabadas
+                        continue;
+                    }
+
+                    // 🔁 Auth: reintento con refresh
+                    if (status === 401 || status === 403) {
                         try {
                             await supabase.auth.refreshSession();
                             await postUpsertActivity(item.payload);
@@ -454,12 +471,20 @@ export default function AdminActivities() {
                             continue;
                         } catch { }
                     }
-                    // backoff exponencial hasta 5 min
+
+                    // 🌐 Backoff para fallas transitorias (red/500/etc.)
                     const attempt = (item.attempt || 0) + 1;
-                    const backoffMs = Math.min(5 * 60_000, 2000 * Math.pow(2, attempt - 1)); // 2s,4s,8s,…
+                    const backoffMs = Math.min(5 * 60_000, 2000 * Math.pow(2, attempt - 1));
                     const next: QueueItem = { ...item, attempt, nextAt: Date.now() + backoffMs };
                     updateQueueItem(next);
-                    break; // salir del loop hasta que venza el backoff
+
+                    toast({
+                        title: "Error temporal guardando",
+                        description: "Lo voy a reintentar automáticamente.",
+                        variant: "destructive",
+                    });
+
+                    break;
                 }
             }
         } finally {

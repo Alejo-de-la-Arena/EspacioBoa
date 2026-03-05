@@ -92,7 +92,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             featured: !!p.featured,
             is_recurring: !!p.is_recurring,
             recurrence: p.recurrence ?? null,
-            created_by: userId,
         };
 
         // Upsert
@@ -117,9 +116,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 .insert(row)
                 .select("*")
                 .maybeSingle();
+
             if (error) {
-                log("400 insert error", error);
-                return res.status(400).json({ error: error.message, request_id });
+                log("insert error", error);
+
+                // ✅ si es slug duplicado, devolver 409
+                const msg = (error as any)?.message || "";
+                if (msg.toLowerCase().includes("duplicate") && msg.toLowerCase().includes("slug")) {
+                    return res.status(409).json({ error: "Slug ya existe. Cambiá el slug o el título.", request_id });
+                }
+
+                return res.status(400).json({ error: msg, request_id });
             }
             result = data;
         }
