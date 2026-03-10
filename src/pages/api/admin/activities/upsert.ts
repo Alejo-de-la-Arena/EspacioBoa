@@ -73,6 +73,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     request_id,
                 });
             }
+
+            const perDaySchedule =
+                recurrence?.perDaySchedule && typeof recurrence.perDaySchedule === "object"
+                    ? recurrence.perDaySchedule
+                    : null;
+
+            if (perDaySchedule) {
+                for (const day of by) {
+                    const cfg = perDaySchedule[day];
+                    if (!cfg?.startTime || !cfg?.endTime) {
+                        return res.status(400).json({
+                            error: `perDaySchedule incompleto para el día ${day}`,
+                            request_id,
+                        });
+                    }
+                    if (cfg.endTime <= cfg.startTime) {
+                        return res.status(400).json({
+                            error: `Horario inválido en perDaySchedule para el día ${day}`,
+                            request_id,
+                        });
+                    }
+                }
+            } else {
+                if (!recurrence?.startTime || !recurrence?.endTime) {
+                    return res.status(400).json({
+                        error: "recurrence.startTime y recurrence.endTime son requeridos si no hay perDaySchedule",
+                        request_id,
+                    });
+                }
+                if (recurrence.endTime <= recurrence.startTime) {
+                    return res.status(400).json({
+                        error: "recurrence.endTime debe ser posterior a recurrence.startTime",
+                        request_id,
+                    });
+                }
+            }
         }
 
 

@@ -126,7 +126,13 @@ type CalendarItem = {
     category?: string;
 
     is_recurring?: boolean;
-    recurrence?: { byWeekday?: number[]; until?: string | null } | null;
+    recurrence?: {
+        byWeekday?: number[];
+        until?: string | null;
+        startTime?: string | null;
+        endTime?: string | null;
+        perDaySchedule?: Record<number, { startTime: string; endTime: string }> | null;
+    } | null;
 
     metaLabel?: string; // ej “Todos los Jueves”
 
@@ -267,7 +273,7 @@ function isInDateRange(day: Date, it: CalendarItem) {
 function itemsForDay(all: CalendarItem[], day: Date) {
     return all
         .filter((it) => isInDateRange(day, it))
-        .sort((a, b) => parseStartMinutes(a.timeLabel) - parseStartMinutes(b.timeLabel));
+        .sort((a, b) => getItemStartMinutesForDate(a, day) - getItemStartMinutesForDate(b, day));
 }
 
 const WEEKDAYS_FULL = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -283,6 +289,66 @@ function recurrenceLabel(byWeekday?: number[]) {
     return `Todos los ${days.join(", ")} y ${last}`;
 }
 
+function getMonday0FromDate(date: Date) {
+    return (date.getDay() + 6) % 7;
+}
+
+function getRecurringTimeRangeForDate(
+    recurrence:
+        | {
+            startTime?: string | null;
+            endTime?: string | null;
+            perDaySchedule?: Record<number, { startTime: string; endTime: string }> | null;
+        }
+        | null
+        | undefined,
+    date: Date
+) {
+    if (!recurrence) return { startTime: "", endTime: "" };
+
+    const day = getMonday0FromDate(date);
+    const perDay = recurrence.perDaySchedule?.[day];
+
+    if (perDay?.startTime && perDay?.endTime) {
+        return {
+            startTime: perDay.startTime,
+            endTime: perDay.endTime,
+        };
+    }
+
+    return {
+        startTime: recurrence.startTime || "",
+        endTime: recurrence.endTime || "",
+    };
+}
+
+function formatRecurringTimeLabel(
+    recurrence:
+        | {
+            startTime?: string | null;
+            endTime?: string | null;
+            perDaySchedule?: Record<number, { startTime: string; endTime: string }> | null;
+        }
+        | null
+        | undefined,
+    date: Date
+) {
+    const { startTime, endTime } = getRecurringTimeRangeForDate(recurrence, date);
+    if (!startTime && !endTime) return "";
+    if (startTime && endTime) return `${startTime} - ${endTime}`;
+    return startTime || endTime || "";
+}
+
+function getItemTimeLabelForDate(it: CalendarItem, day: Date) {
+    if (it.kind === "activity" && it.is_recurring && it.recurrence?.byWeekday?.length) {
+        return formatRecurringTimeLabel(it.recurrence, day);
+    }
+    return it.timeLabel || "";
+}
+
+function getItemStartMinutesForDate(it: CalendarItem, day: Date) {
+    return parseStartMinutes(getItemTimeLabelForDate(it, day));
+}
 
 
 /* ===================================================================== */
@@ -491,11 +557,13 @@ export default function ActivitiesCalendar({
 
 /* -------------------- Subcomponentes -------------------- */
 
-function CalendarChip({ it }: { it: CalendarItem }) {
+function CalendarChip({ it, day }: { it: CalendarItem; day?: Date }) {
     const full = it.capacity > 0 ? it.enrolled >= it.capacity : false;
 
     const isEvent = it.kind === "event";
     const badge = isEvent ? "Evento" : "Actividad";
+
+    const resolvedTimeLabel = day ? getItemTimeLabelForDate(it, day) : it.timeLabel;
 
     const shell = isEvent
         ? full
@@ -540,7 +608,7 @@ function CalendarChip({ it }: { it: CalendarItem }) {
                                 {it.metaLabel}
                             </span>
                         ) : null}
-                        <span className="tabular-nums">{it.timeLabel}</span>
+                        <span className="tabular-nums">{resolvedTimeLabel}</span>
                     </div>
 
 
@@ -595,7 +663,7 @@ function DayView({
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {dayItems.map((it) => (
-                        <CalendarChip key={`${it.kind}-${it.id}`} it={it} />
+                        <CalendarChip key={`${it.kind}-${it.id}`} it={it} day={date} />
                     ))}
                 </div>
             )}
@@ -645,7 +713,7 @@ function WeekView({
                                 {dayItems.length === 0 ? (
                                     <div className="text-[12px] text-boa-ink/50">—</div>
                                 ) : (
-                                    dayItems.map((it) => <CalendarChip key={`${it.kind}-${it.id}`} it={it} />)
+                                    dayItems.map((it) => <CalendarChip key={`${it.kind}-${it.id}`} it={it} day={d} />)
                                 )}
                                 {extra > 0 && <div className="text-[12px] text-boa-ink/60">+{extra} más</div>}
                             </div>
@@ -690,7 +758,7 @@ function DayModal({
                     ) : (
                         items.map((it) => (
                             <div key={`${it.kind}-${it.id}`} onClick={onClose}>
-                                <CalendarChip it={it} />
+                                <CalendarChip it={it} day={date} />
                             </div>
                         ))
                     )}
@@ -787,7 +855,7 @@ function MonthView({
 
                             <div className="hidden sm:block space-y-1.5">
                                 {dayItems.map((it) => (
-                                    <CalendarChip key={`${it.kind}-${it.id}`} it={it} />
+                                    <CalendarChip key={`${it.kind}-${it.id}`} it={it} day={d} />
                                 ))}
                                 {extra > 0 && <div className="text-[12px] text-boa-ink/60">+{extra} más</div>}
                             </div>

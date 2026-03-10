@@ -59,7 +59,13 @@ type ActivityDb = {
     gallery: any | null; // jsonb
     featured: boolean | null;
     is_recurring?: boolean | null;
-    recurrence?: { byWeekday?: number[]; until?: string | null } | null;
+    recurrence?: {
+        byWeekday?: number[];
+        until?: string | null;
+        startTime?: string | null;
+        endTime?: string | null;
+        perDaySchedule?: Record<number, { startTime: string; endTime: string }> | null;
+    } | null;
 };
 
 type UiActivity = {
@@ -76,7 +82,13 @@ type UiActivity = {
     enrolled: number;
     capacity: number;
     is_recurring?: boolean;
-    recurrence?: { byWeekday?: number[]; until?: string | null } | null;
+    recurrence?: {
+        byWeekday?: number[];
+        until?: string | null;
+        startTime?: string | null;
+        endTime?: string | null;
+        perDaySchedule?: Record<number, { startTime: string; endTime: string }> | null;
+    } | null;
     start_at?: string | null;
     end_at?: string | null;
 
@@ -140,8 +152,39 @@ function recurrenceLabel(byWeekday?: number[]) {
     return `Todos los ${days.join(", ")} y ${last}`;
 }
 
+function getRecurringScheduleLines(
+    recurrence?: {
+        byWeekday?: number[];
+        startTime?: string | null;
+        endTime?: string | null;
+        perDaySchedule?: Record<number, { startTime: string; endTime: string }> | null;
+    } | null
+) {
+    const rawDays = Array.isArray(recurrence?.byWeekday) ? recurrence!.byWeekday! : [];
+    if (!rawDays.length) return [];
 
+    return rawDays
+        .slice()
+        .sort((a, b) => a - b)
+        .map((rawDay) => {
+            // nombre visible del día usando el día normalizado
+            const normalizedDay = normalizeByWeekday([rawDay])[0];
+            const dayName = WEEKDAYS_FULL[normalizedDay];
 
+            // horario usando la key REAL guardada en perDaySchedule
+            const perDay = recurrence?.perDaySchedule?.[rawDay];
+
+            const start = perDay?.startTime ?? recurrence?.startTime ?? "";
+            const end = perDay?.endTime ?? recurrence?.endTime ?? "";
+
+            return {
+                dayName,
+                label: start && end ? `${dayName}: ${start} - ${end}` : dayName,
+                start,
+                end,
+            };
+        });
+}
 
 function mapDbToUi(row: ActivityDb, enrolled = 0): UiActivity {
     const galleryArr: string[] = Array.isArray(row.gallery)
@@ -408,6 +451,11 @@ export default function ActivityDetailPage() {
             ? [activity.image]
             : [];
 
+    const recurringScheduleLines =
+        activity.is_recurring && activity.recurrence?.byWeekday?.length
+            ? getRecurringScheduleLines(activity.recurrence)
+            : [];
+
     return (
         <section className="relative min-h-dvh">
             {/* BG crema */}
@@ -540,16 +588,29 @@ export default function ActivityDetailPage() {
                                     )}
                                 </div>
 
-                                <div className="flex items-center">
-                                    <Clock className="h-5 w-5 mr-3 text-boa-green" />
+                                <div className="flex items-start">
+                                    <Clock className="h-5 w-5 mr-3 mt-0.5 text-boa-green shrink-0" />
 
-                                    {activity.is_recurring
-                                        ? (activity.recurrence as any)?.startTime && (activity.recurrence as any)?.endTime
-                                            ? `${(activity.recurrence as any).startTime} - ${(activity.recurrence as any).endTime}`
-                                            : activity.schedule.time
-                                        : activity.schedule.time}
-
-
+                                    {activity.is_recurring ? (
+                                        <div className="flex flex-col leading-tight">
+                                            {recurringScheduleLines.length > 0 ? (
+                                                <div className="flex flex-col gap-1">
+                                                    {recurringScheduleLines.map((item) => (
+                                                        <div key={item.dayName} className="text-[13px] text-boa-ink/80 leading-tight">
+                                                            <span className="font-medium">{item.dayName}: </span>
+                                                            <span className="font-semibold">
+                                                                {item.start && item.end ? `${item.start} - ${item.end}` : "-"}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : activity.schedule.time ? (
+                                                <span>{activity.schedule.time}</span>
+                                            ) : null}
+                                        </div>
+                                    ) : (
+                                        <span>{activity.schedule.time}</span>
+                                    )}
                                 </div>
                                 <div className="flex items-center">
                                     <MapPin className="h-5 w-5 mr-3 text-boa-green" />

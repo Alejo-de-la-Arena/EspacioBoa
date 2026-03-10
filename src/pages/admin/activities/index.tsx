@@ -31,6 +31,13 @@ type ActivityDb = {
     recurrence: any | null;
 };
 
+type RecurringDaySchedule = {
+    startTime: string;
+    endTime: string;
+};
+
+type RecurringPerDaySchedule = Record<number, RecurringDaySchedule>;
+
 function slugify(s: string) {
     return s
         .normalize("NFD")
@@ -225,6 +232,9 @@ export default function AdminActivities() {
     const unWireAuthRef = React.useRef<null | (() => void)>(null);
     const drainingRef = React.useRef(false);
 
+    const [usePerDaySchedule, setUsePerDaySchedule] = React.useState(false);
+    const [perDaySchedule, setPerDaySchedule] = React.useState<RecurringPerDaySchedule>({});
+
     // bloquear scroll de fondo con modal abierto
     React.useEffect(() => {
         if (!open) return;
@@ -371,6 +381,48 @@ export default function AdminActivities() {
         };
     }, []);
 
+    const WEEKDAY_OPTIONS = [
+        { k: 1, l: "Lun" },
+        { k: 2, l: "Mar" },
+        { k: 3, l: "Mié" },
+        { k: 4, l: "Jue" },
+        { k: 5, l: "Vie" },
+        { k: 6, l: "Sáb" },
+        { k: 0, l: "Dom" },
+    ];
+
+    function ensureDaySchedule(day: number, baseStart?: string, baseEnd?: string) {
+        setPerDaySchedule((prev) => {
+            if (prev[day]) return prev;
+            return {
+                ...prev,
+                [day]: {
+                    startTime: baseStart || recurringStartTime || "09:00",
+                    endTime: baseEnd || recurringEndTime || "10:00",
+                },
+            };
+        });
+    }
+
+    function removeDaySchedule(day: number) {
+        setPerDaySchedule((prev) => {
+            const next = { ...prev };
+            delete next[day];
+            return next;
+        });
+    }
+
+    function updateDaySchedule(day: number, patch: Partial<RecurringDaySchedule>) {
+        setPerDaySchedule((prev) => ({
+            ...prev,
+            [day]: {
+                startTime: prev[day]?.startTime || recurringStartTime || "09:00",
+                endTime: prev[day]?.endTime || recurringEndTime || "10:00",
+                ...patch,
+            },
+        }));
+    }
+
     function resetForm() {
         setEditingId(null);
         setTitle("");
@@ -391,6 +443,8 @@ export default function AdminActivities() {
         setRecurringUntil("");
         setRecurringStartTime("09:00");
         setRecurringEndTime("10:00");
+        setUsePerDaySchedule(false);
+        setPerDaySchedule({});
     }
 
     function openCreate() {
@@ -413,12 +467,23 @@ export default function AdminActivities() {
         setHeroImage(r.hero_image ?? "");
         setGallery(Array.isArray(r.gallery) ? r.gallery.join(", ") : (r.gallery ?? ""));
         setFeatured(Boolean(r.featured));
+
         setOpen(true);
+
         setIsRecurring(Boolean(r.is_recurring));
-        setRecurringDays(Array.isArray(r.recurrence?.byWeekday) ? r.recurrence.byWeekday : []);
+
+        const byWeekday = Array.isArray(r.recurrence?.byWeekday) ? r.recurrence.byWeekday : [];
+        setRecurringDays(byWeekday);
         setRecurringUntil(r.recurrence?.until ?? "");
         setRecurringStartTime(r.recurrence?.startTime ?? "09:00");
         setRecurringEndTime(r.recurrence?.endTime ?? "10:00");
+
+        const existingPerDay = r.recurrence?.perDaySchedule && typeof r.recurrence.perDaySchedule === "object"
+            ? r.recurrence.perDaySchedule
+            : {};
+
+        setUsePerDaySchedule(Object.keys(existingPerDay).length > 0);
+        setPerDaySchedule(existingPerDay);
     }
 
     // ===== Cola: drain =====
@@ -534,7 +599,7 @@ export default function AdminActivities() {
             }
         }
 
-        if (isRecurring && recurringStartTime && recurringEndTime) {
+        if (isRecurring && !usePerDaySchedule && recurringStartTime && recurringEndTime) {
             if (recurringEndTime <= recurringStartTime) {
                 toast({
                     title: "Horas inválidas",
@@ -542,6 +607,28 @@ export default function AdminActivities() {
                     variant: "destructive",
                 });
                 return;
+            }
+        }
+
+        if (isRecurring && usePerDaySchedule) {
+            for (const day of recurringDays) {
+                const cfg = perDaySchedule[day];
+                if (!cfg?.startTime || !cfg?.endTime) {
+                    toast({
+                        title: "Horarios incompletos",
+                        description: "Cada día seleccionado debe tener hora de inicio y fin.",
+                        variant: "destructive",
+                    });
+                    return;
+                }
+                if (cfg.endTime <= cfg.startTime) {
+                    toast({
+                        title: "Horas inválidas",
+                        description: "En cada día, la hora fin debe ser posterior a la hora inicio.",
+                        variant: "destructive",
+                    });
+                    return;
+                }
             }
         }
 
@@ -566,14 +653,23 @@ export default function AdminActivities() {
             return x.toISOString();
         }
 
+        const firstSelectedDay = recurringDays.slice().sort((a, b) => a - b)[0];
+
+        const fallbackRecurringStart = usePerDaySchedule
+            ? perDaySchedule[firstSelectedDay]?.startTime || recurringStartTime || "09:00"
+            : recurringStartTime;
+
+        const fallbackRecurringEnd = usePerDaySchedule
+            ? perDaySchedule[firstSelectedDay]?.endTime || recurringEndTime || "10:00"
+            : recurringEndTime;
+
         const anchorStartISO = isRecurring
-            ? isoFromDateAndTime(startAt ? new Date(startAt) : now, recurringStartTime)
+            ? isoFromDateAndTime(startAt ? new Date(startAt) : now, fallbackRecurringStart)
             : new Date(startAt).toISOString();
 
         const anchorEndISO = isRecurring
-            ? isoFromDateAndTime(startAt ? new Date(startAt) : now, recurringEndTime)
+            ? isoFromDateAndTime(startAt ? new Date(startAt) : now, fallbackRecurringEnd)
             : new Date(endAt).toISOString();
-
 
         const request_id = crypto.randomUUID();
         const payload = {
@@ -596,10 +692,21 @@ export default function AdminActivities() {
             recurrence: isRecurring
                 ? {
                     freq: "weekly",
-                    byWeekday: recurringDays.slice().sort((a, b) => a - b), // Monday0
+                    byWeekday: recurringDays.slice().sort((a, b) => a - b),
                     until: recurringUntil || null,
-                    startTime: recurringStartTime,
-                    endTime: recurringEndTime,
+                    startTime: usePerDaySchedule ? null : recurringStartTime,
+                    endTime: usePerDaySchedule ? null : recurringEndTime,
+                    perDaySchedule: usePerDaySchedule
+                        ? Object.fromEntries(
+                            recurringDays.map((day) => [
+                                day,
+                                {
+                                    startTime: perDaySchedule[day]?.startTime || recurringStartTime || "09:00",
+                                    endTime: perDaySchedule[day]?.endTime || recurringEndTime || "10:00",
+                                },
+                            ])
+                        )
+                        : null,
                 }
                 : null,
         };
@@ -788,25 +895,25 @@ export default function AdminActivities() {
                                     {isRecurring && (
                                         <div className="mt-3 grid gap-3">
                                             <div className="flex flex-wrap gap-2">
-                                                {[
-                                                    { k: 1, l: "Lun" },
-                                                    { k: 2, l: "Mar" },
-                                                    { k: 3, l: "Mié" },
-                                                    { k: 4, l: "Jue" },
-                                                    { k: 5, l: "Vie" },
-                                                    { k: 6, l: "Sáb" },
-                                                    { k: 0, l: "Dom" },
-                                                ].map((d) => {
+                                                {WEEKDAY_OPTIONS.map((d) => {
                                                     const active = recurringDays.includes(d.k);
                                                     return (
                                                         <button
                                                             key={d.k}
                                                             type="button"
-                                                            onClick={() =>
-                                                                setRecurringDays((prev) =>
-                                                                    active ? prev.filter((x) => x !== d.k) : [...prev, d.k]
-                                                                )
-                                                            }
+                                                            onClick={() => {
+                                                                setRecurringDays((prev) => {
+                                                                    if (active) {
+                                                                        removeDaySchedule(d.k);
+                                                                        return prev.filter((x) => x !== d.k);
+                                                                    } else {
+                                                                        if (usePerDaySchedule) {
+                                                                            ensureDaySchedule(d.k);
+                                                                        }
+                                                                        return [...prev, d.k];
+                                                                    }
+                                                                });
+                                                            }}
                                                             className={[
                                                                 "h-9 px-3 rounded-full text-sm ring-1 transition",
                                                                 active
@@ -820,28 +927,106 @@ export default function AdminActivities() {
                                                 })}
                                             </div>
 
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-[340px]">
-                                                <div className="grid gap-1">
-                                                    <label className="text-sm">Hora inicio</label>
-                                                    <input
-                                                        type="time"
-                                                        className="border rounded px-3 py-2"
-                                                        value={recurringStartTime}
-                                                        onChange={(e) => setRecurringStartTime(e.target.value)}
-                                                    />
-                                                </div>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    id="per-day-schedule"
+                                                    type="checkbox"
+                                                    checked={usePerDaySchedule}
+                                                    onChange={(e) => {
+                                                        const checked = e.target.checked;
+                                                        setUsePerDaySchedule(checked);
 
-                                                <div className="grid gap-1">
-                                                    <label className="text-sm">Hora fin</label>
-                                                    <input
-                                                        type="time"
-                                                        className="border rounded px-3 py-2"
-                                                        value={recurringEndTime}
-                                                        onChange={(e) => setRecurringEndTime(e.target.value)}
-                                                    />
-                                                </div>
+                                                        if (checked) {
+                                                            setPerDaySchedule((prev) => {
+                                                                const next = { ...prev };
+                                                                for (const day of recurringDays) {
+                                                                    if (!next[day]) {
+                                                                        next[day] = {
+                                                                            startTime: recurringStartTime || "09:00",
+                                                                            endTime: recurringEndTime || "10:00",
+                                                                        };
+                                                                    }
+                                                                }
+                                                                return next;
+                                                            });
+                                                        }
+                                                    }}
+                                                />
+                                                <label htmlFor="per-day-schedule" className="text-sm font-medium">
+                                                    Asignar horarios por cada día
+                                                </label>
                                             </div>
 
+                                            {!usePerDaySchedule ? (
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-[340px]">
+                                                    <div className="grid gap-1">
+                                                        <label className="text-sm">Hora inicio</label>
+                                                        <input
+                                                            type="time"
+                                                            className="border rounded px-3 py-2"
+                                                            value={recurringStartTime}
+                                                            onChange={(e) => setRecurringStartTime(e.target.value)}
+                                                        />
+                                                    </div>
+
+                                                    <div className="grid gap-1">
+                                                        <label className="text-sm">Hora fin</label>
+                                                        <input
+                                                            type="time"
+                                                            className="border rounded px-3 py-2"
+                                                            value={recurringEndTime}
+                                                            onChange={(e) => setRecurringEndTime(e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="grid gap-3">
+                                                    {recurringDays
+                                                        .slice()
+                                                        .sort((a, b) => a - b)
+                                                        .map((day) => {
+                                                            const dayLabel = WEEKDAY_OPTIONS.find((x) => x.k === day)?.l || `Día ${day}`;
+                                                            const cfg = perDaySchedule[day] || {
+                                                                startTime: recurringStartTime || "09:00",
+                                                                endTime: recurringEndTime || "10:00",
+                                                            };
+
+                                                            return (
+                                                                <div key={day} className="rounded-xl border p-3">
+                                                                    <div className="mb-2 text-sm font-medium text-neutral-800">
+                                                                        {dayLabel}
+                                                                    </div>
+
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-[340px]">
+                                                                        <div className="grid gap-1">
+                                                                            <label className="text-sm">Hora inicio</label>
+                                                                            <input
+                                                                                type="time"
+                                                                                className="border rounded px-3 py-2"
+                                                                                value={cfg.startTime}
+                                                                                onChange={(e) =>
+                                                                                    updateDaySchedule(day, { startTime: e.target.value })
+                                                                                }
+                                                                            />
+                                                                        </div>
+
+                                                                        <div className="grid gap-1">
+                                                                            <label className="text-sm">Hora fin</label>
+                                                                            <input
+                                                                                type="time"
+                                                                                className="border rounded px-3 py-2"
+                                                                                value={cfg.endTime}
+                                                                                onChange={(e) =>
+                                                                                    updateDaySchedule(day, { endTime: e.target.value })
+                                                                                }
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                </div>
+                                            )}
 
                                             <div className="grid gap-1 max-w-[220px]">
                                                 <label className="text-sm">Hasta (opcional)</label>
