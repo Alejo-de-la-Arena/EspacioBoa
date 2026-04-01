@@ -538,9 +538,7 @@ export default function EventsPage() {
                                 </div>
 
                                 <div className="px-1 sm:px-4 py-3 flex flex-col items-end gap-2 sm:gap-3">
-                                  <div className="text-[15px] font-bold text-emerald-700 font-sans">
-                                    ${event.price}
-                                  </div>
+
                                   {/* Este botón ahora es puramente visual; el Link exterior maneja el click */}
                                   <Button
                                     size="sm"

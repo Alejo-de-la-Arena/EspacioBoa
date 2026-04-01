@@ -465,10 +465,7 @@ export default function EventDetailPage() {
                                         <CardContent className="p-6">
                                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                                 <div className="flex items-center gap-4">
-                                                    <div>
-                                                        <div className="text-3xl font-bold text-neutral-900 leading-none">${event.price}</div>
-                                                        <div className="text-sm text-neutral-600 mt-1">Por persona</div>
-                                                    </div>
+
                                                     <CapacityMeter enrolled={enrolledCount ?? 0} capacity={capacity ?? 0} />
                                                 </div>
 

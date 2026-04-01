@@ -633,13 +633,7 @@ export default function ActivityDetailPage() {
                                     />
                                     <CardContent className="p-6">
                                         <div className="flex items-start justify-between gap-4">
-                                            <div>
-                                                <div className="text-3xl font-extrabold text-boa-green leading-none">
-                                                    {typeof activity.price === "number" ? `$${activity.price}` : "-"}
-                                                </div>
-                                                <div className="text-sm text-boa-ink/60 mt-1">Por clase</div>
-                                            </div>
-                                            <div className="text-right">
+                                            <div className="ml-auto text-right">
                                                 <div className={`font-semibold ${isFullyBooked ? "text-red-600" : "text-boa-green"}`}>
                                                     {isFullyBooked ? "¡Completo!" : `${spotsRemaining} cupos disponibles`}
                                                 </div>

@@ -36,28 +36,33 @@ type ExpItem = {
     _kind?: "activity" | "event";
 };
 
-function shuffleInPlace<T>(arr: T[]) {
-    for (let i = arr.length - 1; i > 0; i--) {
+
+function shuffle<T>(arr: T[]) {
+    const copy = [...arr];
+
+    for (let i = copy.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
+        [copy[i], copy[j]] = [copy[j], copy[i]];
     }
-    return arr;
-}
-function pickRandom<T>(arr: T[], n: number) {
-    if (!arr?.length) return [];
-    const copy = arr.slice();
-    shuffleInPlace(copy);
-    return copy.slice(0, Math.min(n, copy.length));
+
+    return copy;
 }
 
 function isUpcomingActivity(a: any) {
-    const rawStart =
-        a?.start_at ??
-        a?.startAt ??
-        a?.start_date ??
-        a?.startDate ??
-        a?.date ??
-        null;
+    const now = new Date();
+
+    if (a?.is_recurring) {
+        const until = a?.recurrence?.until ?? null;
+
+        // si es recurrente y no tiene fecha límite, la consideramos vigente
+        if (!until) return true;
+
+        const untilDate = new Date(until);
+        if (Number.isNaN(untilDate.getTime())) return true;
+
+        untilDate.setHours(23, 59, 59, 999);
+        return untilDate >= now;
+    }
 
     const rawEnd =
         a?.end_at ??
@@ -66,14 +71,20 @@ function isUpcomingActivity(a: any) {
         a?.endDate ??
         null;
 
-    const now = new Date();
-
     if (rawEnd) {
         const endDate = new Date(rawEnd);
         if (!Number.isNaN(endDate.getTime())) {
             return endDate >= now;
         }
     }
+
+    const rawStart =
+        a?.start_at ??
+        a?.startAt ??
+        a?.start_date ??
+        a?.startDate ??
+        a?.date ??
+        null;
 
     if (rawStart) {
         const startDate = new Date(rawStart);
@@ -82,6 +93,7 @@ function isUpcomingActivity(a: any) {
         }
     }
 
+    // importante: no descartarla si el hook no trae una fecha clara
     return true;
 }
 
@@ -247,37 +259,26 @@ export default function HomePage() {
     const { activities: liveActivities = [], loading: actsLoading } = useActivitiesLive();
 
     const experienceItems = useMemo(() => {
-        const desired = 4;
+        const desired = 3;
 
-        const t = (x: any) =>
+        const getTitle = (x: any) =>
             x?.title ?? x?.name ?? x?.activityTitle ?? x?.eventTitle ?? "";
 
-        const img = (x: any) =>
+        const getImage = (x: any) =>
             x?.image ??
-            x?.hero_image ?? // columna de la tabla activities
+            x?.hero_image ??
             x?.cover ??
             x?.banner ??
             x?.thumbnail ??
             "";
 
-        const sid = (x: any) =>
-            x?.id ??
-            x?._id ??
-            x?.slug ??
-            x?.uuid ??
-            Math.random().toString(36).slice(2);
+        const actsRaw = Array.isArray(liveActivities) ? liveActivities : [];
 
-        const actsRaw: any[] = Array.isArray(liveActivities) ? liveActivities : [];
-
-        const activities = actsRaw
-            // Publicadas / activas
+        const mappedActivities: ExpItem[] = actsRaw
             .filter((a) => a && a.is_published !== false)
-            // Que tengan al menos título o imagen
-            .filter((a) => t(a) || img(a))
-            // Que todavía no hayan pasado
+            .filter((a) => getTitle(a) || getImage(a))
             .filter(isUpcomingActivity)
-            // Mapeo al formato del slider
-            .map((a) => {
+            .map((a: any) => {
                 const start =
                     a?.start_at ??
                     a?.startAt ??
@@ -292,32 +293,31 @@ export default function HomePage() {
                 if (start) {
                     const d = new Date(start);
                     if (!Number.isNaN(d.getTime())) {
-                        date = d.toISOString(); // lo vamos a leer en el slider
-                        time = d.toLocaleTimeString("es-AR", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                        });
+                        date = d.toISOString();
+                        time = a?.schedule?.time
+                            ?? d.toLocaleTimeString("es-AR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                            });
                     }
                 }
 
                 return {
-                    ...a,
-                    id: sid(a),
-                    title: t(a),
+                    id: a.id,
+                    title: getTitle(a),
                     description: a.description ?? "",
-                    image: img(a),
-                    date,          // fecha de la actividad
-                    time,          // hora de la actividad
+                    image: getImage(a),
+                    href: a?.id ? `/activities/${a.id}` : "/activities",
+                    date,
+                    time,
+                    schedule: a?.schedule,
                     capacity: a.capacity ?? null,
-                    price: a.price ?? undefined,
-                    _kind: "activity" as const,
+                    enrolled: a.enrolled ?? 0,
+                    _kind: "activity",
                 };
             });
 
-        const shuffled = shuffleInPlace(activities.slice());
-        const result = shuffled.slice(0, desired);
-
-        return result;
+        return shuffle(mappedActivities).slice(0, desired);
     }, [liveActivities]);
 
     const cardItem = {

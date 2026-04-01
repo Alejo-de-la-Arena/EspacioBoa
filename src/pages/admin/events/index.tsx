@@ -697,7 +697,7 @@ export default function AdminEvents() {
                                 </div>
 
                                 <div className="grid gap-1">
-                                    <label className="text-sm">Hero image (URL)</label>
+                                    <label className="text-sm">Imagen Principal (URL)</label>
                                     <Input value={heroImage} onChange={(e) => setHeroImage(e.target.value)} />
                                 </div>
 
